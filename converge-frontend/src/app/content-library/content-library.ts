@@ -83,7 +83,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
               </svg>
             </div>
             <h3 class="macos-empty-title">No Deliverables Recorded</h3>
-            <p class="macos-empty-text">Add published post or reel URLs to verify insights via Meta Graph API v26.0.</p>
+            <p class="macos-empty-text">Add published post or reel URLs to verify organic reach and live campaign metrics.</p>
             <button type="button" class="macos-empty-cta" (click)="openModal = true">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <span>Add Content URL</span>
@@ -484,13 +484,34 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .table-container {
       background: #FFFFFF;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 20px;
+      border: 1px solid #EDEDED;
+      border-radius: 6px;
       overflow: hidden;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
+    }
+
+    .content-table th {
+      padding: 10px 14px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #787774;
+      background: #FAFAFC;
+      border-bottom: 1px solid #EDEDED;
+      white-space: nowrap;
+    }
+
+    .content-table td {
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #37352F;
+      border-bottom: 1px solid #F1F1EF;
+      vertical-align: middle;
+    }
+
+    .content-table tr:hover td {
+      background: #FBFBFA;
     }
 
     .macos-empty-state {
@@ -716,28 +737,29 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 999px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
       white-space: nowrap;
     }
 
     .badge-success {
-      background: rgba(82, 126, 90, 0.15);
-      color: #527E5A;
+      background: #EDF3EC;
+      color: #448361;
     }
 
     .badge-warning {
-      background: rgba(228, 102, 75, 0.15);
-      color: #E4664B;
+      background: #FDEBEC;
+      color: #D44C47;
     }
 
     .badge-info {
-      background: rgba(61, 94, 171, 0.15);
-      color: #3D5EAB;
+      background: #EBF5FB;
+      color: #2870BD;
     }
 
     .row-actions {

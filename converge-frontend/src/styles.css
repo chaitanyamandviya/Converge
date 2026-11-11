@@ -1,72 +1,78 @@
 /* ==========================================================================
-   Converge Executive Design System & Apple Fluid Motion Foundations
-   Inspired by: Apple Fluid Interfaces (WWDC), Stripe Dashboard, Linear, Vercel
-   Core Rules:
-   1. Response: Zero-latency active states (scale 0.97 on pointer-down)
-   2. Colors: Pure slate canvas (#F8FAFC), crisp white surfaces, high-contrast text (#0F172A)
-   3. Typography: Plus Jakarta Sans display + Inter data grid with negative optical tracking
-   4. Tabular Figures: "tnum" 1 for all currency and metrics
-   5. Restraint: Zero cartoon clutter, clean 1px borders, semantic status indicators
+   Converge Minimalist SaaS & Notion-Style Design System Foundations
+   Inspired by: Notion, Linear, Stripe
+   Core Design Foundations:
+   - Primary Canvas: Pure White (#FFFFFF)
+   - Sidebar Canvas: Warm Off-White / Light Neutral (#F7F6F3)
+   - Hairline Subtle Borders (#EDEDED & #E2E8F0)
+   - High-Contrast Typography: Primary Charcoal (#37352F), Secondary Muted (#787774), Dim (#9B9A97)
+   - Notion Signature Pastel Status Pills:
+       - Verified / Done: Soft Sage Green (#EDF3EC / #448361)
+       - Auditing / In Progress: Soft Sky Blue (#EBF5FB / #2870BD)
+       - Pending / Awaiting: Soft Warm Amber (#FAF1E5 / #D9730D)
+       - Default / Neutral: Soft Slate (#F1F1EF / #787774)
+   - Tabular Numerals ("tnum" 1) for currency and metrics
+   - Zero glowing neon, zero liquid reflections, zero clutter
    ========================================================================== */
+
 :root {
-  --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
+  --font-family-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   
-  /* Apple Design System Canvas & Surfaces */
-  --color-bg-primary: #F5F5F7;
-  --color-canvas: #F5F5F7;
+  /* Notion Canvas & Surfaces */
+  --color-bg-primary: #FFFFFF;
+  --color-canvas: #FFFFFF;
   --color-surface: #FFFFFF;
-  --color-surface-subtle: #F5F5F7;
-  --color-sidebar: #FBFBFD;
+  --color-surface-subtle: #F7F6F3;
+  --color-sidebar: #F7F6F3;
+  --color-sidebar-hover: #EFEFED;
   --color-white: #FFFFFF;
   
-  /* Apple Typographic Hierarchy */
-  --color-text-main: #1D1D1F;
-  --color-text-secondary: #424245;
-  --color-text-muted: #86868B;
-  --color-text-light: #A1A1A6;
+  /* Notion Typographic Hierarchy */
+  --color-text-main: #37352F;
+  --color-text-secondary: #787774;
+  --color-text-muted: #787774;
+  --color-text-light: #9B9A97;
   --color-text-white: #FFFFFF;
   
-  /* Apple Interactive Blue & Space Graphite */
-  --color-brand-blue: #0071E3;
-  --color-brand-blue-hover: #0077ED;
-  --color-brand-blue-light: #EBF5FF;
-  --color-perspective-dark: #1D1D1F;
+  /* Purposeful Interactive Accent */
+  --color-brand-blue: #0066CC;
+  --color-brand-blue-hover: #0052A3;
+  --color-brand-blue-light: #EFF6FF;
   
-  /* Apple Restrained Accents */
-  --color-accent-green: #34C759;
-  --color-accent-green-bg: #E8F8EE;
-  --color-accent-green-border: #A3E7B7;
-  --color-accent-yellow: #FFF9E6;
-  --color-accent-yellow-solid: #FF9500;
-  --color-accent-coral: #FF3B30;
-  --color-accent-sky: #5AC8FA;
+  /* Notion Pastel Status Tags */
+  --tag-green-bg: #EDF3EC;
+  --tag-green-text: #448361;
+  --tag-blue-bg: #EBF5FB;
+  --tag-blue-text: #2870BD;
+  --tag-amber-bg: #FAF1E5;
+  --tag-amber-text: #D9730D;
+  --tag-gray-bg: #F1F1EF;
+  --tag-gray-text: #787774;
+  --tag-purple-bg: #F4F0F7;
+  --tag-purple-text: #6940A5;
+  --tag-red-bg: #FDEBEC;
+  --tag-red-text: #D44C47;
   
-  /* Hairline Borders & Glass Materials */
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-border-card: rgba(0, 0, 0, 0.06);
-  --color-border-subtle: rgba(0, 0, 0, 0.04);
-  --glass-bg: rgba(255, 255, 255, 0.82);
-  --glass-border: 1px solid rgba(0, 0, 0, 0.08);
+  /* Hairline Borders */
+  --color-border: #EDEDED;
+  --color-border-card: #EDEDED;
+  --color-border-subtle: #F1F1EF;
+  --color-border-strong: #D3D1CB;
 
-  /* Apple Radii */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-card: 20px;
-  --radius-pill: 980px;
+  /* Notion Subtle Radii */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-card: 8px;
+  --radius-pill: 999px;
 
-  /* Apple Elevation Tokens */
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
+  /* Elevation Tokens (Subtle Notion Shadows) */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.06);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.06);
-  --shadow-cta-glow: 0 4px 14px rgba(0, 113, 227, 0.28);
-
-  /* Apple WWDC Springs (Critically Damped Default) */
-  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-modal: 0 12px 36px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
 
   /* Tabular numbers for financial & analytics alignment */
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
@@ -88,161 +94,116 @@ html, body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-main);
   line-height: 1.5;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Optical Tracking for Titles & Headings */
+/* Headings */
 h1, h2, h3, .heading-display, .dashboard-title, .page-title, .brand-title, .hero-title {
-  letter-spacing: -0.028em;
+  letter-spacing: -0.025em;
   color: var(--color-text-main);
+  font-weight: 700;
 }
 
-/* Custom Ergonomic Scrollbars for contained scrollable containers */
-.table-scroll-wrap::-webkit-scrollbar,
-.table-scroll::-webkit-scrollbar,
-.campaign-tabs-list::-webkit-scrollbar,
-.tabs-bar::-webkit-scrollbar {
-  height: 6px;
-  width: 6px;
+/* Common Notion Components */
+.notion-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  line-height: 1.4;
 }
 
-.table-scroll-wrap::-webkit-scrollbar-track,
-.table-scroll::-webkit-scrollbar-track,
-.campaign-tabs-list::-webkit-scrollbar-track,
-.tabs-bar::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 999px;
+.notion-pill.green {
+  background: var(--tag-green-bg);
+  color: var(--tag-green-text);
 }
 
-.table-scroll-wrap::-webkit-scrollbar-thumb,
-.table-scroll::-webkit-scrollbar-thumb,
-.campaign-tabs-list::-webkit-scrollbar-thumb,
-.tabs-bar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.16);
-  border-radius: 999px;
+.notion-pill.blue {
+  background: var(--tag-blue-bg);
+  color: var(--tag-blue-text);
 }
 
-.table-scroll-wrap::-webkit-scrollbar-thumb:hover,
-.table-scroll::-webkit-scrollbar-thumb:hover,
-.campaign-tabs-list::-webkit-scrollbar-thumb:hover,
-.tabs-bar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.28);
+.notion-pill.amber {
+  background: var(--tag-amber-bg);
+  color: var(--tag-amber-text);
 }
 
-/* Apple Focus Ring */
-:focus-visible {
-  outline: 2px solid var(--color-brand-blue);
-  outline-offset: 2px;
+.notion-pill.gray {
+  background: var(--tag-gray-bg);
+  color: var(--tag-gray-text);
 }
 
-/* Tabular Numerics for Metrics & Financial Figures */
-.number-data, .stat-number, .stat-value, .metric-value, .col-val, .agreement-value, .spend-data, .price-data {
-  font-variant-numeric: tabular-nums;
+.notion-pill.purple {
+  background: var(--tag-purple-bg);
+  color: var(--tag-purple-text);
 }
 
-/* Apple Tactile Micro-Interactions */
-button, .btn, a.btn-action-primary, a.view-btn, a.watch-link, .tab-btn, .pill-btn, .invite-btn, .add-creator-btn, .add-btn {
-  transition: transform 140ms var(--ease-spring), 
-              background-color 140ms ease, 
-              border-color 140ms ease, 
-              box-shadow 160ms var(--ease-spring), 
-              opacity 120ms ease;
-  user-select: none;
+.notion-pill.red {
+  background: var(--tag-red-bg);
+  color: var(--tag-red-text);
 }
 
-button:active:not(:disabled), .btn:active, a.btn-action-primary:active {
-  transform: scale(0.97);
-}
-
-/* Apple Button & Pill Styling */
-.btn-action-primary, .invite-btn, .add-creator-btn, .add-btn, .submit-action-btn, .btn-primary {
-  box-shadow: var(--shadow-cta-glow);
-}
-
-.btn-action-primary:hover, .invite-btn:hover, .add-creator-btn:hover, .add-btn:hover, .btn-primary:hover {
-  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.32);
-  transform: translateY(-1px);
-}
-
-/* Staggered Entrance Animations */
-@keyframes animeStaggerSlideUp {
-  0% {
-    opacity: 0;
-    transform: translateY(10px) scale(0.99);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.metric-card, .stat-card, .feature-card, .step-card, .card, .table-container, .admin-brands-card {
-  animation: animeStaggerSlideUp 350ms var(--ease-spring) backwards;
-  transition: transform 200ms var(--ease-spring), box-shadow 200ms var(--ease-spring), border-color 160ms ease;
-}
-
-.metrics-grid > :nth-child(1) { animation-delay: 0ms; }
-.metrics-grid > :nth-child(2) { animation-delay: 40ms; }
-.metrics-grid > :nth-child(3) { animation-delay: 80ms; }
-.metrics-grid > :nth-child(4) { animation-delay: 120ms; }
-
-.metric-card:hover, .stat-card:hover {
-  box-shadow: var(--shadow-card-hover);
-  transform: translateY(-2px);
-}
-
-/* Smooth Table Row Stagger & Hover */
-tbody tr {
-  transition: background-color 140ms ease;
-}
-
-/* Custom Styled Select Inputs across Portal Modals */
-select.form-input {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  background-color: #FFFFFF !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231D1D1F' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 14px center !important;
-  padding-right: 38px !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
+/* Common Button Styles */
+.btn-notion-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: var(--color-brand-blue);
+  border: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease;
 }
 
-/* Modal Pop & Backdrop Animations */
-@keyframes modalBackdropFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.btn-notion-primary:hover {
+  background: var(--color-brand-blue-hover);
 }
 
-@keyframes modalContentPopIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+.btn-notion-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-main);
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
 }
 
-.modal-backdrop {
-  animation: modalBackdropFadeIn 180ms ease forwards;
+.btn-notion-secondary:hover {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border-strong);
 }
 
-.modal-card {
-  animation: modalContentPopIn 260ms var(--ease-out-expo) forwards;
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-
-/* Respect user's motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D3D1CB;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B4B2AC;
 }

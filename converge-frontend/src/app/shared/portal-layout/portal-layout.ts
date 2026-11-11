@@ -11,23 +11,17 @@ import { ConfirmService } from '../../services/confirm.service';
   imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
   template: `
     <div class="portal-root">
-      <!-- Top Workspace Header -->
+      <!-- Notion-style Top Header / Breadcrumbs -->
       <header class="app-header">
         <div class="header-left">
           <a routerLink="/dashboard" class="logo-link" title="Return to Overview">
             <img src="/assets/converge-logo.svg" alt="Converge" class="header-logo" />
           </a>
           <span class="header-divider">/</span>
-          <a routerLink="/dashboard" class="workspace-pill-link" title="Workspace Overview">
-            <div class="workspace-pill">
-              @if (user()?.logoUrl && !logoFailed) {
-                <img [src]="user()?.logoUrl" alt="" class="workspace-logo-img" (error)="logoFailed = true" />
-              } @else {
-                <span class="workspace-dot"></span>
-              }
-              <span class="workspace-name">{{ workspaceName() }}</span>
-            </div>
-          </a>
+          <div class="breadcrumb-chip">
+            <span class="workspace-dot"></span>
+            <span class="workspace-name">{{ workspaceName() }}</span>
+          </div>
         </div>
 
         <div class="header-right">
@@ -39,7 +33,7 @@ import { ConfirmService } from '../../services/confirm.service';
             </div>
           </div>
           <button type="button" class="logout-btn" (click)="logout()" title="Sign out of workspace">
-            <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>
@@ -49,39 +43,48 @@ import { ConfirmService } from '../../services/confirm.service';
         </div>
       </header>
 
-      <!-- Portal Body -->
+      <!-- Portal Body: Slim Notion Sidebar + Main Canvas -->
       <div class="portal-layout">
-        <!-- Sidebar Navigation -->
+        <!-- Notion Slim Sidebar -->
         <aside class="portal-sidebar">
-          <div class="sidebar-category">{{ isAgencyManager() ? 'AGENCY WORKSPACE' : (isAdmin() ? 'ADMIN CONSOLE' : 'BRAND WORKSPACE') }}</div>
+          <div class="sidebar-ws-card">
+            <div class="ws-identity">
+              <span class="ws-badge-icon">📋</span>
+              <span class="ws-title-text">{{ workspaceName() }}</span>
+            </div>
+          </div>
+
+          <div class="sidebar-category">WORKSPACE</div>
           <nav class="sidebar-nav">
             <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-              <img src="/assets/layout-dashboard.svg" alt="" class="nav-icon" />
+              <span class="nav-emoji">🏢</span>
               <span>{{ isAdmin() ? 'Brands & Organizations' : 'Overview' }}</span>
             </a>
 
-            <!-- Campaigns nav item visible to Brand Manager -->
             @if (!isAdmin() && !isAgencyManager()) {
               <a routerLink="/campaigns" routerLinkActive="active" class="nav-item">
-                <img src="/assets/megaphone.svg" alt="" class="nav-icon" />
+                <span class="nav-emoji">📢</span>
                 <span>Campaigns</span>
               </a>
             }
 
-            <!-- Agencies nav item visible to System Admin and Brand Manager -->
             @if (!isAgencyManager()) {
               <a routerLink="/agencies" routerLinkActive="active" class="nav-item">
-                <img src="/assets/building-2.svg" alt="" class="nav-icon" />
+                <span class="nav-emoji">🤝</span>
                 <span>{{ isAdmin() ? 'Agencies (Directory)' : 'Agencies' }}</span>
               </a>
             }
 
             <a routerLink="/creators" routerLinkActive="active" class="nav-item">
-              <img src="/assets/users.svg" alt="" class="nav-icon" />
+              <span class="nav-emoji">✨</span>
               <span>{{ isAgencyManager() ? 'My Talent Roster' : (isAdmin() ? 'Creators (Directory)' : 'Creators') }}</span>
             </a>
+          </nav>
+
+          <div class="sidebar-category" style="margin-top: 14px;">ADMIN &amp; AUDIT</div>
+          <nav class="sidebar-nav">
             <a routerLink="/content-library" routerLinkActive="active" class="nav-item">
-              <img src="/assets/panels-top-left.svg" alt="" class="nav-icon" />
+              <span class="nav-emoji">📊</span>
               <span>{{ isAdmin() ? 'Deliverables Audit' : 'Content library' }}</span>
             </a>
           </nav>
@@ -94,7 +97,7 @@ import { ConfirmService } from '../../services/confirm.service';
           </div>
         </aside>
 
-        <!-- Main Dynamic Portal Content -->
+        <!-- Main Notion Canvas -->
         <main class="portal-main">
           <router-outlet></router-outlet>
         </main>
@@ -108,311 +111,245 @@ import { ConfirmService } from '../../services/confirm.service';
       max-width: 100vw;
       display: flex;
       flex-direction: column;
-      background-color: #F5F5F7;
-      color: #1D1D1F;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", "Inter", sans-serif;
+      background-color: #FFFFFF;
+      color: #37352F;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
       overflow-x: hidden;
       box-sizing: border-box;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
 
+    /* Notion Minimalist Header */
     .app-header {
-      min-height: 52px;
-      height: 52px;
+      height: 48px;
+      min-height: 48px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 24px;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 0 20px;
+      background: #FFFFFF;
+      border-bottom: 1px solid #EDEDED;
       position: sticky;
       top: 0;
       z-index: 50;
       width: 100%;
       box-sizing: border-box;
-      gap: 12px;
     }
 
     .header-left {
       display: flex;
       align-items: center;
-      gap: 12px;
-      min-width: 0;
-      flex-shrink: 1;
-    }
-
-    .logo-link {
-      display: inline-flex;
-      align-items: center;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .workspace-pill-link {
-      display: inline-flex;
-      align-items: center;
-      text-decoration: none;
-      color: inherit;
-      cursor: pointer;
-      min-width: 0;
+      gap: 10px;
     }
 
     .header-logo {
       height: 20px;
       display: block;
-      flex-shrink: 0;
     }
 
     .header-divider {
-      color: rgba(0, 0, 0, 0.2);
-      font-size: 14px;
-      font-weight: 300;
-      flex-shrink: 0;
+      color: #D3D1CB;
+      font-size: 13px;
     }
 
-    .workspace-pill {
-      display: inline-flex;
+    .breadcrumb-chip {
+      display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(0, 0, 0, 0.04);
-      padding: 4px 10px;
-      border-radius: 980px;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
-      color: #1D1D1F;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      transition: background 0.15s ease;
-    }
-
-    .workspace-pill:hover {
-      background: rgba(0, 0, 0, 0.07);
+      color: #787774;
     }
 
     .workspace-dot {
       width: 6px;
       height: 6px;
-      background-color: #34C759;
+      background-color: #10B981;
       border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .workspace-logo-img {
-      width: 15px;
-      height: 15px;
-      border-radius: 3px;
-      object-fit: contain;
-      flex-shrink: 0;
     }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
+      gap: 12px;
     }
 
     .user-chip {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(0, 0, 0, 0.03);
-      padding: 3px 10px 3px 5px;
-      border-radius: 980px;
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      max-width: 260px;
+      background: #F7F6F3;
+      padding: 3px 10px 3px 6px;
+      border-radius: 4px;
+      border: 1px solid #EDEDED;
     }
 
     .user-avatar {
-      width: 24px;
-      height: 24px;
-      background: #1D1D1F;
+      width: 22px;
+      height: 22px;
+      background: #37352F;
       color: #FFFFFF;
-      border-radius: 50%;
+      border-radius: 3px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 600;
       font-size: 11px;
-      flex-shrink: 0;
     }
 
     .user-details {
       display: flex;
       flex-direction: column;
-      line-height: 1.15;
-      min-width: 0;
-      overflow: hidden;
+      line-height: 1.2;
     }
 
     .user-email {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 500;
-      color: #1D1D1F;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      color: #37352F;
     }
 
     .user-role-badge {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #86868B;
-      white-space: nowrap;
+      font-size: 10px;
+      color: #787774;
     }
 
     .logout-btn {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(0, 0, 0, 0.04);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      color: #1D1D1F;
+      gap: 5px;
+      background: transparent;
+      border: 1px solid #EDEDED;
+      color: #787774;
       font-size: 12px;
       font-weight: 500;
-      min-height: 32px;
-      padding: 4px 12px;
-      border-radius: 980px;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 4px;
       cursor: pointer;
-      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-      white-space: nowrap;
-      flex-shrink: 0;
+      transition: all 0.15s ease;
     }
 
     .logout-btn:hover {
-      background: #FF3B30;
-      border-color: #FF3B30;
-      color: #FFFFFF;
-    }
-
-    .logout-btn:active {
-      transform: scale(0.97);
+      background: #FDEBEC;
+      border-color: #F8D7DA;
+      color: #D44C47;
     }
 
     .logout-icon {
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
     }
 
     .portal-layout {
       display: flex;
       flex: 1;
       width: 100%;
-      min-width: 0;
     }
 
-    /* macOS Sidebar */
+    /* Notion Slim Sidebar */
     .portal-sidebar {
-      width: 230px;
+      width: 240px;
       flex-shrink: 0;
-      background: #FBFBFD;
-      border-right: 1px solid rgba(0, 0, 0, 0.08);
+      background: #F7F6F3;
+      border-right: 1px solid #EDEDED;
       display: flex;
       flex-direction: column;
-      padding: 20px 10px;
-      gap: 12px;
+      padding: 16px 12px;
+      gap: 4px;
+    }
+
+    .sidebar-ws-card {
+      padding: 6px 8px;
+      border-radius: 4px;
+      background: transparent;
+      margin-bottom: 12px;
+    }
+
+    .ws-identity {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #37352F;
+    }
+
+    .ws-badge-icon {
+      font-size: 16px;
     }
 
     .sidebar-category {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      color: #86868B;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #9B9A97;
       text-transform: uppercase;
-      padding: 0 10px;
+      padding: 4px 8px;
     }
 
     .sidebar-nav {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
     }
 
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      min-height: 36px;
-      padding: 7px 12px;
+      gap: 8px;
+      padding: 6px 8px;
       font-size: 13px;
       font-weight: 500;
-      color: #424245;
+      color: #37352F;
       text-decoration: none;
-      border-radius: 8px;
-      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 4px;
+      transition: background 0.1s ease;
     }
 
     .nav-item:hover {
-      background: rgba(0, 0, 0, 0.04);
-      color: #1D1D1F;
-    }
-
-    .nav-item:active {
-      transform: scale(0.98);
+      background: #EFEFED;
     }
 
     .nav-item.active {
-      background: rgba(0, 0, 0, 0.08);
-      color: #1D1D1F;
+      background: #EFEFED;
       font-weight: 600;
     }
 
-    .nav-icon {
-      width: 16px;
-      height: 16px;
-      opacity: 0.65;
-      transition: opacity 0.15s ease;
-    }
-
-    .nav-item.active .nav-icon,
-    .nav-item:hover .nav-icon {
-      opacity: 1;
+    .nav-emoji {
+      font-size: 14px;
     }
 
     .sidebar-footer {
       margin-top: auto;
-      padding: 12px 10px;
-      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      padding: 12px 8px;
+      border-top: 1px solid #EDEDED;
     }
 
     .sidebar-stat-chip {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 11px;
-      font-weight: 500;
-      color: #86868B;
+      gap: 6px;
+      font-size: 11.5px;
+      color: #787774;
     }
 
     .status-indicator-dot {
       width: 6px;
       height: 6px;
-      background: #34C759;
+      background: #10B981;
       border-radius: 50%;
     }
 
+    /* Notion Canvas */
     .portal-main {
       flex: 1 1 auto;
-      min-width: 0;
       width: 100%;
-      box-sizing: border-box;
+      min-width: 0;
+      background-color: #FFFFFF;
       padding: 32px 40px;
-      max-width: 1380px;
+      max-width: 1280px;
       margin: 0 auto;
-      overflow-x: hidden;
-      background-color: #F5F5F7;
-    }
-
-    @media (max-width: 1100px) {
-      .portal-main {
-        padding: 24px 20px;
-      }
     }
 
     @media (max-width: 900px) {
@@ -422,51 +359,17 @@ import { ConfirmService } from '../../services/confirm.service';
       .portal-sidebar {
         width: 100%;
         border-right: none;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-        padding: 14px 16px;
-        gap: 10px;
+        border-bottom: 1px solid #EDEDED;
       }
       .sidebar-nav {
         flex-direction: row;
         flex-wrap: wrap;
-        gap: 6px;
-      }
-      .nav-item {
-        min-height: 38px;
-        padding: 8px 12px;
-        font-size: 12px;
       }
       .sidebar-footer {
         display: none;
       }
       .portal-main {
-        padding: 18px 14px;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .app-header {
-        padding: 0 14px;
-      }
-      .user-details {
-        display: none;
-      }
-      .user-chip {
-        padding: 4px;
-      }
-      .logout-btn {
-        padding: 6px 12px;
-        font-size: 12px;
-        min-height: 34px;
-      }
-      .workspace-pill {
-        display: none;
-      }
-      .header-divider {
-        display: none;
-      }
-      .portal-main {
-        padding: 14px 10px;
+        padding: 20px 16px;
       }
     }
   `]
@@ -497,19 +400,9 @@ export class PortalLayoutComponent {
       return 'Agency Workspace';
     }
     if (this.isAdmin()) {
-      return 'Converge System Admin';
+      return 'Converge Master Console';
     }
     return 'Brand Workspace';
-  });
-
-  workspaceSubtitle = computed(() => {
-    if (this.isAdmin()) {
-      return 'Brand & Agency Governance';
-    }
-    if (this.isAgencyManager()) {
-      return 'Creator Roster & Deliverables';
-    }
-    return 'Multi-Agency Campaign Hub';
   });
 
   roleDisplay = computed(() => {

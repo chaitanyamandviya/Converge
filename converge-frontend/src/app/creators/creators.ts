@@ -395,16 +395,16 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .page-title {
-      font-size: 28px;
-      font-weight: 800;
-      color: #1D1D1F;
-      margin: 0 0 6px 0;
-      letter-spacing: -0.02em;
+      font-size: 26px;
+      font-weight: 700;
+      color: #37352F;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.025em;
     }
 
     .page-subtitle {
-      font-size: 14px;
-      color: rgba(0, 0, 0, 0.7);
+      font-size: 13.5px;
+      color: #787774;
       margin: 0;
       line-height: 1.45;
     }
@@ -412,24 +412,22 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .add-creator-btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: #0071E3;
+      gap: 6px;
+      background: #0066CC;
       color: #FFFFFF;
       border: none;
-      padding: 10px 18px;
-      border-radius: 999px;
+      padding: 6px 14px;
+      border-radius: 4px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      transition: all 0.15s ease;
+      transition: background 0.15s ease;
       white-space: nowrap;
       flex-shrink: 0;
     }
 
     .add-creator-btn:hover {
-      background: #0077ED;
-      transform: translateY(-1px);
+      background: #0052A3;
     }
 
     .btn-icon {

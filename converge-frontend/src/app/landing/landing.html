@@ -29,11 +29,9 @@
       </div>
 
       <nav class="nav-links">
-        <button type="button" (click)="scrollToSection('deliverables-stage')" class="nav-item">Campaigns</button>
         <button type="button" (click)="scrollToSection('deliverables-stage')" class="nav-item">Deliverables</button>
-        <button type="button" (click)="scrollToSection('workflow-section')" class="nav-item">How it Works</button>
+        <button type="button" (click)="scrollToSection('workflow-section')" class="nav-item">Workflow</button>
         <button type="button" (click)="scrollToSection('capabilities')" class="nav-item">Security</button>
-        <button type="button" (click)="scrollToSection('faqs')" class="nav-item">FAQs</button>
       </nav>
 
       <div class="nav-actions">
@@ -384,49 +382,7 @@
     </div>
   </section>
 
-  <!-- ========================================================
-       6. Frequently Asked Questions (None Open By Default)
-       ======================================================== -->
-  <section id="faqs" class="faq-section">
-    <div class="section-container">
-      <div class="section-header-centered">
-        <span class="section-eyebrow">COMMON QUESTIONS</span>
-        <h2 class="section-title">Everything you need to know.</h2>
-        <p class="section-description">Clear answers to common questions about platform onboarding and audit workflows.</p>
-      </div>
 
-      <div class="faq-accordion-wrap">
-        @for (faq of faqs; track faq.question; let i = $index) {
-          <div class="faq-row-item" [class.open]="openFaqIndex() === i">
-            <button
-              type="button"
-              class="faq-trigger-btn"
-              (click)="toggleFaq(i)"
-              [attr.aria-expanded]="openFaqIndex() === i"
-            >
-              <span class="faq-q-text">{{ faq.question }}</span>
-              <span class="faq-toggle-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  @if (openFaqIndex() === i) {
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                  } @else {
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                  }
-                </svg>
-              </span>
-            </button>
-
-            @if (openFaqIndex() === i) {
-              <div class="faq-answer-panel">
-                <p>{{ faq.answer }}</p>
-              </div>
-            }
-          </div>
-        }
-      </div>
-    </div>
-  </section>
 
   <!-- ========================================================
        7. Direct Inquiries Modal Trigger & Footer

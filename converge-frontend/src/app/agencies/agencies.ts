@@ -382,16 +382,16 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     }
 
     .page-title {
-      font-size: 28px;
-      font-weight: 800;
-      color: #1D1D1F;
-      margin: 0 0 6px 0;
-      letter-spacing: -0.02em;
+      font-size: 26px;
+      font-weight: 700;
+      color: #37352F;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.025em;
     }
 
     .page-subtitle {
-      font-size: 14px;
-      color: rgba(0, 0, 0, 0.7);
+      font-size: 13.5px;
+      color: #787774;
       margin: 0;
       line-height: 1.45;
     }
@@ -399,29 +399,27 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     .invite-btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: #0071E3;
+      gap: 6px;
+      background: #0066CC;
       color: #FFFFFF;
       border: none;
-      padding: 10px 18px;
-      border-radius: 999px;
+      padding: 6px 14px;
+      border-radius: 4px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      transition: all 0.15s ease;
+      transition: background 0.15s ease;
       white-space: nowrap;
       flex-shrink: 0;
     }
 
     .invite-btn:hover {
-      background: #0077ED;
-      transform: translateY(-1px);
+      background: #0052A3;
     }
 
     .btn-icon {
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
       filter: brightness(0) invert(1);
     }
 
@@ -429,13 +427,10 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       display: inline-flex;
       align-items: center;
       gap: 16px;
-      padding: 8px 20px;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 980px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      padding: 6px 14px;
+      background: #F7F6F3;
+      border: 1px solid #EDEDED;
+      border-radius: 4px;
       width: fit-content;
       max-width: 100%;
       overflow-x: auto;
