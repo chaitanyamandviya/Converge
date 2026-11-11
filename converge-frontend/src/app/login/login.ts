@@ -193,8 +193,7 @@ export class LoginComponent implements OnInit {
 
   setMode(newMode: 'login' | 'signup' | 'forgot'): void {
     this.mode.set(newMode);
-    this.errorMessage.set('');
-    this.successMessage.set('');
+    this.clearMessages();
     this.confirmPassword.set('');
     this.roleDropdownOpen.set(false);
     this.categoryDropdownOpen.set(false);
@@ -202,6 +201,54 @@ export class LoginComponent implements OnInit {
     if (newMode === 'signup') {
       this.loadBrandsForOnboarding();
     }
+  }
+
+  private autoDismissTimer: any = null;
+
+  showError(msg: string): void {
+    this.successMessage.set('');
+    this.errorMessage.set(msg);
+    if (this.autoDismissTimer) clearTimeout(this.autoDismissTimer);
+    this.autoDismissTimer = setTimeout(() => {
+      this.errorMessage.set('');
+    }, 8000);
+  }
+
+  showSuccess(msg: string): void {
+    this.errorMessage.set('');
+    this.successMessage.set(msg);
+    if (this.autoDismissTimer) clearTimeout(this.autoDismissTimer);
+    this.autoDismissTimer = setTimeout(() => {
+      this.successMessage.set('');
+    }, 8000);
+  }
+
+  dismissAlert(type: 'error' | 'success'): void {
+    if (type === 'error') this.errorMessage.set('');
+    if (type === 'success') this.successMessage.set('');
+    if (this.autoDismissTimer) {
+      clearTimeout(this.autoDismissTimer);
+      this.autoDismissTimer = null;
+    }
+  }
+
+  clearMessages(): void {
+    if (this.errorMessage()) this.errorMessage.set('');
+    if (this.successMessage()) this.successMessage.set('');
+    if (this.autoDismissTimer) {
+      clearTimeout(this.autoDismissTimer);
+      this.autoDismissTimer = null;
+    }
+  }
+
+  onEmailChange(val: string): void {
+    this.email.set(val);
+    if (this.errorMessage()) this.errorMessage.set('');
+  }
+
+  onPasswordChange(val: string): void {
+    this.password.set(val);
+    if (this.errorMessage()) this.errorMessage.set('');
   }
 
   selectRole(newRole: 'BRAND_MANAGER' | 'AGENCY_MANAGER'): void {
@@ -316,12 +363,12 @@ export class LoginComponent implements OnInit {
     const confPass = this.confirmPassword();
 
     if (!emailVal) {
-      this.errorMessage.set('Please enter your email address.');
+      this.showError('Please enter your email address.');
       return;
     }
 
     if (newPass && newPass !== confPass) {
-      this.errorMessage.set('New password and Confirm password do not match.');
+      this.showError('New password and Confirm password do not match.');
       return;
     }
 
@@ -352,7 +399,7 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err.message || 'Could not reset password.');
+        this.showError(err.message || 'Could not reset password.');
       }
     });
   }
@@ -367,7 +414,7 @@ export class LoginComponent implements OnInit {
     const urlVal = this.websiteUrl().trim();
 
     if (!orgVal) {
-      this.errorMessage.set(
+      this.showError(
         this.role() === 'BRAND_MANAGER'
           ? 'Brand Name is mandatory.'
           : 'Agency Name is mandatory.'
@@ -376,17 +423,17 @@ export class LoginComponent implements OnInit {
     }
 
     if (!nameVal || !emailVal || !passVal) {
-      this.errorMessage.set('Please complete all mandatory fields (*).');
+      this.showError('Please complete all mandatory fields (*).');
       return;
     }
 
     if (emailVal.toLowerCase() === 'chaitanyamandviya7@gmail.com') {
-      this.errorMessage.set('Security Policy: System Administrator email cannot be used for Brand or Agency onboarding.');
+      this.showError('Security Policy: System Administrator email cannot be used for Brand or Agency onboarding.');
       return;
     }
 
     if (passVal !== confVal) {
-      this.errorMessage.set('Password and Confirm Password do not match.');
+      this.showError('Password and Confirm Password do not match.');
       return;
     }
 
@@ -427,7 +474,7 @@ export class LoginComponent implements OnInit {
         this.mode.set('login');
         this.password.set('');
         this.confirmPassword.set('');
-        this.successMessage.set(
+        this.showSuccess(
           `${orgVal} registered! Your account is pending approval by the ${approver}. Once approved, you can sign in.`
         );
         this.toast.success(
@@ -437,7 +484,7 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err.message || 'Could not submit onboarding application.');
+        this.showError(err.message || 'Could not submit onboarding application.');
       }
     });
   }
@@ -446,25 +493,24 @@ export class LoginComponent implements OnInit {
     event.preventDefault();
     this.emailTouched.set(true);
     this.passwordTouched.set(true);
-    this.errorMessage.set('');
-    this.successMessage.set('');
+    this.clearMessages();
 
     const emailVal = this.email().trim();
     const passVal = this.password();
 
     if (!emailVal) {
-      this.errorMessage.set('Please enter your email address.');
+      this.showError('Please enter your email address.');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailVal)) {
-      this.errorMessage.set('Please enter a valid email address.');
+      this.showError('Please enter a valid email address.');
       return;
     }
 
     if (!passVal) {
-      this.errorMessage.set('Please enter your password.');
+      this.showError('Please enter your password.');
       return;
     }
 
@@ -482,7 +528,7 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err.message || 'Authentication failed. Please check your credentials.');
+        this.showError(err.message || 'Authentication failed. Please check your credentials.');
       }
     });
   }

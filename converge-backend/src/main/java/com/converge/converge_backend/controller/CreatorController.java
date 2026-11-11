@@ -217,12 +217,13 @@ public class CreatorController {
         scoped.setLikes(agencyItems.stream().mapToLong(ContentItemEntity::getLikes).sum());
         scoped.setComments(agencyItems.stream().mapToLong(ContentItemEntity::getComments).sum());
 
+        double fallbackCreatorPrice = creator.getPrice() > 0 ? creator.getPrice() : (creator.getMinPrice() != null && creator.getMinPrice() > 0 ? creator.getMinPrice() : 0.0);
         double agencyPrice = agencyItems.stream()
                 .mapToDouble(ContentItemEntity::getFinalPrice)
                 .filter(p -> p > 0)
                 .findFirst()
-                .orElse(creator.getPrice());
-        scoped.setPrice(agencyPrice);
+                .orElse(fallbackCreatorPrice);
+        scoped.setPrice(agencyPrice > 0 ? agencyPrice : fallbackCreatorPrice);
         scoped.setMinPrice(creator.getMinPrice());
         scoped.setMaxPrice(creator.getMaxPrice());
         scoped.setPricingModel(creator.getPricingModel());
@@ -722,8 +723,23 @@ public class CreatorController {
         syncSubmittedContentUrls(saved, payload.getContentUrls(), resolvedAgency, payload.getPrice());
         if ("PACKAGE".equalsIgnoreCase(saved.getPricingModel())) {
             rebalancePackageDeliverables(saved.getHandle());
+        } else if (saved.getPrice() > 0) {
+            // When updating a creator's rate per deliverable, backfill any existing deliverables whose price was 0 or unassigned
+            List<ContentItemEntity> existing = contentItemRepository.findByCreatorHandle(saved.getHandle());
+            boolean modified = false;
+            for (ContentItemEntity ci : existing) {
+                if (ci.getFinalPrice() <= 0) {
+                    ci.setFinalPrice(saved.getPrice());
+                    contentItemRepository.save(ci);
+                    modified = true;
+                }
+            }
+            if (modified) {
+                cacheEvictionService.evictContent();
+            }
         }
         cacheEvictionService.evictCreators();
+        cacheEvictionService.evictContent();
         if (callerAgencyName != null) {
             return ResponseEntity.ok(scopeCreatorForAgency(saved, callerAgencyName));
         }

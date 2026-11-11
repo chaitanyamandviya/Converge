@@ -65,14 +65,23 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
         <div class="profile-right-group">
           <div class="profile-agreement">
             <span class="agreement-label">{{ pricingModel() === 'PACKAGE' ? 'TOTAL PACKAGE DEAL' : 'TOTAL COMMITTED PAYOUT' }}</span>
-            <span class="agreement-value">₹{{ formatInr(effectiveTotalCost()) }}</span>
-            <span class="agreement-status">
-              @if (pricingModel() === 'PACKAGE') {
-                Fixed retainer · ₹{{ formatInr((creator()?.price || 0) / (creatorContent().length || 1)) }}/post
-              } @else {
-                {{ creatorContent().length }} deliverable(s) @ ₹{{ formatInr(creator()?.price) }}/post
-              }
-            </span>
+            @if (effectiveTotalCost() > 0) {
+              <span class="agreement-value">₹{{ formatInr(effectiveTotalCost()) }}</span>
+              <span class="agreement-status">
+                @if (pricingModel() === 'PACKAGE') {
+                  Fixed retainer · ₹{{ formatInr(effectivePricePerPost()) }}/post
+                } @else {
+                  {{ creatorContent().length }} deliverable(s) @ ₹{{ formatInr(effectivePricePerPost()) }}/post
+                }
+              </span>
+            } @else {
+              <span class="agreement-value unassigned">Rate Not Set</span>
+              <span class="agreement-status">
+                <span class="unassigned-rate-hint" (click)="openEditProfileModal()" title="Click to assign agreed payout rate">
+                  {{ creatorContent().length }} deliverable(s) · <span class="rate-cta-link">Click Edit to assign rate ↗</span>
+                </span>
+              </span>
+            }
           </div>
 
           <div class="hero-actions-toolbar">
@@ -1036,10 +1045,37 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       letter-spacing: -0.02em;
     }
 
+    .agreement-value.unassigned {
+      font-size: 18px;
+      color: #DC543B;
+      font-weight: 800;
+    }
+
     .agreement-status {
       font-size: 11px;
       color: rgba(36, 63, 130, 0.6);
       font-weight: 600;
+    }
+
+    .unassigned-rate-hint {
+      font-size: 11px;
+      color: #DC543B;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: opacity 0.15s ease;
+    }
+
+    .unassigned-rate-hint:hover {
+      opacity: 0.85;
+    }
+
+    .rate-cta-link {
+      text-decoration: underline;
+      color: #243F82;
+      font-weight: 700;
     }
 
     .hero-actions-toolbar {
@@ -2246,6 +2282,23 @@ export class CreatorDetailComponent implements OnInit {
     return false;
   }
 
+  effectivePricePerPost = computed(() => {
+    const c = this.creator();
+    const items = this.creatorContent();
+    if (this.isPackageModel()) {
+      const total = c?.price || 0;
+      return items.length > 0 ? Math.round(total / items.length) : total;
+    }
+    if (items && items.length > 0) {
+      const pricedItems = items.filter(i => i.finalPrice && i.finalPrice > 0);
+      if (pricedItems.length > 0) {
+        const sum = pricedItems.reduce((acc, i) => acc + (i.finalPrice || 0), 0);
+        return Math.round(sum / pricedItems.length);
+      }
+    }
+    return (c?.price && c.price > 0) ? c.price : (c?.minPrice && c.minPrice > 0 ? c.minPrice : 0);
+  });
+
   effectiveTotalCost = computed(() => {
     const c = this.creator();
     if (!c) return 0;
@@ -2254,9 +2307,10 @@ export class CreatorDetailComponent implements OnInit {
     }
     const items = this.creatorContent();
     if (items && items.length > 0) {
-      return items.reduce((sum, item) => sum + ((item.finalPrice && item.finalPrice > 0) ? item.finalPrice : (c.price || 0)), 0);
+      const fallbackRate = (c.price && c.price > 0) ? c.price : (c.minPrice && c.minPrice > 0 ? c.minPrice : 0);
+      return items.reduce((sum, item) => sum + ((item.finalPrice && item.finalPrice > 0) ? item.finalPrice : fallbackRate), 0);
     }
-    return c.price || 0;
+    return (c.price && c.price > 0) ? c.price : (c.minPrice && c.minPrice > 0 ? c.minPrice : 0);
   });
 
   totalSpendHint = computed(() => {
@@ -2265,7 +2319,7 @@ export class CreatorDetailComponent implements OnInit {
     }
     const count = this.creatorContent().length;
     if (count > 1) {
-      return `Sum of ${count} deliverables (@ ₹${this.formatInr(this.creator()?.price)}/post)`;
+      return `Sum of ${count} deliverables (@ ₹${this.formatInr(this.effectivePricePerPost())}/post)`;
     }
     return 'Agreed rate per deliverable';
   });
@@ -2508,16 +2562,19 @@ export class CreatorDetailComponent implements OnInit {
     this.delivTitle = c ? `${c.name} — Deliverable #${this.creatorContent().length + 1}` : 'Campaign Deliverable';
     this.delivUrl = '';
     this.delivFormat = 'Instagram Reel';
-    this.delivFinalPrice = c?.price || (c?.minPrice ? c.minPrice : 0);
+    this.delivFinalPrice = (c?.price && c.price > 0) ? c.price : (c?.minPrice && c.minPrice > 0 ? c.minPrice : 0);
     this.showDeliverableModal = true;
   }
 
   openEditDeliverableModal(item: ContentItem) {
+    const c = this.creator();
     this.editingDeliverableId = item.id ?? null;
     this.delivTitle = item.title || '';
     this.delivUrl = item.contentUrl || '';
     this.delivFormat = item.format === 'TikTok' ? 'Instagram Reel' : (item.format || 'Instagram Reel');
-    this.delivFinalPrice = item.finalPrice || this.creator()?.price || (this.creator()?.minPrice ? this.creator()!.minPrice! : 0);
+    this.delivFinalPrice = (item.finalPrice && item.finalPrice > 0)
+      ? item.finalPrice
+      : ((c?.price && c.price > 0) ? c.price : (c?.minPrice && c.minPrice > 0 ? c.minPrice : 0));
     this.showDeliverableModal = true;
   }
 
@@ -2531,9 +2588,11 @@ export class CreatorDetailComponent implements OnInit {
     }
 
     const isEdit = !!this.editingDeliverableId;
+    const fallbackRate = (c.price && c.price > 0) ? c.price : (c.minPrice && c.minPrice > 0 ? c.minPrice : 0);
+    const chosenRate = this.delivFinalPrice && Number(this.delivFinalPrice) > 0 ? Number(this.delivFinalPrice) : fallbackRate;
     const priceDisplay = this.isPackageModel()
       ? `Auto-shared from Package Retainer (₹${this.formatInr(c.price)})`
-      : `Final Price: ₹${(this.delivFinalPrice || 0).toLocaleString('en-IN')}`;
+      : `Final Price: ₹${(chosenRate || 0).toLocaleString('en-IN')}`;
 
     const confirmed = await this.confirmService.confirm({
       title: isEdit ? 'Confirm Deliverable Update?' : 'Confirm Deliverable Submission?',
@@ -2553,7 +2612,7 @@ export class CreatorDetailComponent implements OnInit {
       title: this.delivTitle.trim(),
       contentUrl: this.delivUrl.trim(),
       format: this.delivFormat,
-      finalPrice: this.isPackageModel() ? 0 : (this.delivFinalPrice || 0)
+      finalPrice: this.isPackageModel() ? 0 : chosenRate
     };
 
     const req$ = isEdit && this.editingDeliverableId
@@ -2564,7 +2623,7 @@ export class CreatorDetailComponent implements OnInit {
       next: () => {
         this.isSavingDeliverable = false;
         this.showDeliverableModal = false;
-        this.portalService.fetchCreatorDetail(c.handle).subscribe();
+        this.portalService.fetchCreatorDetail(c.handle, true).subscribe();
         this.toast.success(
           isEdit ? 'Deliverable Updated' : 'Deliverable Submitted',
           `"${this.delivTitle}" has been saved and synced.`
@@ -2591,7 +2650,7 @@ export class CreatorDetailComponent implements OnInit {
     this.portalService.deleteContentItem(item.id).subscribe({
       next: () => {
         const handle = this.creator()?.handle;
-        if (handle) this.portalService.fetchCreatorDetail(handle).subscribe();
+        if (handle) this.portalService.fetchCreatorDetail(handle, true).subscribe();
         this.toast.success('Deliverable Deleted', `"${item.title}" has been removed.`);
       },
       error: (err) => {
@@ -2677,7 +2736,7 @@ export class CreatorDetailComponent implements OnInit {
         this.isSavingProfile = false;
         this.showEditProfileModal = false;
         this.avatarLoadError.set(false);
-        this.portalService.fetchCreatorDetail(updated.handle).subscribe();
+        this.portalService.fetchCreatorDetail(updated.handle, true).subscribe();
         this.toast.success('Creator Updated', `${updated.name} has been updated.`);
       },
       error: (err) => {

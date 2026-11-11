@@ -279,6 +279,7 @@ public class ContentItemController {
             }
             if (request.getFinalPrice() > 0) {
                 creator.setPrice(request.getFinalPrice());
+                creatorRepository.save(creator);
             }
         }
 
@@ -309,7 +310,17 @@ public class ContentItemController {
             double share = creator.getPrice() > 0 ? (creator.getPrice() / totalCount) : 0.0;
             item.setFinalPrice(share);
         } else {
-            item.setFinalPrice(request.getFinalPrice() > 0 ? request.getFinalPrice() : creator.getPrice());
+            double finalDeliverablePrice = 0.0;
+            if (request.getFinalPrice() > 0) {
+                finalDeliverablePrice = request.getFinalPrice();
+            } else if (creator.getPrice() > 0) {
+                finalDeliverablePrice = creator.getPrice();
+            } else if (creator.getMinPrice() != null && creator.getMinPrice() > 0) {
+                finalDeliverablePrice = creator.getMinPrice();
+                creator.setPrice(finalDeliverablePrice);
+                creatorRepository.save(creator);
+            }
+            item.setFinalPrice(finalDeliverablePrice);
         }
 
         item.setStatus(request.getContentUrl() != null && !request.getContentUrl().isBlank() ? "WITH_INSIGHTS" : "MISSING_URL");

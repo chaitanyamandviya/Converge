@@ -73,6 +73,7 @@
                 <span class="alert-kicker">Authentication Notice</span>
                 <span class="alert-body">{{ errorMessage() }}</span>
               </div>
+              <button type="button" class="alert-dismiss-btn" (click)="dismissAlert('error')" aria-label="Dismiss message">✕</button>
             </div>
           }
 
@@ -87,6 +88,7 @@
                 <span class="alert-kicker">Application Queued</span>
                 <span class="alert-body">{{ successMessage() }}</span>
               </div>
+              <button type="button" class="alert-dismiss-btn" (click)="dismissAlert('success')" aria-label="Dismiss message">✕</button>
             </div>
           }
 
@@ -98,7 +100,7 @@
                 id="email"
                 type="email"
                 [ngModel]="email()"
-                (ngModelChange)="email.set($event)"
+                (ngModelChange)="onEmailChange($event)"
                 name="email"
                 placeholder="name@example.com"
                 autocomplete="email"
@@ -115,7 +117,7 @@
                 id="password"
                 [type]="showPassword() ? 'text' : 'password'"
                 [ngModel]="password()"
-                (ngModelChange)="password.set($event)"
+                (ngModelChange)="onPasswordChange($event)"
                 name="password"
                 placeholder="Enter your password"
                 autocomplete="current-password"
@@ -202,6 +204,7 @@
                 <span class="alert-kicker">Validation Notice</span>
                 <span class="alert-body">{{ errorMessage() }}</span>
               </div>
+              <button type="button" class="alert-dismiss-btn" (click)="dismissAlert('error')" aria-label="Dismiss message">✕</button>
             </div>
           }
 
@@ -491,6 +494,7 @@
                 <span class="alert-kicker">Recovery Notice</span>
                 <span class="alert-body">{{ errorMessage() }}</span>
               </div>
+              <button type="button" class="alert-dismiss-btn" (click)="dismissAlert('error')" aria-label="Dismiss message">✕</button>
             </div>
           }
 
