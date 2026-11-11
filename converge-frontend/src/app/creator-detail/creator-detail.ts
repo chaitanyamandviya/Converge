@@ -204,21 +204,21 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
           </div>
 
           <div class="roi-metric-item">
-            <span class="roi-lbl">{{ totalViews() > 0 ? 'CPM (COST / 1,000 VIEWS)' : 'COST / 1,000 FOLLOWERS' }}</span>
-            <span class="roi-val">₹{{ formatInr(cpm()) }}</span>
+            <span class="roi-lbl">{{ totalViews() >= 100 ? 'CPM (COST / 1,000 VIEWS)' : 'COST / 1,000 FOLLOWERS' }}</span>
+            <span class="roi-val" [class.highlight]="cpm() !== null">{{ cpm() !== null ? ('₹' + formatInr(cpm()!)) : '—' }}</span>
             <span class="roi-hint">{{ cpmHint() }}</span>
           </div>
 
           <div class="roi-metric-item">
             <span class="roi-lbl">COST / INTERACTION (CPE)</span>
-            <span class="roi-val">₹{{ costPerInteraction() | number:'1.1-2' }}</span>
-            <span class="roi-hint">Per verified like/comment</span>
+            <span class="roi-val" [class.highlight]="costPerInteraction() !== null">{{ costPerInteraction() !== null ? ('₹' + (costPerInteraction()! | number:'1.1-2')) : '—' }}</span>
+            <span class="roi-hint">{{ costPerInteraction() !== null ? 'Per verified like/comment' : 'Awaiting live engagement' }}</span>
           </div>
 
           <div class="roi-metric-item">
             <span class="roi-lbl">CPV (COST PER VIEW)</span>
-            <span class="roi-val highlight">₹{{ cpv() | number:'1.2-2' }}</span>
-            <span class="roi-hint">Cost per view</span>
+            <span class="roi-val" [class.highlight]="cpv() !== null">{{ cpv() !== null ? ('₹' + (cpv()! | number:'1.2-2')) : '—' }}</span>
+            <span class="roi-hint">{{ cpv() !== null ? 'Cost per verified view' : 'Pending live reel views' }}</span>
           </div>
         </div>
       </section>
@@ -243,13 +243,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
         @if (creatorContent().length === 0) {
           <div class="empty-deliverables-box">
-            <p>No content deliverables attached yet. Use the button below to attach live Instagram Reel or Post URLs and track verified metrics.</p>
-            @if (!isAdmin()) {
-              <button type="button" class="btn-add-deliverable-action" (click)="openAddDeliverableModal()">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>Add Deliverable</span>
-              </button>
-            }
+            <p>No content deliverables attached yet. Use the <strong>+ Add Deliverable</strong> button above to attach live Instagram Reel or Post URLs and track verified metrics.</p>
           </div>
         } @else {
           <div class="items-list">
@@ -748,34 +742,27 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       flex-wrap: wrap;
     }
 
-    .agency-badge {
-      background: #243F82;
-      color: #F6F4EC;
+    .agency-badge, .category-badge, .platform-badge {
+      background: var(--color-surface-subtle);
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border);
       font-size: 11px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 999px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 6px;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
     }
 
     .category-badge {
-      background: rgba(36, 63, 130, 0.06);
-      color: #243F82;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 999px;
-      white-space: nowrap;
+      background: var(--color-surface-subtle);
+      color: var(--color-text-secondary);
     }
 
     .platform-badge {
-      background: #F4D943;
-      color: #243F82;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 999px;
-      white-space: nowrap;
+      background: var(--color-surface-subtle);
+      color: var(--color-text-secondary);
     }
 
     .ig-counts-row {
@@ -804,14 +791,14 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .tier-pill {
       font-size: 10px;
-      font-weight: 800;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       padding: 2.5px 8px;
-      border-radius: 999px;
-      background: rgba(36, 63, 130, 0.08);
-      color: #243F82;
-      border: 1px solid rgba(36, 63, 130, 0.16);
+      border-radius: 6px;
+      background: #EFF6FF;
+      color: #2563EB;
+      border: 1px solid #BFDBFE;
     }
 
     .influencer-roi-panel {
@@ -2324,33 +2311,39 @@ export class CreatorDetailComponent implements OnInit {
     return 'Agreed rate per deliverable';
   });
 
-  cpm = computed(() => {
+  cpm = computed<number | null>(() => {
     const cost = this.effectiveTotalCost();
+    if (cost <= 0) return null;
     const views = this.totalViews();
-    if (views > 0) {
+    if (views >= 100) {
       return Math.round((cost / views) * 1000);
     }
     const followers = this.creator()?.followersCount || 0;
-    if (followers > 0) {
+    if (followers >= 1000) {
       return Math.round((cost / followers) * 1000);
     }
-    return 0;
+    return null;
   });
 
   cpmHint = computed(() => {
-    return this.totalViews() > 0 ? 'Per 1,000 delivered views (CPM)' : 'Per 1,000 audience reach';
+    if (this.totalViews() >= 100) return 'Per 1,000 delivered views (CPM)';
+    if ((this.creator()?.followersCount || 0) >= 1000) return 'Per 1,000 audience reach';
+    return 'Audience too small for CPM';
   });
 
-  costPerInteraction = computed(() => {
+  costPerInteraction = computed<number | null>(() => {
     const cost = this.effectiveTotalCost();
     const engagements = this.totalLikes() + this.totalComments();
-    return engagements > 0 ? cost / engagements : cost;
+    if (engagements > 0 && cost > 0) {
+      return cost / engagements;
+    }
+    return null;
   });
 
-  cpv = computed(() => {
+  cpv = computed<number | null>(() => {
     const cost = this.effectiveTotalCost();
     const views = this.totalViews();
-    return views > 0 ? cost / views : 0;
+    return (views > 0 && cost > 0) ? cost / views : null;
   });
 
   /**

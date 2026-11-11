@@ -1,50 +1,64 @@
 /* ==========================================================================
-   Converge Design System & UX Laws Foundation
-   Inspired by: shadcn/ui, Anime.js, Component Gallery, Uiverse.io, Vercel
-   Laws Enforced:
-   1. Fitts's Law: Generous hit areas (44px-54px) & ergonomic action placement
-   2. Hick's Law: Focused navigation, progressive disclosure, zero clutter
-   3. Jakob's Law: Familiar SaaS mental models, Google GSI chooser, Esc modals
-   4. Law of Proximity: Tight internal label-input grouping (6px) vs 20px section gaps
-   5. Von Restorff Effect: High-contrast primary CTAs & isolated status callouts
+   Converge Executive Design System & Apple Fluid Motion Foundations
+   Inspired by: Apple Fluid Interfaces (WWDC), Stripe Dashboard, Linear, Vercel
+   Core Rules:
+   1. Response: Zero-latency active states (scale 0.97 on pointer-down)
+   2. Colors: Pure slate canvas (#F8FAFC), crisp white surfaces, high-contrast text (#0F172A)
+   3. Typography: Plus Jakarta Sans display + Inter data grid with negative optical tracking
+   4. Tabular Figures: "tnum" 1 for all currency and metrics
+   5. Restraint: Zero cartoon clutter, clean 1px borders, semantic status indicators
    ========================================================================== */
 :root {
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: 'JetBrains Mono', ui-monospace, monospace;
   
-  /* Brand Palette */
-  --color-bg-primary: #F6F4EC;
-  --color-text-main: #1F2124;
-  --color-text-muted: #5F6368;
-  --color-text-light: #D5DDF0;
+  /* Executive Slate Canvas & Surfaces (Zero Muddy Beige) */
+  --color-bg-primary: #F8FAFC;
+  --color-canvas: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F1F5F9;
+  --color-sidebar: #FFFFFF;
+  --color-white: #FFFFFF;
+  
+  /* High-Contrast Typographic Hierarchy */
+  --color-text-main: #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-text-light: #94A3B8;
   --color-text-white: #FFFFFF;
   
-  --color-brand-blue: #2C54A6;
-  --color-brand-blue-hover: #1E3D7B;
-  --color-brand-blue-light: #E8EFFC;
-  --color-perspective-dark: #243F82;
+  /* Executive Electric Brand Primary */
+  --color-brand-blue: #2563EB;
+  --color-brand-blue-hover: #1D4ED8;
+  --color-brand-blue-light: #EFF6FF;
+  --color-perspective-dark: #0F172A;
   
-  --color-accent-yellow: #F4EECF;
-  --color-accent-yellow-solid: #F4DA40;
-  --color-accent-coral: #DC543B;
-  --color-accent-green: #4C825A;
-  --color-accent-green-bg: #E9EDDF;
-  --color-accent-sky: #8DC3E2;
+  /* Semantic Restrained Accents */
+  --color-accent-green: #059669;
+  --color-accent-green-bg: #ECFDF5;
+  --color-accent-green-border: #A7F3D0;
+  --color-accent-yellow: #FFFBEB;
+  --color-accent-yellow-solid: #D97706;
+  --color-accent-coral: #DC2626;
+  --color-accent-sky: #0284C7;
   
-  --color-border: #DADBD1;
-  --color-border-card: rgba(36, 63, 130, 0.12);
-  --color-white: #FFFFFF;
-  --color-sidebar: #F0F1E9;
+  /* Crisp 1px Borders */
+  --color-border: #E2E8F0;
+  --color-border-card: #E2E8F0;
+  --color-border-subtle: #EDF2F7;
 
-  /* shadcn/ui & Component Gallery Elevation Tokens */
-  --shadow-card: 0 1px 3px rgba(36, 63, 130, 0.04), 0 8px 24px -8px rgba(36, 63, 130, 0.07);
-  --shadow-card-hover: 0 4px 12px rgba(36, 63, 130, 0.08), 0 16px 32px -12px rgba(36, 63, 130, 0.12);
+  /* Executive Micro-Elevation Tokens */
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover: 0 4px 14px -2px rgba(15, 23, 42, 0.08);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-modal: 0 24px 60px -12px rgba(15, 23, 42, 0.32), 0 0 0 1px rgba(36, 63, 130, 0.08);
-  --shadow-cta-glow: 0 4px 14px rgba(44, 84, 166, 0.28);
+  --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  --shadow-cta-glow: 0 2px 8px rgba(37, 99, 235, 0.22);
 
-  /* Anime.js Spring Easing Curves */
-  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Apple WWDC Springs (Critically Damped Default) */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Tabular numbers for financial & analytics alignment */
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
@@ -66,8 +80,15 @@ html, body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-main);
   line-height: 1.5;
+  letter-spacing: -0.012em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optical Tracking for Titles & Headings */
+h1, h2, h3, .heading-display, .dashboard-title, .page-title, .brand-title, .hero-title {
+  letter-spacing: -0.028em;
+  color: var(--color-text-main);
 }
 
 /* Custom Ergonomic Scrollbars for contained scrollable containers */

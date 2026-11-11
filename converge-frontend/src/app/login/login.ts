@@ -277,7 +277,7 @@ export class LoginComponent implements OnInit {
   }
 
   onGoogleSignIn(): void {
-    this.errorMessage.set('');
+    this.clearMessages();
     this.useAnotherGoogleAccount.set(false);
     this.showGoogleModal.set(true);
   }

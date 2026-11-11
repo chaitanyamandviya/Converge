@@ -63,7 +63,7 @@
             <div class="divider" data-node-id="32:13023"></div>
           </div>
 
-          <!-- Alert messages -->
+          <!-- Alert message (Strictly single notification at a time) -->
           @if (errorMessage()) {
             <div class="alert alert-error" role="alert">
               <div class="alert-badge error-badge">
@@ -75,9 +75,7 @@
               </div>
               <button type="button" class="alert-dismiss-btn" (click)="dismissAlert('error')" aria-label="Dismiss message">✕</button>
             </div>
-          }
-
-          @if (successMessage()) {
+          } @else if (successMessage()) {
             <div class="alert alert-success" role="status">
               <div class="alert-badge success-badge">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
