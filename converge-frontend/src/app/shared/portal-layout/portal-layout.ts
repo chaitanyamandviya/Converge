@@ -108,21 +108,26 @@ import { ConfirmService } from '../../services/confirm.service';
       max-width: 100vw;
       display: flex;
       flex-direction: column;
-      background-color: #F6F4EC;
-      color: #243F82;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #F5F5F7;
+      color: #1D1D1F;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", "Inter", sans-serif;
       overflow-x: hidden;
       box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     .app-header {
-      min-height: 64px;
+      min-height: 52px;
+      height: 52px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 28px;
-      background: #FFFFFF;
-      border-bottom: 1px solid rgba(36, 63, 130, 0.12);
+      padding: 0 24px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
       position: sticky;
       top: 0;
       z-index: 50;
@@ -156,14 +161,15 @@ import { ConfirmService } from '../../services/confirm.service';
     }
 
     .header-logo {
-      height: 24px;
+      height: 20px;
       display: block;
       flex-shrink: 0;
     }
 
     .header-divider {
-      color: rgba(36, 63, 130, 0.3);
-      font-size: 16px;
+      color: rgba(0, 0, 0, 0.2);
+      font-size: 14px;
+      font-weight: 300;
       flex-shrink: 0;
     }
 
@@ -171,29 +177,35 @@ import { ConfirmService } from '../../services/confirm.service';
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(36, 63, 130, 0.06);
+      background: rgba(0, 0, 0, 0.04);
       padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #243F82;
+      border-radius: 980px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #1D1D1F;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      transition: background 0.15s ease;
+    }
+
+    .workspace-pill:hover {
+      background: rgba(0, 0, 0, 0.07);
     }
 
     .workspace-dot {
-      width: 7px;
-      height: 7px;
-      background-color: #527E5A;
+      width: 6px;
+      height: 6px;
+      background-color: #34C759;
       border-radius: 50%;
       flex-shrink: 0;
     }
 
     .workspace-logo-img {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
+      width: 15px;
+      height: 15px;
+      border-radius: 3px;
       object-fit: contain;
       flex-shrink: 0;
     }
@@ -201,31 +213,32 @@ import { ConfirmService } from '../../services/confirm.service';
     .header-right {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 10px;
       flex-shrink: 0;
     }
 
     .user-chip {
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: rgba(36, 63, 130, 0.05);
-      padding: 4px 12px 4px 6px;
-      border-radius: 999px;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.03);
+      padding: 3px 10px 3px 5px;
+      border-radius: 980px;
+      border: 1px solid rgba(0, 0, 0, 0.04);
       max-width: 260px;
     }
 
     .user-avatar {
-      width: 28px;
-      height: 28px;
-      background: #243F82;
-      color: #F6F4EC;
+      width: 24px;
+      height: 24px;
+      background: #1D1D1F;
+      color: #FFFFFF;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 12px;
+      font-weight: 600;
+      font-size: 11px;
       flex-shrink: 0;
     }
 
@@ -238,48 +251,48 @@ import { ConfirmService } from '../../services/confirm.service';
     }
 
     .user-email {
-      font-size: 12px;
-      font-weight: 600;
-      color: #243F82;
+      font-size: 11px;
+      font-weight: 500;
+      color: #1D1D1F;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .user-role-badge {
-      font-size: 10px;
+      font-size: 9px;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      color: rgba(36, 63, 130, 0.65);
+      color: #86868B;
       white-space: nowrap;
     }
 
     .logout-btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: #D32F2F;
-      border: 1.5px solid #B71C1C;
-      color: #FFFFFF;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      min-height: 38px;
-      padding: 7px 18px;
-      border-radius: 999px;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      color: #1D1D1F;
+      font-size: 12px;
+      font-weight: 500;
+      min-height: 32px;
+      padding: 4px 12px;
+      border-radius: 980px;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(211, 47, 47, 0.28);
-      transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
       white-space: nowrap;
       flex-shrink: 0;
     }
 
     .logout-btn:hover {
-      background: #B71C1C;
-      border-color: #7F0000;
+      background: #FF3B30;
+      border-color: #FF3B30;
       color: #FFFFFF;
-      transform: translateY(-1.5px);
-      box-shadow: 0 6px 18px rgba(183, 28, 28, 0.4);
+    }
+
+    .logout-btn:active {
+      transform: scale(0.97);
     }
 
     .logout-icon {
@@ -294,93 +307,78 @@ import { ConfirmService } from '../../services/confirm.service';
       min-width: 0;
     }
 
+    /* macOS Sidebar */
     .portal-sidebar {
-      width: 250px;
+      width: 230px;
       flex-shrink: 0;
-      background: #FFFFFF;
-      border-right: 1px solid rgba(36, 63, 130, 0.12);
+      background: #FBFBFD;
+      border-right: 1px solid rgba(0, 0, 0, 0.08);
       display: flex;
       flex-direction: column;
-      padding: 24px 16px;
-      gap: 16px;
-    }
-
-    .sidebar-campaign-card {
-      padding: 12px 14px;
-      border-radius: 10px;
-      background: #F6F4EC;
-      border: 1px solid rgba(36, 63, 130, 0.08);
-    }
-
-    .sidebar-brand-name {
-      font-size: 13px;
-      font-weight: 700;
-      color: #243F82;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .sidebar-active-campaign {
-      font-size: 11px;
-      color: rgba(36, 63, 130, 0.7);
-      margin-top: 2px;
+      padding: 20px 10px;
+      gap: 12px;
     }
 
     .sidebar-category {
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      color: rgba(36, 63, 130, 0.5);
-      margin-top: 8px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: #86868B;
+      text-transform: uppercase;
       padding: 0 10px;
     }
 
     .sidebar-nav {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 12px;
-      min-height: 44px;
-      padding: 10px 14px;
+      gap: 10px;
+      min-height: 36px;
+      padding: 7px 12px;
       font-size: 13px;
-      font-weight: 600;
-      color: rgba(36, 63, 130, 0.75);
+      font-weight: 500;
+      color: #424245;
       text-decoration: none;
       border-radius: 8px;
-      transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .nav-item:hover {
-      background: rgba(36, 63, 130, 0.06);
-      color: #243F82;
-      transform: translateX(2px);
+      background: rgba(0, 0, 0, 0.04);
+      color: #1D1D1F;
+    }
+
+    .nav-item:active {
+      transform: scale(0.98);
     }
 
     .nav-item.active {
-      background: #243F82;
-      color: #F6F4EC;
-      box-shadow: 0 4px 12px rgba(36, 63, 130, 0.22);
-    }
-
-    .nav-item.active .nav-icon {
-      filter: brightness(0) invert(1);
+      background: rgba(0, 0, 0, 0.08);
+      color: #1D1D1F;
+      font-weight: 600;
     }
 
     .nav-icon {
-      width: 17px;
-      height: 17px;
-      opacity: 0.85;
+      width: 16px;
+      height: 16px;
+      opacity: 0.65;
+      transition: opacity 0.15s ease;
+    }
+
+    .nav-item.active .nav-icon,
+    .nav-item:hover .nav-icon {
+      opacity: 1;
     }
 
     .sidebar-footer {
       margin-top: auto;
       padding: 12px 10px;
-      border-top: 1px solid rgba(36, 63, 130, 0.08);
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
 
     .sidebar-stat-chip {
@@ -388,14 +386,14 @@ import { ConfirmService } from '../../services/confirm.service';
       align-items: center;
       gap: 8px;
       font-size: 11px;
-      font-weight: 600;
-      color: #527E5A;
+      font-weight: 500;
+      color: #86868B;
     }
 
     .status-indicator-dot {
-      width: 8px;
-      height: 8px;
-      background: #527E5A;
+      width: 6px;
+      height: 6px;
+      background: #34C759;
       border-radius: 50%;
     }
 
@@ -404,10 +402,11 @@ import { ConfirmService } from '../../services/confirm.service';
       min-width: 0;
       width: 100%;
       box-sizing: border-box;
-      padding: 32px 36px;
-      max-width: 1340px;
+      padding: 32px 40px;
+      max-width: 1380px;
       margin: 0 auto;
       overflow-x: hidden;
+      background-color: #F5F5F7;
     }
 
     @media (max-width: 1100px) {
@@ -423,7 +422,7 @@ import { ConfirmService } from '../../services/confirm.service';
       .portal-sidebar {
         width: 100%;
         border-right: none;
-        border-bottom: 1px solid rgba(36, 63, 130, 0.12);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
         padding: 14px 16px;
         gap: 10px;
       }

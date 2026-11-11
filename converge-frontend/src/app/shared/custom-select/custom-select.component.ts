@@ -72,7 +72,7 @@ export interface SelectOption {
       height: 42px;
       padding: 0 14px;
       background: #FFFFFF;
-      border: 1.5px solid rgba(36, 63, 130, 0.2);
+      border: 1.5px solid rgba(0, 0, 0, 0.2);
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -83,19 +83,19 @@ export interface SelectOption {
       font-family: inherit;
       font-size: 13.5px;
       font-weight: 600;
-      color: #243F82;
+      color: #1D1D1F;
       transition: all 0.18s ease;
       box-sizing: border-box;
     }
 
     .select-trigger:hover:not(:disabled) {
-      border-color: #243F82;
+      border-color: #0071E3;
       background: #FAF9F5;
     }
 
     .custom-select-wrapper.is-open .select-trigger {
-      border-color: #243F82;
-      box-shadow: 0 0 0 3px rgba(36, 63, 130, 0.12);
+      border-color: #0071E3;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
       background: #FFFFFF;
     }
 
@@ -107,14 +107,14 @@ export interface SelectOption {
     }
 
     .trigger-label.placeholder {
-      color: rgba(36, 63, 130, 0.45);
+      color: rgba(0, 0, 0, 0.45);
       font-weight: 500;
     }
 
     .chevron-icon {
       width: 16px;
       height: 16px;
-      color: #243F82;
+      color: #1D1D1F;
       flex-shrink: 0;
       transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
     }
@@ -132,9 +132,9 @@ export interface SelectOption {
       max-height: 250px;
       overflow-y: auto;
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.16);
+      border: 1px solid rgba(0, 0, 0, 0.16);
       border-radius: 10px;
-      box-shadow: 0 12px 30px rgba(36, 63, 130, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
       padding: 5px;
       z-index: 1000;
       animation: menuPopIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
@@ -144,7 +144,7 @@ export interface SelectOption {
       width: 6px;
     }
     .options-menu::-webkit-scrollbar-thumb {
-      background: rgba(36, 63, 130, 0.2);
+      background: rgba(0, 0, 0, 0.2);
       border-radius: 999px;
     }
 
@@ -159,18 +159,18 @@ export interface SelectOption {
       cursor: pointer;
       font-size: 13px;
       font-weight: 600;
-      color: #243F82;
+      color: #1D1D1F;
       transition: all 0.12s ease;
     }
 
     .option-item:hover {
-      background: rgba(36, 63, 130, 0.08);
-      color: #243F82;
+      background: rgba(0, 0, 0, 0.08);
+      color: #1D1D1F;
     }
 
     .option-item.selected {
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
     }
 
     .option-text {
@@ -183,7 +183,7 @@ export interface SelectOption {
     .check-icon {
       width: 14px;
       height: 14px;
-      color: #F6F4EC;
+      color: #FFFFFF;
       flex-shrink: 0;
     }
 

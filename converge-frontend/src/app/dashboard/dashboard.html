@@ -166,7 +166,7 @@
                           <tr>
                             <td class="agency-title-td">
                               <div class="agency-cell-wrap">
-                                <span class="agency-bullet-circle" [style.background-color]="agency.avatarColor || '#243F82'">{{ agency.name[0] }}</span>
+                                <span class="agency-bullet-circle" [style.background-color]="agency.avatarColor || '#0071E3'">{{ agency.name[0] }}</span>
                                 <div>
                                   <strong class="agency-name-text">{{ agency.name }}</strong>
                                   @if (agency.websiteUrl) {
@@ -233,7 +233,7 @@
                   <tr>
                     <td class="agency-title-td">
                       <div class="agency-cell-wrap">
-                        <span class="agency-bullet-circle" [style.background-color]="agency.avatarColor || '#243F82'">{{ agency.name[0] }}</span>
+                        <span class="agency-bullet-circle" [style.background-color]="agency.avatarColor || '#0071E3'">{{ agency.name[0] }}</span>
                         <strong class="agency-name-text">{{ agency.name }}</strong>
                       </div>
                     </td>
@@ -263,7 +263,7 @@
         <span>{{ brandDisplayName() }} / Overview</span>
       </div>
 
-      <!-- 2. Heading with Mascot and Actions (Image 2) -->
+      <!-- 2. Heading and Actions -->
       <div class="dashboard-heading">
         <div class="intro-titles">
           <h1 class="dashboard-title">The whole picture.</h1>
@@ -840,8 +840,8 @@
           </div>
 
           @if (selectedBrandForEdit) {
-            <div class="edit-quick-actions" style="margin-top: 14px; padding: 12px; background: rgba(36, 63, 130, 0.04); border-radius: 10px; border: 1px solid rgba(36, 63, 130, 0.1);">
-              <div style="font-size: 11.5px; font-weight: 700; color: #243F82; margin-bottom: 8px;">Workspace Access & Invites</div>
+            <div class="edit-quick-actions" style="margin-top: 14px; padding: 12px; background: rgba(0, 0, 0, 0.03); border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.08);">
+              <div style="font-size: 11.5px; font-weight: 600; color: #1D1D1F; margin-bottom: 8px;">Workspace Access & Invites</div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 @if (selectedBrandForEdit.status === 'PENDING_APPROVAL') {
                   <button type="button" class="btn-table-action" style="background: #059669; color: #fff; border: none;" (click)="approveBrand(selectedBrandForEdit)">

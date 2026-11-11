@@ -93,7 +93,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
                 Delete
               </button>
             } @else {
-              <span style="display: inline-block; padding: 7px 16px; border-radius: 999px; background: rgba(36, 63, 130, 0.08); font-size: 12px; font-weight: 700; color: #243F82;">
+              <span style="display: inline-block; padding: 7px 16px; border-radius: 999px; background: rgba(0, 0, 0, 0.08); font-size: 12px; font-weight: 700; color: #1D1D1F;">
                 Directory View
               </span>
             }
@@ -558,7 +558,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
                 </div>
                 <div class="form-group">
                   <label>Managing Agency</label>
-                  <input type="text" [value]="creator()?.agencyName || 'Partner Agency'" disabled class="form-input" style="background: rgba(36, 63, 130, 0.05); color: #64748B;" />
+                  <input type="text" [value]="creator()?.agencyName || 'Partner Agency'" disabled class="form-input" style="background: rgba(0, 0, 0, 0.05); color: #64748B;" />
                 </div>
               </div>
 
@@ -566,8 +566,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
               <div class="content-urls-group">
                 <div class="urls-header-row">
                   <div>
-                    <label style="font-size: 12px; font-weight: 700; color: #243F82;">Quick Attach Deliverable URLs</label>
-                    <p style="font-size: 11px; color: rgba(36, 63, 130, 0.7); margin: 2px 0 0;">Add new deliverable URLs — auto-synced with live insights.</p>
+                    <label style="font-size: 12px; font-weight: 700; color: #1D1D1F;">Quick Attach Deliverable URLs</label>
+                    <p style="font-size: 11px; color: rgba(0, 0, 0, 0.7); margin: 2px 0 0;">Add new deliverable URLs — auto-synced with live insights.</p>
                   </div>
                   <button type="button" class="btn-add-url-slot" (click)="addEditUrlSlot()">+ Add another URL</button>
                 </div>
@@ -628,17 +628,17 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: #243F82;
+      color: #1D1D1F;
       text-decoration: none;
       font-weight: 600;
       padding: 5px 12px;
       border-radius: 999px;
-      background: rgba(36, 63, 130, 0.06);
+      background: rgba(0, 0, 0, 0.06);
       transition: all 0.15s ease;
     }
 
     .back-link:hover {
-      background: rgba(36, 63, 130, 0.12);
+      background: rgba(0, 0, 0, 0.12);
     }
 
     .back-icon {
@@ -647,17 +647,17 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .crumb-separator {
-      color: rgba(36, 63, 130, 0.4);
+      color: rgba(0, 0, 0, 0.4);
     }
 
     .current-crumb {
-      color: rgba(36, 63, 130, 0.65);
+      color: rgba(0, 0, 0, 0.65);
       font-weight: 600;
     }
 
     .profile-card {
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 16px;
       padding: 26px 30px;
       display: flex;
@@ -665,7 +665,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       align-items: center;
       gap: 24px;
       flex-wrap: wrap;
-      box-shadow: 0 4px 16px rgba(36, 63, 130, 0.04);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
       width: 100%;
       box-sizing: border-box;
     }
@@ -683,8 +683,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       width: 68px;
       height: 68px;
       border-radius: 50%;
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -692,7 +692,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       font-weight: 800;
       overflow: hidden;
       flex-shrink: 0;
-      border: 3px solid rgba(36, 63, 130, 0.14);
+      border: 3px solid rgba(0, 0, 0, 0.14);
     }
 
     .avatar-img {
@@ -718,7 +718,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .creator-name {
       font-size: 24px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
       margin: 0;
       letter-spacing: -0.02em;
     }
@@ -732,7 +732,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .ig-profile-link {
       font-size: 12px;
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
       text-decoration: underline;
     }
 
@@ -770,13 +770,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       align-items: center;
       gap: 10px;
       font-size: 13px;
-      color: rgba(36, 63, 130, 0.85);
+      color: rgba(0, 0, 0, 0.85);
       margin-top: 4px;
       flex-wrap: wrap;
     }
 
     .ig-stat strong {
-      color: #243F82;
+      color: #1D1D1F;
       font-weight: 800;
     }
 
@@ -785,7 +785,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .ig-stat-divider {
-      color: rgba(36, 63, 130, 0.35);
+      color: rgba(0, 0, 0, 0.35);
       font-size: 10px;
     }
 
@@ -803,10 +803,10 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .influencer-roi-panel {
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 16px;
       padding: 24px 28px;
-      box-shadow: 0 4px 16px rgba(36, 63, 130, 0.04);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
       display: flex;
       flex-direction: column;
       gap: 18px;
@@ -819,7 +819,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 16px;
       flex-wrap: wrap;
       padding-bottom: 14px;
-      border-bottom: 1px solid rgba(36, 63, 130, 0.08);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     }
 
     .roi-title-col {
@@ -832,12 +832,12 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       margin: 0;
       font-size: 16px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .roi-section-subtitle {
       font-size: 12px;
-      color: rgba(36, 63, 130, 0.65);
+      color: rgba(0, 0, 0, 0.65);
     }
 
     .roi-header-tags {
@@ -855,17 +855,17 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .pricing-control-label {
       font-size: 11px;
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
     .pricing-segmented-switch {
       display: inline-flex;
-      background: rgba(36, 63, 130, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       padding: 3px;
       border-radius: 8px;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
     }
 
     .pricing-segment-btn {
@@ -884,13 +884,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .pricing-segment-btn:hover {
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .pricing-segment-btn.active {
       background: #FFFFFF;
-      color: #243F82;
-      box-shadow: 0 1px 4px rgba(36, 63, 130, 0.15);
+      color: #1D1D1F;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
     }
 
     .creator-type-chip {
@@ -898,8 +898,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       font-weight: 700;
       padding: 4px 10px;
       border-radius: 999px;
-      background: rgba(36, 63, 130, 0.08);
-      color: #243F82;
+      background: rgba(0, 0, 0, 0.08);
+      color: #1D1D1F;
     }
 
     .risk-badge {
@@ -937,7 +937,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .roi-metric-item {
       background: #FDFBF7;
-      border: 1px solid rgba(36, 63, 130, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 12px;
       padding: 14px 16px;
       display: flex;
@@ -947,14 +947,14 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .roi-metric-item:hover {
-      border-color: rgba(36, 63, 130, 0.22);
+      border-color: rgba(0, 0, 0, 0.22);
       transform: translateY(-1px);
     }
 
     .roi-lbl {
       font-size: 10px;
       font-weight: 700;
-      color: rgba(36, 63, 130, 0.55);
+      color: rgba(0, 0, 0, 0.55);
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
@@ -962,7 +962,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .roi-val {
       font-size: 18px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .roi-val.highlight {
@@ -982,14 +982,14 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .roi-val.stars small {
-      color: #243F82;
+      color: #1D1D1F;
       font-size: 11px;
       font-weight: 700;
     }
 
     .roi-hint {
       font-size: 11px;
-      color: rgba(36, 63, 130, 0.5);
+      color: rgba(0, 0, 0, 0.5);
     }
 
     @media (max-width: 1200px) {
@@ -1022,7 +1022,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.08em;
-      color: rgba(36, 63, 130, 0.55);
+      color: rgba(0, 0, 0, 0.55);
     }
 
     .agreement-value {
@@ -1040,7 +1040,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .agreement-status {
       font-size: 11px;
-      color: rgba(36, 63, 130, 0.6);
+      color: rgba(0, 0, 0, 0.6);
       font-weight: 600;
     }
 
@@ -1061,7 +1061,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .rate-cta-link {
       text-decoration: underline;
-      color: #243F82;
+      color: #1D1D1F;
       font-weight: 700;
     }
 
@@ -1070,14 +1070,14 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       align-items: center;
       gap: 6px;
       padding: 4px;
-      background: #F6F4EC;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 12px;
     }
 
     .btn-hero-primary {
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       border: none;
       padding: 8px 14px;
       border-radius: 8px;
@@ -1089,13 +1089,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .btn-hero-primary:hover {
-      background: #1B3166;
+      background: #0077ED;
     }
 
     .btn-hero-secondary {
       background: #FFFFFF;
-      color: #243F82;
-      border: 1px solid rgba(36, 63, 130, 0.16);
+      color: #1D1D1F;
+      border: 1px solid rgba(0, 0, 0, 0.16);
       padding: 7px 12px;
       border-radius: 8px;
       font-size: 12px;
@@ -1106,7 +1106,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .btn-hero-secondary:hover {
-      background: #243F82;
+      background: #0071E3;
       color: #FFFFFF;
     }
 
@@ -1137,7 +1137,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .stat-card {
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 12px;
       padding: 20px;
       display: flex;
@@ -1149,7 +1149,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.06em;
-      color: rgba(36, 63, 130, 0.55);
+      color: rgba(0, 0, 0, 0.55);
     }
 
     .stat-value-group {
@@ -1161,13 +1161,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .stat-number {
       font-size: 26px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
       letter-spacing: -0.02em;
     }
 
     .stat-sub {
       font-size: 12px;
-      color: rgba(36, 63, 130, 0.6);
+      color: rgba(0, 0, 0, 0.6);
       font-weight: 600;
     }
 
@@ -1177,10 +1177,10 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .content-feed {
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 14px;
       padding: 24px;
-      box-shadow: 0 4px 16px rgba(36, 63, 130, 0.04);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
     }
 
     .feed-header {
@@ -1190,7 +1190,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 12px;
       margin-bottom: 20px;
       padding-bottom: 14px;
-      border-bottom: 1px solid rgba(36, 63, 130, 0.08);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     }
 
     .feed-title-group {
@@ -1202,13 +1202,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .feed-title {
       font-size: 16px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
       margin: 0;
     }
 
     .feed-badge {
-      background: rgba(36, 63, 130, 0.08);
-      color: #243F82;
+      background: rgba(0, 0, 0, 0.08);
+      color: #1D1D1F;
       font-size: 11px;
       font-weight: 700;
       padding: 3px 10px;
@@ -1216,8 +1216,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .btn-add-deliverable {
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       border: none;
       padding: 8px 16px;
       border-radius: 999px;
@@ -1229,20 +1229,20 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .btn-add-deliverable:hover {
-      background: #1B3166;
+      background: #0077ED;
     }
 
     .empty-deliverables-box {
       padding: 32px 20px;
       text-align: center;
-      background: rgba(246, 244, 236, 0.65);
-      border: 1px dashed rgba(36, 63, 130, 0.2);
+      background: rgba(0, 0, 0, 0.03, 0.65);
+      border: 1px dashed rgba(0, 0, 0, 0.2);
       border-radius: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 12px;
-      color: rgba(36, 63, 130, 0.75);
+      color: rgba(0, 0, 0, 0.75);
       font-size: 13.5px;
     }
 
@@ -1263,13 +1263,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 16px;
       padding: 16px 20px;
       border-radius: 12px;
-      background: #F6F4EC;
-      border: 1px solid rgba(36, 63, 130, 0.08);
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.08);
       transition: all 0.15s ease;
     }
 
     .content-card:hover {
-      border-color: rgba(36, 63, 130, 0.25);
+      border-color: rgba(0, 0, 0, 0.25);
     }
 
     .card-left {
@@ -1286,8 +1286,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       overflow: hidden;
       flex-shrink: 0;
       background: #E8EEFA;
-      box-shadow: 0 2px 6px rgba(36, 63, 130, 0.12);
-      border: 1px solid rgba(36, 63, 130, 0.15);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.15);
     }
 
     .deliverable-thumb {
@@ -1319,7 +1319,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       width: 38px;
       height: 38px;
       border-radius: 10px;
-      background: #243F82;
+      background: #0071E3;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1335,13 +1335,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .item-title {
       font-size: 14px;
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
       margin: 0 0 4px 0;
     }
 
     .item-sub {
       font-size: 12px;
-      color: rgba(36, 63, 130, 0.6);
+      color: rgba(0, 0, 0, 0.6);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -1387,12 +1387,12 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .col-val {
       font-size: 14px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .col-lbl {
       font-size: 10px;
-      color: rgba(36, 63, 130, 0.55);
+      color: rgba(0, 0, 0, 0.55);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       font-weight: 600;
@@ -1405,13 +1405,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .risk-reason-chip {
-      background: rgba(36, 63, 130, 0.06);
-      color: #243F82;
+      background: rgba(0, 0, 0, 0.06);
+      color: #1D1D1F;
       font-size: 11px;
       font-weight: 700;
       padding: 3px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
     }
 
     .action-dropdown-container {
@@ -1425,9 +1425,9 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 6px;
       padding: 6px 12px;
       border-radius: 8px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       background: #FFFFFF;
-      color: #243F82;
+      color: #1D1D1F;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
@@ -1436,10 +1436,10 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .btn-action-trigger:hover {
-      background: #F6F4EC;
-      border-color: #243F82;
+      background: #FFFFFF;
+      border-color: #0071E3;
       transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(36, 63, 130, 0.12);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
     }
 
     .action-dropdown-menu {
@@ -1449,7 +1449,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       z-index: 1000;
       min-width: 175px;
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.14);
+      border: 1px solid rgba(0, 0, 0, 0.14);
       border-radius: 12px;
       box-shadow: 0 14px 34px rgba(18, 32, 68, 0.18);
       padding: 6px;
@@ -1479,7 +1479,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       border: none;
       background: transparent;
       border-radius: 8px;
-      color: #1B3166;
+      color: #0077ED;
       font-size: 12.5px;
       font-weight: 600;
       text-decoration: none;
@@ -1489,8 +1489,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .dropdown-item:hover {
-      background: #F6F4EC;
-      color: #243F82;
+      background: #FFFFFF;
+      color: #1D1D1F;
     }
 
     .dropdown-item.danger {
@@ -1504,7 +1504,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .dropdown-divider {
       height: 1px;
-      background: rgba(36, 63, 130, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       margin: 4px 6px;
     }
 
@@ -1533,7 +1533,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 4px;
       padding: 3px;
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 8px;
       white-space: nowrap;
     }
@@ -1541,7 +1541,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .btn-item-act {
       background: transparent;
       border: none;
-      color: #243F82;
+      color: #1D1D1F;
       font-size: 11.5px;
       font-weight: 600;
       padding: 5px 9px;
@@ -1552,7 +1552,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .btn-item-act:hover {
-      background: #243F82;
+      background: #0071E3;
       color: #FFFFFF;
     }
 
@@ -1569,22 +1569,22 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       font-size: 13px;
       font-weight: 700;
       padding: 8px 18px;
       border-radius: 999px;
-      border: 1px solid #1B3166;
+      border: 1px solid #0077ED;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(36, 63, 130, 0.25);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
       transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .btn-add-deliverable-action:hover {
-      background: #1B3166;
+      background: #0077ED;
       transform: translateY(-1.5px);
-      box-shadow: 0 6px 18px rgba(36, 63, 130, 0.35);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     }
 
     /* Modals */
@@ -1606,8 +1606,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       width: 100%;
       max-width: 620px;
       padding: 28px 32px;
-      box-shadow: 0 24px 60px rgba(18, 32, 68, 0.28), 0 4px 16px rgba(36, 63, 130, 0.08);
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      box-shadow: 0 24px 60px rgba(18, 32, 68, 0.28), 0 4px 16px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       box-sizing: border-box;
       max-height: 90vh;
       overflow-y: auto;
@@ -1623,7 +1623,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       align-items: flex-start;
       margin-bottom: 22px;
       padding-bottom: 16px;
-      border-bottom: 1px solid rgba(36, 63, 130, 0.08);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     }
 
     .modal-title-row {
@@ -1636,8 +1636,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       width: 42px;
       height: 42px;
       border-radius: 12px;
-      background: rgba(36, 63, 130, 0.08);
-      color: #243F82;
+      background: rgba(0, 0, 0, 0.08);
+      color: #1D1D1F;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1648,7 +1648,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       margin: 0;
       font-size: 19px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
       letter-spacing: -0.01em;
     }
 
@@ -1663,12 +1663,12 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      background: rgba(36, 63, 130, 0.06);
+      background: rgba(0, 0, 0, 0.06);
       border: none;
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
-      color: #243F82;
+      color: #1D1D1F;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1677,8 +1677,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .close-btn:hover {
-      background: rgba(36, 63, 130, 0.14);
-      color: #1B3166;
+      background: rgba(0, 0, 0, 0.14);
+      color: #0077ED;
       transform: scale(1.06);
     }
 
@@ -1714,26 +1714,26 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 10px;
       padding: 11px 13px;
       border-radius: 9px;
-      border: 1.5px solid rgba(36, 63, 130, 0.18);
+      border: 1.5px solid rgba(0, 0, 0, 0.18);
       background: #FFFFFF;
       cursor: pointer;
       transition: all 0.18s ease;
     }
 
     .pricing-radio-card:hover {
-      border-color: #243F82;
-      background: rgba(36, 63, 130, 0.02);
+      border-color: #0071E3;
+      background: rgba(0, 0, 0, 0.02);
     }
 
     .pricing-radio-card.selected {
-      border-color: #243F82;
-      background: rgba(36, 63, 130, 0.05);
-      box-shadow: 0 0 0 1px #243F82;
+      border-color: #0071E3;
+      background: rgba(0, 0, 0, 0.05);
+      box-shadow: 0 0 0 1px #0071E3;
     }
 
     .pricing-radio-card input {
       margin-top: 3px;
-      accent-color: #243F82;
+      accent-color: #1D1D1F;
     }
 
     .pricing-radio-content {
@@ -1745,7 +1745,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .pricing-radio-title {
       font-size: 12px;
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .pricing-radio-desc {
@@ -1764,11 +1764,11 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .input-locked-field {
       width: 100%;
       padding-right: 86px !important;
-      background: rgba(36, 63, 130, 0.04) !important;
+      background: rgba(0, 0, 0, 0.04) !important;
       color: #475569 !important;
       cursor: not-allowed !important;
       font-weight: 600;
-      border-color: rgba(36, 63, 130, 0.16) !important;
+      border-color: rgba(0, 0, 0, 0.16) !important;
     }
 
     .input-lock-pill {
@@ -1777,8 +1777,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      background: rgba(36, 63, 130, 0.09);
-      color: #243F82;
+      background: rgba(0, 0, 0, 0.09);
+      color: #1D1D1F;
       font-size: 11px;
       font-weight: 700;
       padding: 3px 8px;
@@ -1795,19 +1795,19 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .label-lock-hint {
       font-size: 10.5px;
-      color: rgba(36, 63, 130, 0.6);
+      color: rgba(0, 0, 0, 0.6);
       font-weight: 600;
     }
 
     .form-group label {
       font-size: 12px;
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .form-input {
       padding: 10px 14px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       border-radius: 8px;
       font-size: 13px;
       outline: none;
@@ -1815,7 +1815,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .form-input:focus {
-      border-color: #243F82;
+      border-color: #0071E3;
     }
 
     .label-with-range-info {
@@ -1858,8 +1858,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       display: flex;
       align-items: center;
       gap: 10px;
-      background: linear-gradient(135deg, rgba(36, 63, 130, 0.06) 0%, rgba(36, 63, 130, 0.02) 100%);
-      border: 1px solid rgba(36, 63, 130, 0.15);
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.02) 100%);
+      border: 1px solid rgba(0, 0, 0, 0.15);
       border-radius: 8px;
       padding: 9px 12px;
       min-height: 42px;
@@ -1870,8 +1870,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       width: 26px;
       height: 26px;
       border-radius: 6px;
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1888,7 +1888,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .pkg-badge-text strong {
       font-size: 11.5px;
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .pkg-badge-text span {
@@ -1898,8 +1898,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .rate-range-container {
-      background: rgba(36, 63, 130, 0.03);
-      border: 1px dashed rgba(36, 63, 130, 0.18);
+      background: rgba(0, 0, 0, 0.03);
+      border: 1px dashed rgba(0, 0, 0, 0.18);
       border-radius: 10px;
       padding: 12px;
       margin-top: 4px;
@@ -1953,13 +1953,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .btn-cancel {
       padding: 9px 16px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       background: transparent;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .btn-submit {
@@ -1969,25 +1969,25 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 8px;
       padding: 10px 22px;
       border: none;
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       border-radius: 999px;
       font-size: 13.5px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(36, 63, 130, 0.25);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
       transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .btn-submit:hover:not(:disabled) {
-      background: #1B3166;
+      background: #0077ED;
       transform: translateY(-1.5px);
-      box-shadow: 0 6px 20px rgba(36, 63, 130, 0.35);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
     }
 
     .btn-submit:active:not(:disabled) {
       transform: scale(0.96) translateY(0);
-      box-shadow: 0 2px 8px rgba(36, 63, 130, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
     .btn-submit:disabled {
@@ -1997,8 +1997,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .content-urls-group {
-      background: rgba(246, 244, 236, 0.55);
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      background: rgba(0, 0, 0, 0.03, 0.55);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 12px;
       padding: 14px;
       margin-top: 10px;
@@ -2013,8 +2013,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .btn-add-url-slot {
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.22);
-      color: #243F82;
+      border: 1px solid rgba(0, 0, 0, 0.22);
+      color: #1D1D1F;
       font-size: 11.5px;
       font-weight: 700;
       padding: 4px 10px;
@@ -2025,8 +2025,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .btn-add-url-slot:hover {
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
     }
 
     .urls-list {

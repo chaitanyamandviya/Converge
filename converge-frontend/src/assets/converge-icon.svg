@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="16" fill="#1F2124"/>
-  <path d="M44 23 C40 17 31 16 25 20 C17 25 15 37 20 44 C25 51 36 52 43 46 C45.5 44 47 41.5 48 38.5" 
-        stroke="#4E82F7" stroke-width="6.5" stroke-linecap="round" fill="none" />
-  <circle cx="44" cy="20" r="4.5" fill="#F4DA40" />
-  <circle cx="48" cy="38" r="4.5" fill="#DC543B" />
-  <circle cx="34" cy="48" r="4" fill="#4C825A" />
-  <circle cx="19" cy="28" r="3.5" fill="#8DC3E2" />
+  <!-- Apple App Icon Squircle (Continuous curve) -->
+  <rect width="64" height="64" rx="16" fill="#1D1D1F"/>
+  <circle cx="32" cy="32" r="18" stroke="#FFFFFF" stroke-width="3" opacity="0.15" />
+  <path d="M22 32C22 26.4772 26.4772 22 32 22C37.5228 22 42 26.4772 42 32" stroke="#2997FF" stroke-width="4" stroke-linecap="round" />
+  <path d="M42 32C42 37.5228 37.5228 42 32 42C26.4772 42 22 37.5228 22 32" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" />
+  <circle cx="32" cy="32" r="4.5" fill="#2997FF" />
 </svg>

@@ -58,7 +58,7 @@ describe('DashboardComponent', () => {
           spend: 16000,
           status: 'ACTIVE',
           joinedDate: 'Oct 2026',
-          avatarColor: '#243F82'
+          avatarColor: '#0071E3'
         }
       ]);
       return of(portalService.agencies());

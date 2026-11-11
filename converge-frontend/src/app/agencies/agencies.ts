@@ -315,8 +315,8 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
               </div>
 
               @if (selectedAgencyForEdit) {
-                <div class="edit-quick-actions" style="margin-top: 14px; padding: 12px; background: rgba(36, 63, 130, 0.04); border-radius: 10px; border: 1px solid rgba(36, 63, 130, 0.1);">
-                  <div style="font-size: 11.5px; font-weight: 700; color: #243F82; margin-bottom: 8px;">Workspace Access & Communication</div>
+                <div class="edit-quick-actions" style="margin-top: 14px; padding: 12px; background: rgba(0, 0, 0, 0.04); border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.1);">
+                  <div style="font-size: 11.5px; font-weight: 700; color: #1D1D1F; margin-bottom: 8px;">Workspace Access & Communication</div>
                   <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     @if (selectedAgencyForEdit.status === 'PENDING_APPROVAL') {
                       <button type="button" class="btn-row-action" style="background: #059669; color: #fff; border: none;" (click)="approveAgency(selectedAgencyForEdit)">
@@ -379,14 +379,14 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     .page-title {
       font-size: 28px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
       margin: 0 0 6px 0;
       letter-spacing: -0.02em;
     }
 
     .page-subtitle {
       font-size: 14px;
-      color: rgba(36, 63, 130, 0.7);
+      color: rgba(0, 0, 0, 0.7);
       margin: 0;
       line-height: 1.45;
     }
@@ -395,22 +395,22 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       border: none;
       padding: 10px 18px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(36, 63, 130, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       transition: all 0.15s ease;
       white-space: nowrap;
       flex-shrink: 0;
     }
 
     .invite-btn:hover {
-      background: #1B3166;
+      background: #0077ED;
       transform: translateY(-1px);
     }
 
@@ -429,7 +429,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
 
     .stat-card {
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 12px;
       padding: 20px;
       display: flex;
@@ -441,7 +441,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.06em;
-      color: rgba(36, 63, 130, 0.55);
+      color: rgba(0, 0, 0, 0.55);
     }
 
     .stat-value-group {
@@ -453,7 +453,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     .stat-number {
       font-size: 26px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
       letter-spacing: -0.02em;
     }
 
@@ -465,10 +465,10 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
 
     .table-container {
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 4px 16px rgba(36, 63, 130, 0.04);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
@@ -476,7 +476,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
 
     .table-header-strip {
       padding: 18px 24px;
-      border-bottom: 1px solid rgba(36, 63, 130, 0.08);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -486,7 +486,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       font-size: 16px;
       font-weight: 700;
       margin: 0;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .table-badge {
@@ -501,7 +501,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     .empty-state {
       padding: 36px 24px;
       text-align: center;
-      color: rgba(36, 63, 130, 0.7);
+      color: rgba(0, 0, 0, 0.7);
       font-size: 13px;
     }
 
@@ -528,21 +528,21 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.06em;
-      color: rgba(36, 63, 130, 0.6);
-      background: rgba(246, 244, 236, 0.6);
-      border-bottom: 1px solid rgba(36, 63, 130, 0.08);
+      color: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.03, 0.6);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     }
 
     .agencies-table td {
       padding: 14px 16px;
       font-size: 13px;
-      color: #243F82;
-      border-bottom: 1px solid rgba(36, 63, 130, 0.06);
+      color: #1D1D1F;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
       vertical-align: middle;
     }
 
     .agencies-table tr:hover {
-      background: rgba(36, 63, 130, 0.02);
+      background: rgba(0, 0, 0, 0.02);
     }
 
     .col-agency-main {
@@ -579,7 +579,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       width: 34px;
       height: 34px;
       border-radius: 8px;
-      color: #F6F4EC;
+      color: #FFFFFF;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -589,21 +589,21 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
 
     .agency-name {
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .agency-email {
       font-size: 11px;
-      color: rgba(36, 63, 130, 0.6);
+      color: rgba(0, 0, 0, 0.6);
     }
 
     .partner-brand-pill {
       display: inline-flex;
       align-items: center;
       white-space: nowrap;
-      background: rgba(36, 63, 130, 0.08);
-      border: 1px solid rgba(36, 63, 130, 0.14);
-      color: #243F82;
+      background: rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.14);
+      color: #1D1D1F;
       padding: 4px 10px;
       border-radius: 999px;
       font-size: 11.5px;
@@ -614,9 +614,9 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       display: inline-flex;
       align-items: center;
       white-space: nowrap;
-      background: #F6F4EC;
-      border: 1px solid rgba(36, 63, 130, 0.12);
-      color: #243F82;
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      color: #1D1D1F;
       padding: 4px 10px;
       border-radius: 999px;
       font-size: 11.5px;
@@ -633,7 +633,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
 
     .spend-data {
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .status-chip {
@@ -645,8 +645,8 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.04em;
-      background: rgba(36, 63, 130, 0.08);
-      color: #243F82;
+      background: rgba(0, 0, 0, 0.08);
+      color: #1D1D1F;
     }
 
     .status-chip.active {
@@ -675,8 +675,8 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       flex-wrap: nowrap;
       white-space: nowrap;
       padding: 3px;
-      background: rgba(246, 244, 236, 0.75);
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      background: rgba(0, 0, 0, 0.03, 0.75);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 10px;
     }
 
@@ -706,9 +706,9 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       gap: 6px;
       padding: 6px 12px;
       border-radius: 8px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       background: #FFFFFF;
-      color: #243F82;
+      color: #1D1D1F;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
@@ -717,10 +717,10 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     }
 
     .btn-action-trigger:hover {
-      background: #F6F4EC;
-      border-color: #243F82;
+      background: #FFFFFF;
+      border-color: #0071E3;
       transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(36, 63, 130, 0.12);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
     }
 
     .action-dropdown-menu {
@@ -730,7 +730,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       z-index: 1000;
       min-width: 175px;
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.14);
+      border: 1px solid rgba(0, 0, 0, 0.14);
       border-radius: 12px;
       box-shadow: 0 14px 34px rgba(18, 32, 68, 0.18);
       padding: 6px;
@@ -760,7 +760,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       border: none;
       background: transparent;
       border-radius: 8px;
-      color: #1B3166;
+      color: #0077ED;
       font-size: 12.5px;
       font-weight: 600;
       text-decoration: none;
@@ -770,8 +770,8 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     }
 
     .dropdown-item:hover {
-      background: #F6F4EC;
-      color: #243F82;
+      background: #FFFFFF;
+      color: #1D1D1F;
     }
 
     .dropdown-item.danger {
@@ -785,7 +785,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
 
     .dropdown-divider {
       height: 1px;
-      background: rgba(36, 63, 130, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       margin: 4px 6px;
     }
 
@@ -795,8 +795,8 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       gap: 5px;
       white-space: nowrap;
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
-      color: #243F82;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      color: #1D1D1F;
       padding: 5px 9px;
       border-radius: 7px;
       font-size: 11px;
@@ -812,9 +812,9 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     }
 
     .btn-row-action:hover:not(:disabled) {
-      background: #243F82;
-      border-color: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      border-color: #0071E3;
+      color: #FFFFFF;
     }
 
     .btn-row-action.warn:hover:not(:disabled) {
@@ -839,7 +839,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(36, 63, 130, 0.4);
+      background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
@@ -853,7 +853,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       width: 100%;
       max-width: 440px;
       padding: 28px;
-      box-shadow: 0 12px 36px rgba(36, 63, 130, 0.2);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
     }
 
     .modal-head {
@@ -867,7 +867,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       margin: 0;
       font-size: 18px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .close-btn {
@@ -875,7 +875,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       border: none;
       font-size: 16px;
       cursor: pointer;
-      color: rgba(36, 63, 130, 0.5);
+      color: rgba(0, 0, 0, 0.5);
     }
 
     .form-group {
@@ -888,12 +888,12 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     .form-group label {
       font-size: 12px;
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .form-input {
       padding: 10px 14px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       border-radius: 8px;
       font-size: 13px;
       outline: none;
@@ -901,7 +901,7 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     }
 
     .form-input:focus {
-      border-color: #243F82;
+      border-color: #0071E3;
     }
 
     select.form-input {
@@ -943,9 +943,9 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       height: 42px;
       padding: 0 14px;
       background: #FFFFFF;
-      border: 1.5px solid rgba(36, 63, 130, 0.22);
+      border: 1.5px solid rgba(0, 0, 0, 0.22);
       border-radius: 8px;
-      color: #243F82;
+      color: #1D1D1F;
       font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
@@ -955,8 +955,8 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     }
 
     .btn-fetch-logo:hover {
-      background: rgba(36, 63, 130, 0.06);
-      border-color: #243F82;
+      background: rgba(0, 0, 0, 0.06);
+      border-color: #0071E3;
       transform: translateY(-1px);
     }
 
@@ -966,8 +966,8 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       gap: 8px;
       margin-top: 8px;
       padding: 4px 10px 4px 6px;
-      background: rgba(36, 63, 130, 0.06);
-      border: 1px solid rgba(36, 63, 130, 0.14);
+      background: rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.14);
       border-radius: 999px;
       width: fit-content;
     }
@@ -978,19 +978,19 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       border-radius: 50%;
       object-fit: cover;
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.1);
     }
 
     .preview-logo-text {
       font-size: 12px;
       font-weight: 600;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .btn-clear-logo {
       border: none;
       background: transparent;
-      color: rgba(36, 63, 130, 0.6);
+      color: rgba(0, 0, 0, 0.6);
       font-size: 13px;
       font-weight: 700;
       cursor: pointer;
@@ -1005,10 +1005,10 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     .modal-helper-note {
       margin: 4px 0 0 0;
       padding: 10px 12px;
-      background: rgba(36, 63, 130, 0.05);
+      background: rgba(0, 0, 0, 0.05);
       border-radius: 8px;
       font-size: 12px;
-      color: rgba(36, 63, 130, 0.8);
+      color: rgba(0, 0, 0, 0.8);
       line-height: 1.45;
     }
 
@@ -1021,13 +1021,13 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
 
     .btn-cancel {
       padding: 8px 16px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       background: transparent;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .btn-submit {
@@ -1037,25 +1037,25 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       gap: 8px;
       padding: 10px 22px;
       border: none;
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       border-radius: 999px;
       font-size: 13.5px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(36, 63, 130, 0.25);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
       transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .btn-submit:hover:not(:disabled) {
-      background: #1B3166;
+      background: #0077ED;
       transform: translateY(-1.5px);
-      box-shadow: 0 6px 20px rgba(36, 63, 130, 0.35);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
     }
 
     .btn-submit:active:not(:disabled) {
       transform: scale(0.96) translateY(0);
-      box-shadow: 0 2px 8px rgba(36, 63, 130, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
     .btn-submit:disabled {
@@ -1085,8 +1085,8 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
     }
 
     .btn-spinner.dark {
-      border-color: rgba(36, 63, 130, 0.25);
-      border-top-color: #243F82;
+      border-color: rgba(0, 0, 0, 0.25);
+      border-top-color: #0071E3;
     }
 
     @keyframes agSpin {

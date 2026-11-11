@@ -48,7 +48,7 @@ import { ConfirmService } from '../../services/confirm.service';
       width: 100%;
       max-width: 380px;
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.14);
+      border: 1px solid rgba(0, 0, 0, 0.14);
       border-radius: 14px;
       padding: 22px 24px;
       box-shadow: 0 20px 44px rgba(18, 32, 68, 0.22);
@@ -60,7 +60,7 @@ import { ConfirmService } from '../../services/confirm.service';
       margin: 0 0 8px 0;
       font-size: 16px;
       font-weight: 800;
-      color: #1B3166;
+      color: #0077ED;
       letter-spacing: -0.01em;
     }
 
@@ -81,9 +81,9 @@ import { ConfirmService } from '../../services/confirm.service';
     .btn-confirm-cancel {
       padding: 9px 18px;
       border-radius: 999px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       background: #FFFFFF;
-      color: #243F82;
+      color: #1D1D1F;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
@@ -91,8 +91,8 @@ import { ConfirmService } from '../../services/confirm.service';
     }
 
     .btn-confirm-cancel:hover {
-      background: #F6F4EC;
-      border-color: #243F82;
+      background: #FFFFFF;
+      border-color: #0071E3;
       transform: translateY(-1px);
     }
 
@@ -112,26 +112,26 @@ import { ConfirmService } from '../../services/confirm.service';
       font-weight: 700;
       color: #FFFFFF;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(36, 63, 130, 0.25);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
       transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .btn-confirm-accept:hover {
       transform: translateY(-1.5px);
-      box-shadow: 0 6px 18px rgba(36, 63, 130, 0.35);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     }
 
     .btn-confirm-accept:active {
       transform: scale(0.96) translateY(0);
-      box-shadow: 0 2px 8px rgba(36, 63, 130, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
     .btn-confirm-accept.primary {
-      background: #243F82;
+      background: #0071E3;
     }
 
     .btn-confirm-accept.primary:hover {
-      background: #1B3166;
+      background: #0077ED;
     }
 
     .btn-confirm-accept.warning {

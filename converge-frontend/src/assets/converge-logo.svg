@@ -1,13 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 32" fill="none" height="32" width="132">
-  <style>
-    .wordmark {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-weight: 800;
-      font-size: 27px;
-      letter-spacing: -0.9px;
-    }
-  </style>
-  <text x="0" y="24" class="wordmark">
-    <tspan fill="#2C54A6">c</tspan><tspan fill="#F4DA40">o</tspan><tspan fill="#1F2124">nv</tspan><tspan fill="#DC543B">e</tspan><tspan fill="#4C825A">rg</tspan><tspan fill="#8DC3E2">e</tspan>
-  </text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 32" fill="none" height="32" width="144">
+  <g transform="translate(2, 4)">
+    <!-- Apple-grade Minimalist Converge Icon Mark: Dual converging arcs -->
+    <circle cx="12" cy="12" r="11" stroke="#1D1D1F" stroke-width="2.2" opacity="0.15" />
+    <path d="M6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12" stroke="#0071E3" stroke-width="2.6" stroke-linecap="round" />
+    <path d="M18 12C18 15.3137 15.3137 18 12 18C8.68629 18 6 15.3137 6 12" stroke="#1D1D1F" stroke-width="2.6" stroke-linecap="round" />
+    <circle cx="12" cy="12" r="2.5" fill="#0071E3" />
+  </g>
+  <!-- Apple Display Typographic Wordmark -->
+  <text x="34" y="22" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', 'Inter', sans-serif" font-weight="700" font-size="20" letter-spacing="-0.03em" fill="#1D1D1F">converge</text>
 </svg>

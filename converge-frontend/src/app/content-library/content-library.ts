@@ -103,7 +103,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
         </div>
 
         @if (filteredItems().length === 0) {
-          <div style="padding: 36px 24px; text-align: center; color: rgba(36, 63, 130, 0.7); font-size: 13px;">
+          <div style="padding: 36px 24px; text-align: center; color: rgba(0, 0, 0, 0.7); font-size: 13px;">
             No content items recorded yet. Click <strong>+ Add content URL</strong> above to add a post and sync Instagram Graph API v26.0 insights.
           </div>
         } @else {
@@ -380,14 +380,14 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .page-title {
       font-size: 28px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
       margin: 0 0 6px 0;
       letter-spacing: -0.02em;
     }
 
     .page-subtitle {
       font-size: 14px;
-      color: rgba(36, 63, 130, 0.7);
+      color: rgba(0, 0, 0, 0.7);
       margin: 0;
       line-height: 1.45;
     }
@@ -396,22 +396,22 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       border: none;
       padding: 10px 18px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(36, 63, 130, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       transition: all 0.15s ease;
       white-space: nowrap;
       flex-shrink: 0;
     }
 
     .add-btn:hover {
-      background: #1B3166;
+      background: #0077ED;
       transform: translateY(-1px);
     }
 
@@ -430,7 +430,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .stat-card {
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 12px;
       padding: 18px 20px;
       display: flex;
@@ -441,33 +441,33 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .stat-card:hover {
-      border-color: #243F82;
+      border-color: #0071E3;
       transform: translateY(-2px);
     }
 
     .stat-card.selected {
-      border: 2px solid #243F82;
-      background: rgba(36, 63, 130, 0.02);
+      border: 2px solid #0071E3;
+      background: rgba(0, 0, 0, 0.02);
     }
 
     .stat-label {
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.06em;
-      color: rgba(36, 63, 130, 0.55);
+      color: rgba(0, 0, 0, 0.55);
     }
 
     .stat-number {
       font-size: 26px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
       letter-spacing: -0.02em;
     }
 
     .stat-sub {
       font-size: 12px;
       font-weight: 600;
-      color: rgba(36, 63, 130, 0.6);
+      color: rgba(0, 0, 0, 0.6);
     }
 
     .stat-sub.positive {
@@ -484,10 +484,10 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .table-container {
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 4px 16px rgba(36, 63, 130, 0.04);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
@@ -506,7 +506,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .table-header-strip {
       padding: 16px 20px;
-      border-bottom: 1px solid rgba(36, 63, 130, 0.08);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
       display: flex;
       align-items: center;
       flex-wrap: wrap;
@@ -525,14 +525,14 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .filter-label {
       font-size: 12px;
       font-weight: 600;
-      color: rgba(36, 63, 130, 0.5);
+      color: rgba(0, 0, 0, 0.5);
       margin-right: 4px;
     }
 
     .pill-btn {
       background: transparent;
-      border: 1px solid rgba(36, 63, 130, 0.15);
-      color: rgba(36, 63, 130, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      color: rgba(0, 0, 0, 0.7);
       padding: 5px 12px;
       border-radius: 999px;
       font-size: 12px;
@@ -544,14 +544,14 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .pill-btn:hover {
-      background: rgba(36, 63, 130, 0.05);
-      color: #243F82;
+      background: rgba(0, 0, 0, 0.05);
+      color: #1D1D1F;
     }
 
     .pill-btn.active {
-      background: #243F82;
-      color: #F6F4EC;
-      border-color: #243F82;
+      background: #0071E3;
+      color: #FFFFFF;
+      border-color: #0071E3;
     }
 
     .content-table {
@@ -566,9 +566,9 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.06em;
-      color: rgba(36, 63, 130, 0.6);
-      background: rgba(246, 244, 236, 0.6);
-      border-bottom: 1px solid rgba(36, 63, 130, 0.08);
+      color: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.03, 0.6);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
       white-space: nowrap;
     }
 
@@ -580,13 +580,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .content-table td {
       padding: 16px 18px;
       font-size: 13px;
-      color: #243F82;
-      border-bottom: 1px solid rgba(36, 63, 130, 0.06);
+      color: #1D1D1F;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
       vertical-align: middle;
     }
 
     .content-table tr:hover {
-      background: rgba(36, 63, 130, 0.02);
+      background: rgba(0, 0, 0, 0.02);
     }
 
     .title-with-thumb {
@@ -602,8 +602,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       overflow: hidden;
       flex-shrink: 0;
       background: #E8EEFA;
-      border: 1px solid rgba(36, 63, 130, 0.15);
-      box-shadow: 0 1px 4px rgba(36, 63, 130, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     }
 
     .table-thumb {
@@ -620,12 +620,12 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .title-text {
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .creator-sub {
       font-size: 11px;
-      color: rgba(36, 63, 130, 0.6);
+      color: rgba(0, 0, 0, 0.6);
       margin-top: 2px;
     }
 
@@ -633,7 +633,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       display: inline-flex;
       align-items: center;
       white-space: nowrap;
-      background: #F6F4EC;
+      background: #FFFFFF;
       padding: 4px 10px;
       border-radius: 999px;
       font-size: 11px;
@@ -689,14 +689,14 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      color: #243F82;
+      color: #1D1D1F;
       font-size: 11.5px;
       font-weight: 700;
       text-decoration: none;
       padding: 5px 10px;
       border-radius: 7px;
-      background: rgba(36, 63, 130, 0.05);
-      border: 1px solid rgba(36, 63, 130, 0.14);
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.14);
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.15s ease;
@@ -713,9 +713,9 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 6px;
       padding: 6px 12px;
       border-radius: 8px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       background: #FFFFFF;
-      color: #243F82;
+      color: #1D1D1F;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
@@ -724,10 +724,10 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .btn-action-trigger:hover {
-      background: #F6F4EC;
-      border-color: #243F82;
+      background: #FFFFFF;
+      border-color: #0071E3;
       transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(36, 63, 130, 0.12);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
     }
 
     .action-dropdown-menu {
@@ -737,7 +737,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       z-index: 1000;
       min-width: 175px;
       background: #FFFFFF;
-      border: 1px solid rgba(36, 63, 130, 0.14);
+      border: 1px solid rgba(0, 0, 0, 0.14);
       border-radius: 12px;
       box-shadow: 0 14px 34px rgba(18, 32, 68, 0.18);
       padding: 6px;
@@ -767,7 +767,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       border: none;
       background: transparent;
       border-radius: 8px;
-      color: #1B3166;
+      color: #0077ED;
       font-size: 12.5px;
       font-weight: 600;
       text-decoration: none;
@@ -777,8 +777,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .dropdown-item:hover {
-      background: #F6F4EC;
-      color: #243F82;
+      background: #FFFFFF;
+      color: #1D1D1F;
     }
 
     .dropdown-item.danger {
@@ -792,15 +792,15 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .dropdown-divider {
       height: 1px;
-      background: rgba(36, 63, 130, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       margin: 4px 6px;
     }
 
     .link-btn:hover,
     .row-btn:hover {
-      background: #243F82;
-      color: #F6F4EC;
-      border-color: #243F82;
+      background: #0071E3;
+      color: #FFFFFF;
+      border-color: #0071E3;
     }
 
     .row-btn.danger {
@@ -836,7 +836,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(36, 63, 130, 0.4);
+      background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
@@ -850,7 +850,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       width: 100%;
       max-width: 480px;
       padding: 28px;
-      box-shadow: 0 12px 36px rgba(36, 63, 130, 0.2);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
     }
 
     .modal-head {
@@ -864,7 +864,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       margin: 0;
       font-size: 18px;
       font-weight: 800;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .close-btn {
@@ -872,7 +872,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       border: none;
       font-size: 16px;
       cursor: pointer;
-      color: rgba(36, 63, 130, 0.5);
+      color: rgba(0, 0, 0, 0.5);
     }
 
     .form-row-2 {
@@ -891,12 +891,12 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .form-group label {
       font-size: 12px;
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .form-input {
       padding: 10px 14px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       border-radius: 8px;
       font-size: 13px;
       outline: none;
@@ -904,7 +904,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .form-input:focus {
-      border-color: #243F82;
+      border-color: #0071E3;
     }
 
     .label-with-range-info-cl {
@@ -945,8 +945,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       display: flex;
       align-items: center;
       gap: 10px;
-      background: linear-gradient(135deg, rgba(36, 63, 130, 0.06) 0%, rgba(36, 63, 130, 0.02) 100%);
-      border: 1px solid rgba(36, 63, 130, 0.15);
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.02) 100%);
+      border: 1px solid rgba(0, 0, 0, 0.15);
       border-radius: 8px;
       padding: 8px 12px;
       min-height: 42px;
@@ -957,8 +957,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       width: 24px;
       height: 24px;
       border-radius: 6px;
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -975,7 +975,7 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .pkg-badge-text-cl strong {
       font-size: 11px;
       font-weight: 700;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .pkg-badge-text-cl span {
@@ -1013,9 +1013,9 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 6px;
       padding: 0 14px;
       border-radius: 8px;
-      border: 1px solid rgba(36, 63, 130, 0.25);
-      background: #F6F4EC;
-      color: #243F82;
+      border: 1px solid rgba(0, 0, 0, 0.25);
+      background: #FFFFFF;
+      color: #1D1D1F;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
@@ -1024,9 +1024,9 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     }
 
     .btn-fetch-handle:hover:not(:disabled) {
-      background: #243F82;
-      color: #F6F4EC;
-      border-color: #243F82;
+      background: #0071E3;
+      color: #FFFFFF;
+      border-color: #0071E3;
     }
 
     .btn-fetch-handle:disabled {
@@ -1038,8 +1038,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       margin-top: 6px;
       padding: 10px 12px;
       border-radius: 10px;
-      background: rgba(36, 63, 130, 0.04);
-      border: 1px solid rgba(36, 63, 130, 0.14);
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.14);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -1055,12 +1055,12 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .creator-preview-avatar-img {
       object-fit: cover;
-      border: 1.5px solid rgba(36, 63, 130, 0.2);
+      border: 1.5px solid rgba(0, 0, 0, 0.2);
     }
 
     .creator-preview-avatar {
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       font-size: 11px;
       font-weight: 800;
       display: flex;
@@ -1082,12 +1082,12 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 6px;
       flex-wrap: wrap;
       font-size: 12.5px;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .creator-preview-handle {
       font-size: 11.5px;
-      color: rgba(36, 63, 130, 0.65);
+      color: rgba(0, 0, 0, 0.65);
       font-weight: 600;
     }
 
@@ -1103,16 +1103,16 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .creator-preview-badge.new-badge {
       background: rgba(61, 94, 171, 0.14);
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .creator-preview-meta {
       font-size: 11px;
-      color: rgba(36, 63, 130, 0.68);
+      color: rgba(0, 0, 0, 0.68);
     }
 
     .creator-preview-meta a {
-      color: #243F82;
+      color: #1D1D1F;
       font-weight: 600;
       text-decoration: underline;
     }
@@ -1120,8 +1120,8 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
     .mini-spinner {
       width: 12px;
       height: 12px;
-      border: 2px solid rgba(36, 63, 130, 0.25);
-      border-top-color: #243F82;
+      border: 2px solid rgba(0, 0, 0, 0.25);
+      border-top-color: #0071E3;
       border-radius: 50%;
       animation: clSpin 0.65s linear infinite;
       display: inline-block;
@@ -1145,13 +1145,13 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
 
     .btn-cancel {
       padding: 8px 16px;
-      border: 1px solid rgba(36, 63, 130, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.2);
       background: transparent;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      color: #243F82;
+      color: #1D1D1F;
     }
 
     .btn-submit {
@@ -1161,25 +1161,25 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       gap: 8px;
       padding: 10px 22px;
       border: none;
-      background: #243F82;
-      color: #F6F4EC;
+      background: #0071E3;
+      color: #FFFFFF;
       border-radius: 999px;
       font-size: 13.5px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(36, 63, 130, 0.25);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
       transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .btn-submit:hover:not(:disabled) {
-      background: #1B3166;
+      background: #0077ED;
       transform: translateY(-1.5px);
-      box-shadow: 0 6px 20px rgba(36, 63, 130, 0.35);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
     }
 
     .btn-submit:active:not(:disabled) {
       transform: scale(0.96) translateY(0);
-      box-shadow: 0 2px 8px rgba(36, 63, 130, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
     .btn-submit:disabled,
