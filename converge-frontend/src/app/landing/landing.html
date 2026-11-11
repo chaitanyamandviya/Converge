@@ -6,9 +6,9 @@
     <div class="boot-veil">
       <div class="boot-mark-container">
         <svg class="boot-icon-svg" viewBox="0 0 32 32" fill="none">
-          <path d="M5 6L15 16L5 26" stroke="#0F172A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M13 6L23 16L13 26" stroke="#0066CC" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="28" cy="16" r="3" fill="#0066CC"/>
+          <path d="M5 6L15 16L5 26" stroke="#1D1D1F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M13 6L23 16L13 26" stroke="#0071E3" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="28" cy="16" r="3" fill="#0071E3"/>
         </svg>
         <div class="boot-progress-track">
           <div class="boot-progress-bar"></div>
@@ -18,7 +18,7 @@
   }
 
   <!-- ========================================================
-       1. Top Minimalist Navigation Bar
+       1. Top Navigation Bar (Apple Style Clean Header)
        ======================================================== -->
   <header class="navbar">
     <div class="nav-container">
@@ -29,451 +29,499 @@
       </div>
 
       <nav class="nav-links">
-        <button type="button" (click)="scrollToSection('deliverables-stage')" class="nav-item">Deliverables</button>
-        <button type="button" (click)="scrollToSection('workflow-section')" class="nav-item">Workflow</button>
-        <button type="button" (click)="scrollToSection('capabilities')" class="nav-item">Security</button>
+        <button type="button" (click)="scrollToSection('workflow-section')" class="nav-item">Product</button>
+        <button type="button" (click)="scrollToSection('workflow-section')" class="nav-item">How it works</button>
+        <button type="button" (click)="scrollToSection('metrics-section')" class="nav-item">Platform</button>
+        <button type="button" (click)="scrollToSection('faq-section')" class="nav-item">Security</button>
       </nav>
 
       <div class="nav-actions">
         <a routerLink="/login" class="nav-btn-ghost">Sign in</a>
-        <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="nav-btn-primary">
-          <span>Launch Workspace</span>
-          <svg class="nav-arrow" viewBox="0 0 16 16" fill="none">
-            <path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
+        <button type="button" (click)="openDemoModal()" class="nav-btn-primary">
+          <span>Book a demo</span>
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- ========================================================
-       2. Hero Section (Linear & Stripe Aesthetic)
-       ======================================================== -->
-  <section class="hero-section">
-    <div class="hero-container">
-      <!-- Eyebrow Pill -->
-      <div class="hero-eyebrow">
-        <span class="eyebrow-dot"></span>
-        <span class="eyebrow-text">CAMPAIGN VERIFICATION WORKSPACE</span>
+  <main class="landing-content">
+    <!-- ========================================================
+         2. Hero Section (Apple Aesthetic: SF Pro, High Contrast)
+         ======================================================== -->
+    <section class="hero-section">
+      <div class="hero-container">
+        <!-- Eyebrow Pill -->
+        <div class="hero-eyebrow">
+          <span class="eyebrow-text">NEW · CAMPAIGN PERFORMANCE AUDIT</span>
+        </div>
+
+        <!-- Master Headline -->
+        <h1 class="hero-headline">
+          Real influence.<br>
+          Verified results.
+        </h1>
+
+        <!-- Subheadline -->
+        <p class="hero-subtext">
+          One shared workspace to track campaigns, audit creator deliverables, and reconcile financial ledgers with absolute clarity.
+        </p>
+
+        <!-- CTA Action Row -->
+        <div class="hero-cta-group">
+          <button type="button" (click)="openDemoModal()" class="btn-hero-primary">
+            <span>Book a demo</span>
+          </button>
+          <a routerLink="/login" class="btn-hero-secondary">
+            <span>See live demo</span>
+            <span class="arrow">→</span>
+          </a>
+        </div>
+
+        <!-- Trust Note -->
+        <div class="hero-footnote">
+          <span>Trusted by leading D2C brands and partner agencies</span>
+        </div>
+
+        <!-- ========================================================
+             3. Hero Interactive Product Card ("Summer essentials")
+             ======================================================== -->
+        <div id="preview-stage" class="stage-wrapper">
+          <div class="console-card">
+            <!-- Console Top Header -->
+            <div class="console-top-bar">
+              <div class="console-breadcrumb">
+                <span class="crumb-dim">Campaign</span>
+                <span class="crumb-slash">/</span>
+                <span class="crumb-active">{{ campaignSummary.name }}</span>
+              </div>
+              <div class="console-badge">
+                <span class="pulse-dot"></span>
+                <span>Live Campaign</span>
+              </div>
+            </div>
+
+            <!-- 4 Metric Cards Grid -->
+            <div class="metrics-grid">
+              <div class="metric-box">
+                <span class="metric-label">Campaign Budget</span>
+                <span class="metric-val">{{ campaignSummary.budget }}</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-label">Verified Reach</span>
+                <span class="metric-val highlight">{{ campaignSummary.verifiedReach }}</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-label">Deliverables</span>
+                <span class="metric-val">{{ campaignSummary.deliverablesCount }}</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-label">Payout Balance</span>
+                <span class="metric-val">{{ campaignSummary.payoutBalance }}</span>
+              </div>
+            </div>
+
+            <!-- Deliverables Table -->
+            <div class="table-wrapper">
+              <div class="table-label-row">
+                <span class="table-section-title">Deliverables</span>
+                <span class="table-section-sub">Real-time status & payout sync</span>
+              </div>
+              <table class="apple-table">
+                <thead>
+                  <tr>
+                    <th>Deliverable</th>
+                    <th>Creator</th>
+                    <th>Format</th>
+                    <th>Content URL</th>
+                    <th>Reach</th>
+                    <th>Status</th>
+                    <th class="col-right">INR Payout</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of deliverables; track item.name) {
+                    <tr>
+                      <td class="cell-name">{{ item.name }}</td>
+                      <td class="cell-muted">{{ item.creator }}</td>
+                      <td>
+                        <span class="format-tag">{{ item.format }}</span>
+                      </td>
+                      <td class="cell-link">
+                        <span class="url-preview">{{ item.url }}</span>
+                      </td>
+                      <td class="cell-num">{{ item.reach }}</td>
+                      <td>
+                        @if (item.status === 'Verified') {
+                          <span class="status-pill status-verified">
+                            <span class="status-dot"></span>
+                            Verified
+                          </span>
+                        } @else {
+                          <span class="status-pill status-audit">
+                            <span class="status-dot"></span>
+                            Under Audit
+                          </span>
+                        }
+                      </td>
+                      <td class="cell-payout">{{ item.payout }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
+    </section>
 
-      <!-- Razor-sharp Headline -->
-      <h1 class="hero-headline">
-        The verified deliverables workspace for<br class="hero-br">
-        enterprise brands and partner agencies.
-      </h1>
+    <!-- ========================================================
+         4. Section 2: From brief to payout. Three simple steps.
+         ======================================================== -->
+    <section id="workflow-section" class="workflow-section">
+      <div class="section-container">
+        <div class="section-header-left">
+          <div class="section-eyebrow">HOW IT WORKS · END-TO-END WORKFLOW</div>
+          <h2 class="section-title">
+            From brief to payout.<br>
+            Three simple steps.
+          </h2>
+          <p class="section-desc">
+            Eliminate endless back-and-forth messaging and manual proof-of-work checks.
+          </p>
+        </div>
 
-      <!-- Subheadline (Zero API Jargon) -->
-      <p class="hero-subtext">
-        A single shared portal to track campaign briefs, audit published content URLs, and reconcile partner agency budgets in INR.
-      </p>
+        <div class="steps-grid">
+          @for (step of steps; track step.number) {
+            <div class="step-card">
+              <div class="step-card-header">
+                <span class="step-num-badge">{{ step.number }}</span>
+                <span class="step-role-tag">{{ step.targetRole }}</span>
+              </div>
 
-      <!-- CTA Action Row -->
-      <div class="hero-cta-group">
-        <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="btn-hero-primary">
-          <span>Launch Workspace</span>
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-            <path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-        <button (click)="scrollToSection('workflow-section')" type="button" class="btn-hero-secondary">
-          <span>Explore Workflow</span>
+              <h3 class="step-title">{{ step.title }}</h3>
+              <p class="step-text">{{ step.description }}</p>
+
+              <div class="step-preview-box">
+                <span class="preview-box-label">{{ step.previewLabel }}</span>
+                @if (step.previewIsLink) {
+                  <span class="preview-box-val link-val">{{ step.previewValue }}</span>
+                } @else {
+                  <span class="preview-box-val" [class.success-val]="step.number === '03'">{{ step.previewValue }}</span>
+                }
+                <span class="preview-box-sub">{{ step.previewNote }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         5. Section 3: Real numbers. Not another screenshot.
+         ======================================================== -->
+    <section id="metrics-section" class="numbers-section">
+      <div class="section-container">
+        <div class="split-grid">
+          <!-- Left Column Copy -->
+          <div class="split-col-text">
+            <div class="section-eyebrow">VERIFIED PERFORMANCE</div>
+            <h2 class="split-title">
+              Real numbers.<br>
+              Not another screenshot.
+            </h2>
+            <p class="split-desc">
+              We pull verified live metrics directly from official platform APIs. Say goodbye to fabricated insights screenshots and outdated engagement decks.
+            </p>
+            <a routerLink="/login" class="apple-text-link">
+              <span>Learn about automated audit</span>
+              <span class="arrow">→</span>
+            </a>
+          </div>
+
+          <!-- Right Column Performance Card -->
+          <div class="split-col-visual">
+            <div class="perf-card">
+              <span class="perf-card-header">Total Campaign Verified Impressions</span>
+              <div class="perf-big-stat">12,48,600</div>
+              <p class="perf-subtext">Real views validated across live creator posts</p>
+
+              <div class="perf-stats-row">
+                <div class="perf-sub-stat">
+                  <span class="stat-number">18</span>
+                  <span class="stat-caption">Deliverables Verified</span>
+                </div>
+                <div class="perf-sub-stat">
+                  <span class="stat-number">6.4%</span>
+                  <span class="stat-caption">Avg Engagement Rate</span>
+                </div>
+              </div>
+
+              <div class="perf-footer-bar">
+                <div class="live-indicator">
+                  <span class="check-icon">✓</span>
+                  <span class="indicator-title">Verified Live Source</span>
+                </div>
+                <span class="indicator-source">Official platform API feed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         6. Section 4: Two teams. One shared truth.
+         ======================================================== -->
+    <section class="teams-section">
+      <div class="section-container">
+        <div class="section-header-center">
+          <h2 class="section-title-center">Two teams. One shared truth.</h2>
+          <p class="section-desc-center">Keep everyone aligned without the follow-ups.</p>
+        </div>
+
+        <div class="teams-grid">
+          <!-- For Brands -->
+          <div class="team-card">
+            <div class="team-badge">FOR BRANDS</div>
+            <h3 class="team-title">Stay in control. Not in the weeds.</h3>
+            <p class="team-desc">
+              Set budgets, invite agencies, and see which deliverables are fulfilled in real-time.
+            </p>
+            <div class="team-pills-row">
+              <span class="pill-chip">Executive Oversight</span>
+              <span class="pill-chip">Budget Caps (INR)</span>
+              <span class="pill-chip">Instant Approvals</span>
+            </div>
+          </div>
+
+          <!-- For Agencies -->
+          <div class="team-card">
+            <div class="team-badge">FOR AGENCIES</div>
+            <h3 class="team-title">Less chasing. More creating.</h3>
+            <p class="team-desc">
+              Submit live post links, eliminate manual client decks, and trigger automated milestone payouts.
+            </p>
+            <div class="team-pills-row">
+              <span class="pill-chip">Zero Manual Decks</span>
+              <span class="pill-chip">Deliverable Pacing</span>
+              <span class="pill-chip">Fast Sign-off</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         7. Section 5: Close the campaign. Not 12 spreadsheets.
+         ======================================================== -->
+    <section class="reconcile-section">
+      <div class="section-container">
+        <div class="split-grid reverse-split">
+          <!-- Left Visual: Ledger Table -->
+          <div class="split-col-visual">
+            <div class="reconcile-card">
+              <div class="reconcile-header">
+                <span class="reconcile-title">Summer essentials — Reconciliation</span>
+                <span class="reconcile-sub">June 2026 · All deliverables accounted</span>
+              </div>
+
+              <div class="reconcile-table-wrapper">
+                <table class="reconcile-table">
+                  <thead>
+                    <tr>
+                      <th>Agency / Partner</th>
+                      <th>Deliverables</th>
+                      <th>Settlement</th>
+                      <th class="col-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of ledgerItems; track row.agency) {
+                      <tr>
+                        <td class="ledger-agency">{{ row.agency }}</td>
+                        <td class="ledger-deliv">{{ row.deliverables }}</td>
+                        <td class="ledger-budget">{{ row.budget }}</td>
+                        <td class="col-right">
+                          <span class="settled-pill">
+                            <span class="green-dot"></span>
+                            {{ row.status }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="reconcile-footer">
+                <a routerLink="/login" class="excel-link">
+                  <span>Generate 1-click Excel audit workbook</span>
+                  <span class="arrow">→</span>
+                </a>
+                <span class="reconcile-caption">Complete financial ledger and timestamped audit trail.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column Copy -->
+          <div class="split-col-text">
+            <div class="section-eyebrow">INR FINANCIAL LEDGER</div>
+            <h2 class="split-title">
+              Close the campaign.<br>
+              Not 12 spreadsheets.
+            </h2>
+            <p class="split-desc">
+              Reconcile every rupee against active creator deliverables and export executive-ready Excel ledgers that match bank statements.
+            </p>
+            <a routerLink="/login" class="apple-text-link">
+              <span>See how reconciliation works</span>
+              <span class="arrow">→</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         8. Section 6: FAQ ("A little more clarity.")
+         ======================================================== -->
+    <section id="faq-section" class="faq-section">
+      <div class="section-container">
+        <div class="faq-layout">
+          <div class="faq-left">
+            <h2 class="faq-title">A little more clarity.</h2>
+            <p class="faq-desc">Frequently asked questions about Converge.</p>
+          </div>
+
+          <div class="faq-right">
+            @for (faq of faqs; track faq.question; let i = $index) {
+              <div class="faq-item" [class.faq-open]="openFaqIndex() === i">
+                <button type="button" class="faq-trigger" (click)="toggleFaq(i)">
+                  <span class="faq-question">{{ faq.question }}</span>
+                  <span class="faq-chevron" [class.rotated]="openFaqIndex() === i">
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                      <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                </button>
+                @if (openFaqIndex() === i) {
+                  <div class="faq-answer">
+                    <p>{{ faq.answer }}</p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         9. Section 7: Final CTA ("Your next campaign. Minus the chaos.")
+         ======================================================== -->
+    <section class="cta-banner-section">
+      <div class="cta-banner-container">
+        <h2 class="cta-headline">
+          Your next campaign.<br>
+          Minus the chaos.
+        </h2>
+        <p class="cta-subtext">
+          Bring your brands, agencies, and metrics together.
+        </p>
+        <button type="button" (click)="openDemoModal()" class="btn-banner-primary">
+          <span>Book a demo</span>
         </button>
       </div>
-
-      <!-- Crisp Value Strip -->
-      <div class="hero-footnote">
-        <span>Zero manual reporting · Automated post verification · INR ledger reconciliation</span>
-      </div>
-
-      <!-- ========================================================
-           3. Core UI Component: Deliverables Verification Table
-           ======================================================== -->
-      <div id="deliverables-stage" class="stage-wrapper">
-        <div class="table-container-card">
-          <!-- Table Header Bar & Filter Tabs -->
-          <div class="table-top-bar">
-            <div class="table-title-group">
-              <span class="live-dot"></span>
-              <span class="table-heading">Live Deliverable Verification Pipeline</span>
-            </div>
-
-            <div class="filter-tab-group">
-              <button
-                type="button"
-                class="filter-pill-btn"
-                [class.active]="activeFilter() === 'ALL'"
-                (click)="setFilter('ALL')"
-              >
-                All ({{ deliverables.length }})
-              </button>
-              <button
-                type="button"
-                class="filter-pill-btn"
-                [class.active]="activeFilter() === 'VERIFIED'"
-                (click)="setFilter('VERIFIED')"
-              >
-                Verified Reach
-              </button>
-              <button
-                type="button"
-                class="filter-pill-btn"
-                [class.active]="activeFilter() === 'AUDIT'"
-                (click)="setFilter('AUDIT')"
-              >
-                Under Audit
-              </button>
-              <button
-                type="button"
-                class="filter-pill-btn"
-                [class.active]="activeFilter() === 'AWAITING'"
-                (click)="setFilter('AWAITING')"
-              >
-                Awaiting Post URL
-              </button>
-            </div>
-          </div>
-
-          <!-- Enterprise Data Table (Zero Fake Usernames, Zero Demo Vanity Figures) -->
-          <div class="table-scroll-wrap">
-            <table class="deliverables-table">
-              <thead>
-                <tr>
-                  <th style="width: 28%;">Campaign Brief</th>
-                  <th style="width: 16%;">Deliverable Format</th>
-                  <th style="width: 24%;">Content URL Status</th>
-                  <th style="width: 18%;">Verification Status</th>
-                  <th style="width: 14%; text-align: right;">INR Settlement</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of filteredDeliverables; track item.campaign) {
-                  <tr>
-                    <td>
-                      <div class="campaign-cell">
-                        <span class="campaign-name">{{ item.campaign }}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span class="format-badge" [class.reel]="item.format === 'Reel'">
-                        {{ item.format }}
-                      </span>
-                    </td>
-                    <td>
-                      @if (item.urlAttached) {
-                        <span class="url-text linked">{{ item.urlStatus }}</span>
-                      } @else {
-                        <span class="url-text dimmed">{{ item.urlStatus }}</span>
-                      }
-                    </td>
-                    <td>
-                      <span
-                        class="status-badge"
-                        [class.verified]="item.status === 'Verified Reach'"
-                        [class.audit]="item.status === 'Under Audit'"
-                        [class.awaiting]="item.status === 'Awaiting Post URL'"
-                      >
-                        {{ item.status }}
-                      </span>
-                    </td>
-                    <td style="text-align: right;">
-                      <span class="inr-value">{{ item.settlementInr }}</span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Table Summary Footer -->
-          <div class="table-footer-bar">
-            <div class="footer-stat">
-              <strong>5 Tracked Deliverables</strong>
-              <span class="stat-sep">·</span>
-              <span>₹8,90,000 Committed Pacing</span>
-            </div>
-            <div class="footer-sync">
-              <span class="sync-indicator"></span>
-              <span>Direct Telemetry Verification Active</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
+  </main>
 
   <!-- ========================================================
-       4. Extended Section: Campaign Lifecycle & Financial Ledger
-       ======================================================== -->
-  <section id="workflow-section" class="workflow-section">
-    <div class="section-container">
-      <div class="section-header-centered">
-        <span class="section-eyebrow">CAMPAIGN LIFECYCLE &amp; FINANCIAL RECONCILIATION</span>
-        <h2 class="section-title">Multi-agency roster tracking and automated INR settlement ledger.</h2>
-        <p class="section-description">
-          Streamline agency operations from initial campaign brief to final multi-sheet financial export.
-        </p>
-      </div>
-
-      <!-- Panel 1: 4-Stage Lifecycle Stages -->
-      <div class="workflow-panel">
-        <div class="panel-header">
-          <span class="panel-num">01</span>
-          <h3 class="panel-title">End-to-End Campaign Lifecycle Stages</h3>
-        </div>
-
-        <div class="stages-grid">
-          <div class="stage-step-card">
-            <div class="step-badge">STAGE 1</div>
-            <h4 class="step-title">Agency Briefing</h4>
-            <p class="step-desc">Campaign brief dispatched with agreed deliverable formats, posting deadlines, and INR budget limits.</p>
-          </div>
-
-          <div class="stage-step-card">
-            <div class="step-badge">STAGE 2</div>
-            <h4 class="step-title">Deliverable URL Submission</h4>
-            <p class="step-desc">Agency rosters assigned talent and attaches published Instagram Reel or Carousel post URLs.</p>
-          </div>
-
-          <div class="stage-step-card active">
-            <div class="step-badge active">STAGE 3</div>
-            <h4 class="step-title">Automated Reach Audit</h4>
-            <p class="step-desc">Direct server verification resolves media identity, format compliance, and real organic impressions.</p>
-          </div>
-
-          <div class="stage-step-card">
-            <div class="step-badge">STAGE 4</div>
-            <h4 class="step-title">INR Settlement Released</h4>
-            <p class="step-desc">Milestone sign-off unlocks approved creator payouts with clean audit trails for client finance teams.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Panel 2: Reconciliation Ledger & Agency Roster -->
-      <div class="workflow-panel" style="margin-top: 32px;">
-        <div class="panel-header">
-          <span class="panel-num">02</span>
-          <h3 class="panel-title">Consolidated Financial Reconciliation &amp; Partner Roster</h3>
-        </div>
-
-        <!-- Financial Summary Bar -->
-        <div class="ledger-metrics-bar">
-          <div class="metric-segment">
-            <span class="m-label">TOTAL ALLOCATED</span>
-            <span class="m-val">₹45,00,000</span>
-          </div>
-          <div class="metric-divider"></div>
-          <div class="metric-segment">
-            <span class="m-label">SETTLED BALANCES</span>
-            <span class="m-val green">₹32,50,000</span>
-          </div>
-          <div class="metric-divider"></div>
-          <div class="metric-segment">
-            <span class="m-label">CURRENTLY UNDER AUDIT</span>
-            <span class="m-val blue">₹12,50,000</span>
-          </div>
-        </div>
-
-        <!-- Partner Agency Ledger Table -->
-        <div class="table-scroll-wrap" style="margin-top: 20px;">
-          <table class="deliverables-table">
-            <thead>
-              <tr>
-                <th style="width: 35%;">Agency Partner</th>
-                <th style="width: 25%;">Verified Deliverables</th>
-                <th style="width: 20%;">Audit Compliance</th>
-                <th style="width: 20%; text-align: right;">Settlement Amount (INR)</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (agency of agencyLedger; track agency.name) {
-                <tr>
-                  <td>
-                    <strong>{{ agency.name }}</strong>
-                  </td>
-                  <td>
-                    <span class="count-pill">{{ agency.deliverables }} Deliverables Recorded</span>
-                  </td>
-                  <td>
-                    <span
-                      class="status-badge"
-                      [class.verified]="agency.compliance === 'Settled'"
-                      [class.audit]="agency.compliance === 'Auditing'"
-                    >
-                      {{ agency.compliance }}
-                    </span>
-                  </td>
-                  <td style="text-align: right;">
-                    <span class="inr-value">{{ agency.settlementInr }}</span>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-
-        <!-- 1-Click Excel Export Bar -->
-        <div class="excel-export-strip">
-          <div class="export-left">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066CC" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            <span><strong>Multi-Sheet Audit Workbook:</strong> Instant Excel export of brands, agencies, posts, and balances</span>
-          </div>
-          <span class="export-ready-tag">Export Ready (.xlsx)</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================================
-       5. Core Capabilities & Architecture (No Big Clunky Cards)
-       ======================================================== -->
-  <section id="capabilities" class="capabilities-section">
-    <div class="section-container">
-      <div class="section-header-centered">
-        <span class="section-eyebrow">PLATFORM CAPABILITIES</span>
-        <h2 class="section-title">Built with deep architectural restraint.</h2>
-        <p class="section-description">
-          Engineered to replace chaotic spreadsheets, untracked group chats, and manual screenshot chasing with pure operational clarity.
-        </p>
-      </div>
-
-      <div class="capabilities-grid">
-        <div class="capability-card">
-          <div class="cap-icon-box">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0066CC" stroke-width="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-          </div>
-          <h3 class="cap-title">Role-Isolated Hierarchy</h3>
-          <p class="cap-desc">
-            Brand managers retain macroscopic portfolio visibility, while partner agencies manage their designated talent rosters with complete contractual confidentiality.
-          </p>
-        </div>
-
-        <div class="capability-card">
-          <div class="cap-icon-box green">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-          </div>
-          <h3 class="cap-title">Automated Telemetry Verification</h3>
-          <p class="cap-desc">
-            Direct server verification confirms published media formats, real organic reach, and authentic interaction metrics straight from official platform channels.
-          </p>
-        </div>
-
-        <div class="capability-card">
-          <div class="cap-icon-box slate">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2">
-              <rect x="2" y="5" width="20" height="14" rx="2"/>
-              <line x1="2" y1="10" x2="22" y2="10"/>
-            </svg>
-          </div>
-          <h3 class="cap-title">INR Financial Ledger</h3>
-          <p class="cap-desc">
-            Track per-deliverable fees, milestone releases, and aggregate agency payout caps in Indian Rupees (INR) with complete cross-reconciliation workbooks.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-
-
-  <!-- ========================================================
-       7. Direct Inquiries Modal Trigger & Footer
+       10. Footer (Apple Minimalist Footer)
        ======================================================== -->
   <footer class="footer">
     <div class="footer-container">
-      <div class="footer-main">
+      <div class="footer-left">
         <div class="footer-brand">
           <img src="/assets/converge-logo.svg" alt="Converge" class="footer-logo-img" />
-          <p class="footer-tagline">The verified deliverables workspace for enterprise brands and agency partners.</p>
         </div>
-
-        <div class="footer-links-col">
-          <span class="f-col-title">WORKSPACE</span>
-          <a routerLink="/login">Sign In</a>
-          <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }">Launch Workspace</a>
-          <button type="button" (click)="showFeedbackModal.set(true)" class="link-btn">Direct Support Inquiry</button>
-        </div>
-
-        <div class="footer-links-col">
-          <span class="f-col-title">AUDIT &amp; GOVERNANCE</span>
-          <button type="button" (click)="scrollToSection('deliverables-stage')" class="link-btn">Deliverable Pipeline</button>
-          <button type="button" (click)="scrollToSection('workflow-section')" class="link-btn">Reconciliation Ledger</button>
-          <button type="button" (click)="scrollToSection('capabilities')" class="link-btn">Role Isolation</button>
-        </div>
+        <p class="footer-tagline">The deliverable verification platform.</p>
       </div>
 
-      <div class="footer-bottom-bar">
-        <span class="f-copy">&copy; 2026 Converge Platform. All rights reserved.</span>
-        <div class="f-legal">
-          <span>Enterprise Security</span>
-          <span>·</span>
-          <span>INR Ledger Compliance</span>
-        </div>
+      <div class="footer-right">
+        <nav class="footer-links">
+          <a routerLink="/privacy" class="footer-link">Privacy</a>
+          <a routerLink="/terms" class="footer-link">Terms of Service</a>
+          <a routerLink="/docs" class="footer-link">Documentation</a>
+          <span class="footer-link">Status</span>
+        </nav>
+        <p class="footer-copy">© 2026 Converge Inc. All rights reserved.</p>
       </div>
     </div>
   </footer>
 
   <!-- ========================================================
-       8. Support Feedback Modal
+       11. Book a Demo Modal (Clean Apple Dialog)
        ======================================================== -->
-  @if (showFeedbackModal()) {
-    <div class="modal-backdrop" (click)="showFeedbackModal.set(false)">
-      <div class="modal-box" (click)="$event.stopPropagation()">
+  @if (showDemoModal()) {
+    <div class="modal-backdrop" (click)="closeDemoModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <div>
-            <h3 class="modal-title">Direct Enterprise Inquiry</h3>
-            <p class="modal-sub">Send a message directly to our platform engineering and support team.</p>
+            <h3 class="modal-title">Book an Enterprise Demo</h3>
+            <p class="modal-desc">See live deliverable audits and INR reconciliation in action.</p>
           </div>
-          <button type="button" class="btn-close-modal" (click)="showFeedbackModal.set(false)">✕</button>
+          <button type="button" class="modal-close-btn" (click)="closeDemoModal()">×</button>
         </div>
 
-        <div class="modal-body">
-          <div class="form-field">
-            <label for="fb-email" class="form-label">Your Work Email</label>
+        <form (ngSubmit)="submitDemoRequest()" class="modal-form">
+          <div class="form-group">
+            <label class="form-label" for="demoEmail">Work Email</label>
             <input
-              id="fb-email"
+              id="demoEmail"
               type="email"
+              [(ngModel)]="demoEmail"
+              name="demoEmail"
+              placeholder="alex@brand.com"
               class="form-input"
-              [(ngModel)]="feedbackEmail"
-              placeholder="manager@company.com"
+              required
             />
           </div>
 
-          <div class="form-field">
-            <label for="fb-msg" class="form-label">Inquiry or Requirements</label>
+          <div class="form-group">
+            <label class="form-label" for="demoCompany">Brand or Agency Name</label>
+            <input
+              id="demoCompany"
+              type="text"
+              [(ngModel)]="demoCompany"
+              name="demoCompany"
+              placeholder="Acme Co. or Velocity Agency"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="demoMessage">Campaign Focus</label>
             <textarea
-              id="fb-msg"
+              id="demoMessage"
+              [(ngModel)]="demoMessage"
+              name="demoMessage"
+              rows="3"
+              placeholder="Tell us about your creator rosters, deliverable volume, or INR budget size..."
               class="form-textarea"
-              rows="4"
-              [(ngModel)]="feedbackMessage"
-              placeholder="Describe your brand workspace or agency partnership requirements..."
             ></textarea>
           </div>
-        </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn-cancel" (click)="showFeedbackModal.set(false)">Cancel</button>
-          <button
-            type="button"
-            class="btn-send"
-            [disabled]="isSendingFeedback()"
-            (click)="submitFeedback()"
-          >
-            @if (isSendingFeedback()) {
-              <span>Delivering...</span>
-            } @else {
-              <span>Send Message</span>
-            }
-          </button>
-        </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-modal-ghost" (click)="closeDemoModal()">Cancel</button>
+            <button type="submit" class="btn-modal-primary" [disabled]="isSubmittingDemo()">
+              @if (isSubmittingDemo()) {
+                <span>Submitting...</span>
+              } @else {
+                <span>Schedule Demo</span>
+              }
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   }

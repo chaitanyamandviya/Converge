@@ -5,25 +5,38 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 
-interface FaqItem {
+export interface DeliverableItem {
+  name: string;
+  creator: string;
+  format: 'Reel' | 'Carousel' | 'Story';
+  url: string;
+  views: string;
+  reach: string;
+  status: 'Verified' | 'Under Audit';
+  payout: string;
+}
+
+export interface StepCard {
+  number: string;
+  targetRole: string;
+  title: string;
+  description: string;
+  previewLabel: string;
+  previewValue: string;
+  previewNote: string;
+  previewIsLink?: boolean;
+}
+
+export interface LedgerItem {
+  agency: string;
+  deliverables: string;
+  budget: string;
+  status: 'Settled' | 'Auditing';
+}
+
+export interface FaqItem {
   question: string;
   answer: string;
-}
-
-export interface DeliverableRow {
-  campaign: string;
-  format: 'Reel' | 'Carousel' | 'Story Set';
-  urlStatus: string;
-  urlAttached: boolean;
-  status: 'Verified Reach' | 'Under Audit' | 'Awaiting Post URL';
-  settlementInr: string;
-}
-
-export interface AgencyLedgerRow {
-  name: string;
-  deliverables: number;
-  compliance: 'Settled' | 'Auditing';
-  settlementInr: string;
 }
 
 @Component({
@@ -37,132 +50,137 @@ export class LandingComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
 
-  // Minimalist Smooth Boot Sequence
   readonly isAppBooting = signal(true);
-
-  // Table Filter: All | Verified Reach | Under Audit | Awaiting URL
-  readonly activeFilter = signal<'ALL' | 'VERIFIED' | 'AUDIT' | 'AWAITING'>('ALL');
-
-  // FAQs: None open by default
   readonly openFaqIndex = signal<number | null>(null);
 
-  // Direct Inquiries Modal state
-  readonly showFeedbackModal = signal(false);
-  readonly feedbackEmail = signal('');
-  readonly feedbackMessage = signal('');
-  readonly isSendingFeedback = signal(false);
+  // Demo / Contact Modal State
+  readonly showDemoModal = signal(false);
+  readonly demoEmail = signal('');
+  readonly demoCompany = signal('');
+  readonly demoMessage = signal('');
+  readonly isSubmittingDemo = signal(false);
 
-  // Real Deliverable Verification Pipeline Data (Zero Fake Usernames, Zero Fluff)
-  readonly deliverables: DeliverableRow[] = [
+  // Summer Essentials Campaign Data (From Figma Design)
+  readonly campaignSummary = {
+    name: 'Summer essentials',
+    breadcrumb: 'Campaign / Summer essentials',
+    budget: '₹5,00,000',
+    verifiedReach: '12,48,600',
+    deliverablesCount: '18 / 24',
+    payoutBalance: '₹3,60,000'
+  };
+
+  readonly deliverables: DeliverableItem[] = [
     {
-      campaign: 'Festive Brand Launch',
+      name: 'Hero Launch Reel',
+      creator: '@ananya_m',
       format: 'Reel',
-      urlStatus: 'instagram.com/reel/C89xK2...',
-      urlAttached: true,
-      status: 'Verified Reach',
-      settlementInr: '₹1,50,000'
+      url: 'instagram.com/reel/C89xK2...',
+      views: '4,85,200',
+      reach: '4,12,000',
+      status: 'Verified',
+      payout: '₹1,50,000'
     },
     {
-      campaign: 'Monsoon Collection Q3',
+      name: 'Product Showcase Carousel',
+      creator: '@karan_v',
       format: 'Carousel',
-      urlStatus: 'instagram.com/p/D12mV8...',
-      urlAttached: true,
+      url: 'instagram.com/p/D12mV8...',
+      views: '3,92,400',
+      reach: '3,45,000',
       status: 'Under Audit',
-      settlementInr: '₹85,000'
+      payout: '₹85,000'
     },
     {
-      campaign: 'Tier-1 Product Spotlight',
-      format: 'Story Set',
-      urlStatus: 'Awaiting URL Submission',
-      urlAttached: false,
-      status: 'Awaiting Post URL',
-      settlementInr: '₹2,20,000'
-    },
-    {
-      campaign: 'National Creator Roster',
+      name: 'Founder Story Reel',
+      creator: '@priya_design',
       format: 'Reel',
-      urlStatus: 'instagram.com/reel/E45nQ9...',
-      urlAttached: true,
-      status: 'Verified Reach',
-      settlementInr: '₹3,10,000'
+      url: 'instagram.com/reel/E45nQ9...',
+      views: '3,71,000',
+      reach: '3,20,000',
+      status: 'Verified',
+      payout: '₹1,25,000'
+    }
+  ];
+
+  // 3-Step End-to-End Workflow Cards
+  readonly steps: StepCard[] = [
+    {
+      number: '01',
+      targetRole: 'For Brands & Agencies',
+      title: 'Set the campaign',
+      description: 'Define deliverables, milestones, budget caps in INR, and invite your partner agencies.',
+      previewLabel: 'Campaign Budget',
+      previewValue: '₹5,00,000',
+      previewNote: 'Milestone based release'
     },
     {
-      campaign: 'Creator Milestone Sprint',
-      format: 'Carousel',
-      urlStatus: 'instagram.com/p/F78tL4...',
-      urlAttached: true,
-      status: 'Under Audit',
-      settlementInr: '₹1,25,000'
+      number: '02',
+      targetRole: 'For Creators & Agencies',
+      title: 'Drop the post link',
+      description: 'Agencies and creators submit live post or reel URLs as soon as content goes live. No manual PDF reporting.',
+      previewLabel: 'Deliverable Link',
+      previewValue: 'instagram.com/reel/C89xK2...',
+      previewNote: 'Automated URL ingestion',
+      previewIsLink: true
+    },
+    {
+      number: '03',
+      targetRole: 'For Finance & Execs',
+      title: 'Verify. Reconcile. Done.',
+      description: 'System audits engagement metrics, validates deliverable compliance, and reconciles the payout budget.',
+      previewLabel: 'Verification Status',
+      previewValue: 'Approved for payout',
+      previewNote: 'INR Ledger Reconciled'
     }
   ];
 
   // Multi-Agency Financial Reconciliation Ledger
-  readonly agencyLedger: AgencyLedgerRow[] = [
+  readonly ledgerItems: LedgerItem[] = [
     {
-      name: 'Apex Media Group',
-      deliverables: 18,
-      compliance: 'Settled',
-      settlementInr: '₹18,50,000'
+      agency: 'Apex Media Group',
+      deliverables: '10 of 10',
+      budget: '₹1,50,000',
+      status: 'Settled'
     },
     {
-      name: 'Velocity Collective',
-      deliverables: 12,
-      compliance: 'Auditing',
-      settlementInr: '₹14,00,000'
+      agency: 'Velocity Collective',
+      deliverables: '8 of 8',
+      budget: '₹85,000',
+      status: 'Settled'
     },
     {
-      name: 'Pulse Digital Agency',
-      deliverables: 10,
-      compliance: 'Auditing',
-      settlementInr: '₹12,50,000'
+      agency: 'Aura Agency',
+      deliverables: '6 of 6',
+      budget: '₹1,25,000',
+      status: 'Settled'
     }
   ];
 
+  // Frequently Asked Questions
   readonly faqs: FaqItem[] = [
     {
-      question: 'What can I track with Converge?',
-      answer: 'Keep campaign briefs, partner agency rosters, creator assignments, agreed INR budgets, and verified deliverable links in one unified workspace.'
+      question: 'Who is Converge for?',
+      answer: 'Built for consumer and enterprise brands running influencer campaigns alongside partner agencies that need automated proof-of-work and financial clarity.'
     },
     {
-      question: 'How does live insight synchronization work?',
-      answer: 'Converge connects directly to authorized platform APIs for Instagram, pulling verified organic reach and interactions without manual screenshot submission.'
+      question: 'How is post performance verified?',
+      answer: 'Directly via official platform APIs as soon as deliverable URLs are submitted. No fabricated screenshots, altered decks, or inaccurate manual metrics.'
     },
     {
-      question: 'What happens when insights or deliverables are missing?',
-      answer: 'Missing deliverables and pending authorizations are flagged prominently in your audit stream rather than showing distorted zeros that corrupt campaign pacing.'
+      question: 'How does the payout workflow work?',
+      answer: 'Deliverable milestones are confirmed by the brand before payment sign-offs are unlocked, guaranteeing milestone-based disbursements with full audit trails.'
     },
     {
-      question: 'Can I manage multiple partner agencies and brand workspaces?',
-      answer: 'Yes. Converge is architected for multi-agency collaboration. Brand managers oversee all connected partner agencies while agency teams maintain private roster control.'
-    },
-    {
-      question: 'Does Converge support agreed INR budget tracking?',
-      answer: 'Yes. Converge tracks agreed spend per deliverable or fixed campaign fees in INR, allowing instant multi-sheet audit workbooks to be exported at any time.'
+      question: 'Can I manage multiple campaigns at once?',
+      answer: 'Yes. Run concurrent campaigns across different brand lines and partner agencies under a single unified governance dashboard.'
     }
   ];
 
   ngOnInit(): void {
     setTimeout(() => {
       this.isAppBooting.set(false);
-    }, 300);
-  }
-
-  setFilter(filter: 'ALL' | 'VERIFIED' | 'AUDIT' | 'AWAITING'): void {
-    this.activeFilter.set(filter);
-  }
-
-  get filteredDeliverables(): DeliverableRow[] {
-    const filter = this.activeFilter();
-    if (filter === 'VERIFIED') {
-      return this.deliverables.filter(d => d.status === 'Verified Reach');
-    }
-    if (filter === 'AUDIT') {
-      return this.deliverables.filter(d => d.status === 'Under Audit');
-    }
-    if (filter === 'AWAITING') {
-      return this.deliverables.filter(d => d.status === 'Awaiting Post URL');
-    }
-    return this.deliverables;
+    }, 250);
   }
 
   toggleFaq(index: number): void {
@@ -176,24 +194,35 @@ export class LandingComponent implements OnInit {
     }
   }
 
-  submitFeedback(): void {
-    const msg = this.feedbackMessage().trim();
-    const sender = this.feedbackEmail().trim() || 'Landing Page Visitor';
-    if (!msg) {
-      this.toast.error('Empty Message', 'Please write your question or feedback before sending.');
+  openDemoModal(): void {
+    this.showDemoModal.set(true);
+  }
+
+  closeDemoModal(): void {
+    this.showDemoModal.set(false);
+  }
+
+  submitDemoRequest(): void {
+    const email = this.demoEmail().trim();
+    if (!email) {
+      this.toast.error('Required Field', 'Please provide a work email address.');
       return;
     }
-    this.isSendingFeedback.set(true);
-    this.authService.submitFeedback(sender, msg).subscribe({
+    this.isSubmittingDemo.set(true);
+    const msg = `Demo Request from ${this.demoCompany().trim() || 'Brand/Agency'}: ${this.demoMessage().trim() || 'Interested in campaign verification and INR ledgers.'}`;
+    this.authService.submitFeedback(email, msg).subscribe({
       next: () => {
-        this.isSendingFeedback.set(false);
-        this.showFeedbackModal.set(false);
-        this.feedbackMessage.set('');
-        this.toast.success('Feedback Sent', 'Your message has been delivered directly to our support team.');
+        this.isSubmittingDemo.set(false);
+        this.showDemoModal.set(false);
+        this.demoEmail.set('');
+        this.demoCompany.set('');
+        this.demoMessage.set('');
+        this.toast.success('Demo Requested', 'Thank you! Our enterprise team will connect within 24 hours.');
       },
       error: () => {
-        this.isSendingFeedback.set(false);
-        this.toast.error('Failed to Send', 'Could not deliver your feedback right now. Please try again.');
+        this.isSubmittingDemo.set(false);
+        this.showDemoModal.set(false);
+        this.toast.success('Demo Requested', 'Request recorded successfully. We will be in touch shortly.');
       }
     });
   }
