@@ -471,7 +471,7 @@ export class DashboardComponent implements OnInit {
     if (!brand.id || this.processingBrandId() === brand.id) return;
     const confirmed = await this.confirmService.confirm({
       title: 'Approve Brand Workspace?',
-      message: `Approve "${brand.name}" and dispatch activation & Set-Password credentials via Resend?`,
+      message: `Approve "${brand.name}" and dispatch activation & Set-Password credentials?`,
       detail: `Manager Email: ${brand.primaryManagerEmail || brand.contactEmail}`,
       confirmText: 'Approve Brand',
       variant: 'primary'
@@ -626,7 +626,7 @@ export class DashboardComponent implements OnInit {
         this.processingBrandAction.set('');
         this.toast.success(
           'Onboarding Email Sent',
-          `Set-Initial-Password link sent via Resend for ${brand.primaryManagerEmail}.`
+          `Set-Initial-Password link sent to ${brand.primaryManagerEmail}.`
         );
       },
       error: (err) => {

@@ -25,9 +25,6 @@
         <div class="metric-val-row">
           <span class="metric-value">{{ brands().length }}</span>
         </div>
-        <div class="metric-trend-row">
-          <img src="/assets/views-trend-1.svg" alt="" class="trend-spark" />
-        </div>
         <span class="metric-footnote positive">Enterprise brand workspaces</span>
       </div>
 
@@ -35,9 +32,6 @@
         <span class="metric-label">CONNECTED AGENCIES</span>
         <div class="metric-val-row">
           <span class="metric-value">{{ agencies().length }}</span>
-        </div>
-        <div class="metric-trend-row">
-          <img src="/assets/views-trend.svg" alt="" class="trend-spark" />
         </div>
         <span class="metric-footnote positive">Partner agency accounts</span>
       </div>
@@ -47,9 +41,6 @@
         <div class="metric-val-row">
           <span class="metric-value">{{ overview().totalCreators }}</span>
         </div>
-        <div class="metric-trend-row">
-          <img src="/assets/engagements-trend.svg" alt="" class="trend-spark" />
-        </div>
         <span class="metric-footnote positive">Talent across all agencies</span>
       </div>
 
@@ -57,9 +48,6 @@
         <span class="metric-label">TOTAL PLATFORM SPEND</span>
         <div class="metric-val-row">
           <span class="metric-value">₹{{ formatInr(overview().spend) }}</span>
-        </div>
-        <div class="metric-progress-bar">
-          <div class="progress-fill" [style.width.%]="overview().spend > 0 ? 100 : 0"></div>
         </div>
         <span class="metric-footnote positive">{{ overview().spend > 0 ? 'Committed platform budget' : 'No budget deployed yet' }}</span>
       </div>

@@ -81,7 +81,7 @@ export class LandingComponent {
         this.isSendingFeedback.set(false);
         this.showFeedbackModal.set(false);
         this.feedbackMessage.set('');
-        this.toast.success('Feedback Sent', 'Your message was emailed to chaitanyamandviya7@gmail.com via Resend.');
+        this.toast.success('Feedback Sent', 'Your message has been delivered directly to our support team.');
       },
       error: () => {
         this.isSendingFeedback.set(false);

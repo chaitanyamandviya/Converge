@@ -346,13 +346,13 @@ export class LoginComponent implements OnInit {
         this.isSendingSupport.set(false);
         this.showHelpModal.set(false);
         this.supportQuestion.set('');
-        this.toast.success('Sent to Admin Email', 'Your feedback/query has been emailed via Resend to chaitanyamandviya7@gmail.com.');
+        this.toast.success('Feedback Sent', 'Your feedback or query has been delivered to the platform team.');
       },
       error: () => {
         this.isSendingSupport.set(false);
         this.showHelpModal.set(false);
         this.supportQuestion.set('');
-        this.toast.success('Feedback Recorded', 'Your inquiry has been logged for chaitanyamandviya7@gmail.com.');
+        this.toast.success('Feedback Recorded', 'Your inquiry has been received by the support team.');
       }
     });
   }
