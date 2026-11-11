@@ -1,580 +1,420 @@
-<div class="landing-page">
+<div class="landing-page bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-secondary-container selection:text-on-surface">
+
   <!-- ========================================================
-       0. Minimalist Clean Boot Sequence
+       Top Navigation Bar (Stitch Specification)
        ======================================================== -->
-  @if (isAppBooting()) {
-    <div class="boot-veil">
-      <div class="boot-mark-container">
-        <svg class="boot-icon-svg" viewBox="0 0 32 32" fill="none">
-          <path d="M5 6L15 16L5 26" stroke="#1D1D1F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M13 6L23 16L13 26" stroke="#0071E3" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="28" cy="16" r="3" fill="#0071E3"/>
+  <header class="header-nav fixed top-0 left-0 right-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
+    <div class="h-16 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
+      <div class="flex items-center gap-10">
+        <a routerLink="/" class="flex items-center gap-2 group cursor-pointer" title="Converge">
+          <img src="/assets/stitch-logo.png" alt="Converge" class="w-8 h-8 object-contain rounded-md">
+          <span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface">Converge</span>
+        </a>
+
+        <nav class="hidden md:flex items-center gap-8">
+          <a routerLink="/" class="transition-colors text-on-surface font-label-md text-label-md font-medium">Overview</a>
+          <button type="button" (click)="scrollToSection('vignettes')" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer bg-transparent border-0">Product</button>
+          <button type="button" (click)="scrollToSection('vignettes')" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer bg-transparent border-0">Stories</button>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <a routerLink="/login" [queryParams]="{ mode: 'signup' }" class="inline-flex items-center justify-center h-9 px-5 rounded-full bg-primary text-on-primary font-label-md text-label-md hover:bg-neutral-800 transition-all active:scale-[0.98] text-white no-underline font-medium">
+          Get Started
+        </a>
+        <a routerLink="/login" class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white no-underline hover:opacity-90 transition-opacity" title="Sign In">
+          <span class="material-symbols-outlined text-[18px]">person</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       Main Content (Stitch Specification)
+       ======================================================== -->
+  <main class="w-full pt-16 bg-surface min-h-[calc(100vh-6rem)]">
+    <div class="flex flex-col w-full">
+
+      <!-- ========================================================
+           Hero Section: Brands. Agencies. Creators. Connected.
+           ======================================================== -->
+      <section class="relative w-full overflow-hidden px-6 lg:px-12 pt-12 pb-16 flex flex-col items-center text-center">
+
+        <!-- Floating Background Doodle Accents -->
+        <svg class="absolute top-12 left-10 w-12 h-12 text-[#FBBC05] opacity-80 animate-pulse pointer-events-none sparkle-float" fill="none" viewBox="0 0 48 48">
+          <path d="M24 4L26.5 18.5L40 14L29 24L41 33.5L26.5 30L24 44L21.5 30L7 33.5L19 24L8 14L21.5 18.5L24 4Z" fill="currentColor"></path>
         </svg>
-        <div class="boot-progress-track">
-          <div class="boot-progress-bar"></div>
+
+        <svg class="absolute top-28 right-16 w-14 h-14 text-[#4285F4] opacity-75 pointer-events-none transition-transform duration-500 hover:rotate-45" fill="none" viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="18" stroke="currentColor" stroke-dasharray="4 4" stroke-linecap="round" stroke-width="3"></circle>
+          <path d="M28 14V42M14 28H42" stroke="currentColor" stroke-linecap="round" stroke-width="3"></path>
+        </svg>
+
+        <svg class="absolute bottom-6 left-1/4 w-10 h-10 text-[#34A853] opacity-70 pointer-events-none" fill="none" viewBox="0 0 40 40">
+          <path d="M8 32C14 20 26 12 34 8M10 10C18 16 26 26 30 34" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"></path>
+        </svg>
+
+        <svg class="absolute top-1/2 right-12 w-8 h-8 text-[#EA4335] opacity-85 pointer-events-none" fill="none" viewBox="0 0 32 32">
+          <circle cx="16" cy="16" fill="currentColor" r="6"></circle>
+          <path d="M16 2V7M16 25V30M2 16H7M25 16H30" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"></path>
+        </svg>
+
+        <!-- Super Minimal Header / Tagline -->
+        <div class="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+          <span class="w-2 h-2 rounded-full bg-[#34A853]"></span>
+          <span>Creativity is better together</span>
+        </div>
+
+        <h1 class="font-headline-display text-headline-display text-on-surface max-w-4xl tracking-tight leading-[1.08] mb-5 font-bold">
+          Brands. Agencies. Creators.<br>
+          <span class="relative inline-block text-on-surface">
+            Connected.
+            <svg class="absolute -bottom-2.5 left-0 w-full h-3 text-[#4285F4]" fill="none" preserveAspectRatio="none" viewBox="0 0 240 16">
+              <path d="M3 11C60 4 175 4 237 12C180 8 70 8 3 13" stroke="currentColor" stroke-linecap="round" stroke-width="3.5"></path>
+            </svg>
+          </span>
+        </h1>
+
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg mb-8 leading-relaxed">
+          Where brilliant partnerships ignite without the friction.
+        </p>
+
+        <!-- Pill Actions -->
+        <div class="flex flex-col sm:flex-row items-center gap-4 mb-12">
+          <a routerLink="/login" [queryParams]="{ mode: 'signup' }" class="inline-flex items-center justify-center h-12 px-8 rounded-full bg-[#1b1c1a] text-white font-label-md text-label-md hover:bg-neutral-800 transition-all hover:scale-105 active:scale-95 shadow-sm no-underline font-medium">
+            Start creating
+            <span class="material-symbols-outlined ml-2 text-[18px]">arrow_forward</span>
+          </a>
+          <button type="button" (click)="scrollToSection('vignettes')" class="inline-flex items-center justify-center h-12 px-6 rounded-full text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all cursor-pointer bg-transparent border-0 font-medium">
+            <span class="material-symbols-outlined mr-2 text-[20px] text-[#4285F4]">play_circle</span>
+            See the spark
+          </button>
+        </div>
+
+        <!-- Centerpiece Google-Coded Bespoke SVG Illustration -->
+        <div class="relative w-full max-w-4xl mx-auto py-4 select-none illustration-stage">
+          <svg class="w-full h-auto drop-shadow-sm transition-transform duration-700 hover:scale-[1.01]" fill="none" viewBox="0 0 920 460" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="blueGlow" x1="0%" x2="100%" y1="0%" y2="100%">
+                <stop offset="0%" stop-color="#4285F4"></stop>
+                <stop offset="50%" stop-color="#FBBC05"></stop>
+                <stop offset="100%" stop-color="#34A853"></stop>
+              </linearGradient>
+              <filter height="140%" id="softGlow" width="140%" x="-20%" y="-20%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="3"></feGaussianBlur>
+                <feMerge>
+                  <feMergeNode></feMergeNode>
+                  <feMergeNode in="SourceGraphic"></feMergeNode>
+                </feMerge>
+              </filter>
+
+              <!-- Motion Path Definitions for Travelling Pulse Dots -->
+              <path d="M160 250 C 230 140, 310 120, 460 220 C 610 320, 680 180, 770 200" fill="none" id="pathBlueMain"></path>
+              <path d="M220 180 C 340 70, 570 90, 710 160" fill="none" id="pathCoralTop"></path>
+              <path d="M180 300 C 300 370, 520 370, 750 240" fill="none" id="pathGoldBottom"></path>
+            </defs>
+
+            <!-- Dynamic Interconnected Ribbon Pathway (Glowing underlay) -->
+            <path class="under-ribbon transition-all duration-300" d="M160 250 C 230 140, 310 120, 460 220 C 610 320, 680 180, 770 200" stroke="#E5E2DE" stroke-linecap="round" stroke-width="12"></path>
+            <path class="flow-line-main transition-colors duration-300" d="M160 250 C 230 140, 310 120, 460 220 C 610 320, 680 180, 770 200" stroke="#4285F4" stroke-linecap="round" stroke-width="4"></path>
+
+            <!-- Flowing Secondary Energy Threads with dash flow animation -->
+            <path class="flow-line-gold transition-colors duration-300" d="M180 300 C 300 370, 520 370, 750 240" stroke="#FBBC05" stroke-linecap="round" stroke-width="3"></path>
+            <path class="flow-line-coral transition-colors duration-300" d="M220 180 C 340 70, 570 90, 710 160" stroke="#EA4335" stroke-linecap="round" stroke-width="3"></path>
+
+            <!-- Travelling Pulsing Energy Dots connecting Brands -> Agencies -> Creators -->
+            <circle fill="#4285F4" filter="url(#softGlow)" r="5">
+              <animateMotion dur="4.2s" repeatCount="indefinite">
+                <mpath href="#pathBlueMain"></mpath>
+              </animateMotion>
+            </circle>
+            <circle fill="#34A853" filter="url(#softGlow)" r="4">
+              <animateMotion begin="2.1s" dur="4.2s" repeatCount="indefinite">
+                <mpath href="#pathBlueMain"></mpath>
+              </animateMotion>
+            </circle>
+            <circle fill="#EA4335" r="4">
+              <animateMotion dur="5s" repeatCount="indefinite">
+                <mpath href="#pathCoralTop"></mpath>
+              </animateMotion>
+            </circle>
+            <circle fill="#FBBC05" r="4.5">
+              <animateMotion dur="4.6s" repeatCount="indefinite">
+                <mpath href="#pathGoldBottom"></mpath>
+              </animateMotion>
+            </circle>
+
+            <!-- Brand Pillar: Left (The Brand Flag & Joyful Character) -->
+            <g class="character-group cursor-pointer">
+              <!-- Shadow ground spot -->
+              <ellipse class="character-shadow transition-all duration-300 origin-center" cx="180" cy="380" fill="#E5E2DE" rx="42" ry="7"></ellipse>
+              <!-- Body / Doodled Figure -->
+              <path d="M180 370 C 180 310, 150 280, 150 240 C 150 215, 170 195, 195 195 C 220 195, 240 215, 240 240 C 240 280, 210 310, 210 370 Z" fill="#4285F4"></path>
+              <!-- Head -->
+              <circle cx="195" cy="155" fill="#FFE0B2" r="32"></circle>
+              <!-- Smiling Eyes & Joyful Mouth -->
+              <path d="M184 150 C 187 146, 191 146, 194 150" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
+              <path d="M200 150 C 203 146, 207 146, 210 150" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
+              <path d="M188 165 C 194 172, 202 172, 208 165" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
+              <!-- Cheeks -->
+              <circle cx="182" cy="160" fill="#FF8A80" r="3"></circle>
+              <circle cx="214" cy="160" fill="#FF8A80" r="3"></circle>
+              <!-- Hand / Gesturing Flag -->
+              <path d="M230 230 Q 280 190 285 140" fill="none" stroke="#1b1c1a" stroke-linecap="round" stroke-width="3.5"></path>
+              <!-- Floating Brand Gem / Diamond Flag -->
+              <polygon class="sparkle-float origin-center" fill="#EA4335" points="285,120 315,140 285,160 255,140"></polygon>
+              <circle cx="285" cy="140" fill="#FFFFFF" r="6"></circle>
+              <text class="character-label transition-colors duration-200" fill="#1b1c1a" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700" text-anchor="middle" x="195" y="415">Brands</text>
+            </g>
+
+            <!-- Agency / Orchestrator: Center (The Creative Spark) -->
+            <g class="character-group cursor-pointer">
+              <!-- Shadow ground spot -->
+              <ellipse class="character-shadow transition-all duration-300 origin-center" cx="460" cy="390" fill="#E5E2DE" rx="48" ry="8"></ellipse>
+              <!-- Friendly Floating Orb Shape / Body -->
+              <path d="M430 380 L430 270 Q460 255 490 270 L490 380 Z" fill="#FBBC05"></path>
+              <!-- Central Character Head with playful beret/tilt -->
+              <circle cx="460" cy="210" fill="#FFCCBC" r="38"></circle>
+              <path d="M435 185 C 445 160, 485 160, 495 185 Z" fill="#1b1c1a"></path>
+              <!-- Eyes with glasses doodle -->
+              <circle cx="448" cy="210" fill="none" r="8" stroke="#1b1c1a" stroke-width="2.5"></circle>
+              <circle cx="472" cy="210" fill="none" r="8" stroke="#1b1c1a" stroke-width="2.5"></circle>
+              <path d="M456 210 L464 210" stroke="#1b1c1a" stroke-width="2"></path>
+              <path d="M453 226 C 458 231, 463 231, 468 226" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
+              <!-- Floating Giant Spark Star overhead -->
+              <g class="sparkle-float" transform="translate(460, 110)">
+                <path d="M0 -30 L7 -8 L30 0 L7 8 L0 30 L-7 8 L-30 0 L-7 -8 Z" fill="#34A853"></path>
+                <circle cx="0" cy="0" fill="#FFFFFF" r="4"></circle>
+              </g>
+              <!-- Radiating spark doodles -->
+              <path class="sparkle-float" d="M495 100 L515 90 M425 100 L405 90 M460 65 L460 50" stroke="#34A853" stroke-linecap="round" stroke-width="2.5"></path>
+              <text class="character-label transition-colors duration-200" fill="#1b1c1a" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700" text-anchor="middle" x="460" y="420">Agencies</text>
+            </g>
+
+            <!-- Creator: Right (The Camera & Magic Wand Figure) -->
+            <g class="character-group cursor-pointer">
+              <!-- Shadow ground spot -->
+              <ellipse class="character-shadow transition-all duration-300 origin-center" cx="740" cy="375" fill="#E5E2DE" rx="42" ry="7"></ellipse>
+              <!-- Creator dynamic curved body -->
+              <path d="M720 365 C 715 310, 700 270, 725 240 C 740 220, 770 230, 775 260 C 785 300, 760 330, 755 365 Z" fill="#34A853"></path>
+              <!-- Head -->
+              <circle cx="735" cy="170" fill="#F8BBD0" r="30"></circle>
+              <!-- Wink eye + cheerful eye -->
+              <path d="M722 166 L730 166" stroke="#1b1c1a" stroke-linecap="round" stroke-width="3"></path>
+              <path d="M738 163 C 741 160, 745 160, 748 163" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
+              <path d="M728 178 C 734 185, 742 185, 746 178" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
+              <!-- Left Arm holding Magic Wand -->
+              <path d="M710 240 Q 670 210 650 170" fill="none" stroke="#1b1c1a" stroke-linecap="round" stroke-width="3.5"></path>
+              <!-- Floating Camera Doodle -->
+              <g class="sparkle-float" transform="translate(620, 140)">
+                <rect fill="#4285F4" height="24" rx="5" width="36" x="0" y="8"></rect>
+                <path d="M10 8 L14 3 L22 3 L26 8 Z" fill="#4285F4"></path>
+                <circle cx="18" cy="20" fill="#FFFFFF" r="6"></circle>
+                <circle cx="28" cy="14" fill="#FBBC05" r="2"></circle>
+              </g>
+              <!-- Wand Flash Stars -->
+              <path class="sparkle-float" d="M640 120 L646 130 L658 132 L648 140 L650 152 L640 144 L630 152 L632 140 L622 132 L634 130 Z" fill="#FBBC05"></path>
+              <text class="character-label transition-colors duration-200" fill="#1b1c1a" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700" text-anchor="middle" x="740" y="415">Creators</text>
+            </g>
+
+            <!-- Whimsical Handwritten-Style Doodles & Accents -->
+            <g fill="none" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2">
+              <path class="sparkle-float origin-center" d="M260 90 C255 80, 240 85, 248 98 C255 106, 260 110, 260 110 C260 110, 265 106, 272 98 C280 85, 265 80, 260 90 Z" fill="#EA4335" stroke="none"></path>
+              <path d="M570 240 C575 235, 580 238, 580 243 C579 249, 570 250, 567 245 C564 238, 574 230, 582 233"></path>
+              <path d="M340 170 C355 165, 370 170, 380 180"></path>
+              <path d="M345 180 C358 176, 368 180, 375 188"></path>
+              <path class="sparkle-float" d="M805 130 L815 130 M810 125 L810 135"></path>
+              <path class="sparkle-float" d="M120 220 L130 220 M125 215 L125 225"></path>
+            </g>
+
+            <!-- Playful Annotation Arrows -->
+            <g>
+              <path class="flow-line-main" d="M330 330 C360 360, 400 360, 420 345" fill="none" stroke="#4285F4" stroke-linecap="round" stroke-width="2"></path>
+              <polygon fill="#4285F4" points="423,342 418,348 424,352"></polygon>
+              <text fill="#4285F4" font-family="'JetBrains Mono', monospace" font-size="11" x="360" y="380">direct sync</text>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           3-Point Showcase: Vignette Doodles (NO BOXES, NO BORDERS)
+           ======================================================== -->
+      <section class="w-full max-w-5xl mx-auto px-6 py-20" id="vignettes">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-16 text-center">
+
+          <!-- Vignette 1: Pure Handshake Spark -->
+          <div class="group flex flex-col items-center cursor-default">
+            <div class="w-28 h-28 flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <svg class="w-24 h-24" fill="none" viewBox="0 0 96 96">
+                <!-- Sparkles above -->
+                <path d="M48 6 L51 16 L61 19 L51 22 L48 32 L45 22 L35 19 L45 16 Z" fill="#FBBC05"></path>
+                <!-- Friendly Handshake line art -->
+                <path d="M18 52 L34 40 C38 37, 44 38, 48 42 L52 46 C55 49, 60 49, 64 45 L78 34" stroke="#1b1c1a" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+                <path d="M30 62 L42 50 C46 46, 52 46, 56 50 L60 54" stroke="#4285F4" stroke-linecap="round" stroke-width="4"></path>
+                <path d="M38 72 L48 62 C51 59, 56 59, 59 62 L63 66" stroke="#34A853" stroke-linecap="round" stroke-width="4"></path>
+                <!-- Cute hearts -->
+                <circle cx="28" cy="30" fill="#EA4335" r="3"></circle>
+                <circle cx="68" cy="24" fill="#4285F4" r="4"></circle>
+              </svg>
+            </div>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold">Instant mutual sync</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Zero back-and-forth noise.</p>
+          </div>
+
+          <!-- Vignette 2: Creator Wand Magic -->
+          <div class="group flex flex-col items-center cursor-default">
+            <div class="w-28 h-28 flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
+              <svg class="w-24 h-24" fill="none" viewBox="0 0 96 96">
+                <!-- Floating viewfinder / magic aperture -->
+                <circle cx="48" cy="48" r="32" stroke="#E5E2DE" stroke-dasharray="6 6" stroke-width="3"></circle>
+                <!-- Wand -->
+                <path d="M26 70 L62 34" stroke="#1b1c1a" stroke-linecap="round" stroke-width="4.5"></path>
+                <path d="M54 42 L62 34" stroke="#EA4335" stroke-linecap="round" stroke-width="6"></path>
+                <!-- Magic Burst Star -->
+                <path d="M68 28 L72 16 L84 20 L76 30 L84 40 L72 36 L68 48 L64 36 L52 40 L60 30 L52 20 L64 16 Z" fill="#4285F4"></path>
+                <!-- Little color sprinkles -->
+                <circle cx="22" cy="40" fill="#34A853" r="3.5"></circle>
+                <circle cx="34" cy="24" fill="#FBBC05" r="4"></circle>
+                <circle cx="76" cy="66" fill="#EA4335" r="3"></circle>
+              </svg>
+            </div>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold">Authentic creative flow</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Pure creative freedom.</p>
+          </div>
+
+          <!-- Vignette 3: Instant Insight Flash -->
+          <div class="group flex flex-col items-center cursor-default">
+            <div class="w-28 h-28 flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+              <svg class="w-24 h-24" fill="none" viewBox="0 0 96 96">
+                <!-- Lightbulb outline handdrawn -->
+                <path d="M36 40 C36 28, 42 20, 50 20 C58 20, 64 28, 64 40 C64 47, 58 52, 58 58 L42 58 C42 52, 36 47, 36 40 Z" fill="none" stroke="#1b1c1a" stroke-linejoin="round" stroke-width="4"></path>
+                <path d="M44 64 H56 M46 70 H54" stroke="#1b1c1a" stroke-linecap="round" stroke-width="3.5"></path>
+                <!-- Filament smiling heart -->
+                <path d="M46 38 C46 34, 50 34, 50 38 C50 34, 54 34, 54 38 C54 43, 50 46, 50 46 C50 46, 46 43, 46 38 Z" fill="#FBBC05"></path>
+                <!-- Lightning bursts around -->
+                <path d="M50 8 V14 M26 24 L32 28 M74 24 L68 28 M20 44 H26 M74 44 H80" stroke="#34A853" stroke-linecap="round" stroke-width="3"></path>
+              </svg>
+            </div>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold">Clear live alignment</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Everyone on target.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           Clean Airy Google-Style Sign Up (Search Pill Input)
+           ======================================================== -->
+      <section class="w-full max-w-2xl mx-auto px-6 pt-10 pb-28 text-center flex flex-col items-center relative">
+        <!-- Star Doodle Accent -->
+        <div class="mb-4 inline-flex items-center justify-center">
+          <svg class="w-10 h-10 text-[#FBBC05] animate-bounce" fill="none" viewBox="0 0 40 40">
+            <path d="M20 3L23.5 14.5L35 18L23.5 21.5L20 33L16.5 21.5L5 18L16.5 14.5L20 3Z" fill="currentColor"></path>
+          </svg>
+        </div>
+
+        <h2 class="font-headline-md text-headline-md text-on-surface mb-2 font-bold">
+          Ready to meet your match?
+        </h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8">
+          Join the quiet revolution in creative collaboration.
+        </p>
+
+        <!-- Search-Style Elevated Pill Input Form -->
+        <form (ngSubmit)="submitWaitlist()" class="w-full max-w-md flex items-center bg-surface-container-lowest rounded-full px-3 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.1)] transition-all focus-within:ring-2 focus-within:ring-[#4285F4]/30 border border-[#E5E2DE]/60">
+          <span class="material-symbols-outlined text-[#4285F4] ml-2 text-[22px]">auto_awesome</span>
+          <input
+            [(ngModel)]="workEmail"
+            name="workEmail"
+            class="w-full bg-transparent border-0 px-3 py-2 text-on-surface placeholder:text-on-surface-variant/60 font-body-md text-body-md focus:outline-none focus:ring-0"
+            placeholder="Enter your work email"
+            required
+            type="email"
+          />
+          <button class="h-10 px-6 rounded-full bg-[#1b1c1a] text-white font-label-md text-label-md hover:bg-neutral-800 transition-transform active:scale-95 flex-shrink-0 border-0 cursor-pointer font-medium" type="submit" [disabled]="isJoining()">
+            {{ isJoining() ? 'Joining...' : 'Join' }}
+          </button>
+        </form>
+
+        @if (joinedSuccess()) {
+          <div class="mt-4 text-[#34A853] font-label-md text-label-md flex items-center gap-1.5 animate-fadeIn">
+            <span class="material-symbols-outlined text-[18px]">check_circle</span>
+            <span>You're on the invite list! We'll be in touch soon.</span>
+          </div>
+        }
+
+        <p class="font-label-sm text-label-sm text-on-surface-variant/60 mt-4">
+          No setup required · Free for early teams · Instant access
+        </p>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ========================================================
+       Footer (Stitch Specification)
+       ======================================================== -->
+  <footer class="w-full bg-surface py-12 border-t border-[#E5E2DE]/60">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-6">
+        <span class="font-body-sm text-body-sm text-on-surface-variant">© 2026 Converge Systems, Inc.</span>
+        <span class="hidden sm:inline text-outline-variant">·</span>
+        <span class="font-body-sm text-body-sm text-on-surface-variant">All rights reserved.</span>
+      </div>
+
+      <nav class="flex items-center gap-6">
+        <a routerLink="/" class="font-body-sm transition-colors text-on-surface no-underline">Overview</a>
+        <button type="button" (click)="showPrivacyModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer">Privacy</button>
+        <button type="button" (click)="showTermsModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer">Terms</button>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- ========================================================
+       Privacy Policy Modal Dialog
+       ======================================================== -->
+  @if (showPrivacyModal()) {
+    <div class="modal-backdrop" (click)="showPrivacyModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <div class="modal-badge-icon">🔒</div>
+          <div>
+            <h3>Privacy & Data Governance</h3>
+            <p>Converge Architecture Standards</p>
+          </div>
+        </div>
+        <div class="modal-body-content">
+          <p><strong>1. Zero Untrusted Access:</strong> Workspace briefs and brand campaigns remain isolated to authorized team rosters.</p>
+          <p><strong>2. Authorized Platform Sync:</strong> Creator reach, plays, likes, and interactions are retrieved strictly through authorized official platform APIs.</p>
+          <p><strong>3. Encrypted Credentials:</strong> All credentials are encrypted with BCrypt and authenticated via signed JWT session tokens.</p>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn-modal-close" (click)="showPrivacyModal.set(false)">Close</button>
         </div>
       </div>
     </div>
   }
 
   <!-- ========================================================
-       1. Top Navigation Bar (Apple Style Clean Header)
+       Terms Modal Dialog
        ======================================================== -->
-  <header class="navbar">
-    <div class="nav-container">
-      <div class="nav-left">
-        <a routerLink="/" class="logo-link" title="Converge">
-          <img src="/assets/converge-logo.svg" alt="Converge" class="nav-logo-img" />
-        </a>
-      </div>
-
-      <nav class="nav-links">
-        <button type="button" (click)="scrollToSection('workflow-section')" class="nav-item">Product</button>
-        <button type="button" (click)="scrollToSection('workflow-section')" class="nav-item">How it works</button>
-        <button type="button" (click)="scrollToSection('metrics-section')" class="nav-item">Platform</button>
-        <button type="button" (click)="scrollToSection('faq-section')" class="nav-item">Security</button>
-      </nav>
-
-      <div class="nav-actions">
-        <a routerLink="/login" class="nav-btn-ghost">Sign in</a>
-        <button type="button" (click)="openDemoModal()" class="nav-btn-primary">
-          <span>Book a demo</span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main class="landing-content">
-    <!-- ========================================================
-         2. Hero Section (Apple Aesthetic: SF Pro, High Contrast)
-         ======================================================== -->
-    <section class="hero-section">
-      <div class="hero-container">
-        <!-- Eyebrow Pill -->
-        <div class="hero-eyebrow">
-          <span class="eyebrow-text">NEW · CAMPAIGN PERFORMANCE AUDIT</span>
-        </div>
-
-        <!-- Master Headline -->
-        <h1 class="hero-headline">
-          Real influence.<br>
-          Verified results.
-        </h1>
-
-        <!-- Subheadline -->
-        <p class="hero-subtext">
-          One shared workspace to track campaigns, audit creator deliverables, and reconcile financial ledgers with absolute clarity.
-        </p>
-
-        <!-- CTA Action Row -->
-        <div class="hero-cta-group">
-          <button type="button" (click)="openDemoModal()" class="btn-hero-primary">
-            <span>Book a demo</span>
-          </button>
-          <a routerLink="/login" class="btn-hero-secondary">
-            <span>See live demo</span>
-            <span class="arrow">→</span>
-          </a>
-        </div>
-
-        <!-- Trust Note -->
-        <div class="hero-footnote">
-          <span>Trusted by leading D2C brands and partner agencies</span>
-        </div>
-
-        <!-- ========================================================
-             3. Hero Interactive Console Card ("Summer essentials")
-             ======================================================== -->
-        <div id="preview-stage" class="stage-wrapper">
-          <div class="console-card">
-            <!-- Left Mini Sidebar inside Card -->
-            <div class="console-sidebar">
-              <div class="sidebar-top">
-                <div class="sidebar-logo">
-                  <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-                    <path d="M5 6L15 16L5 26" stroke="#1D1D1F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M13 6L23 16L13 26" stroke="#0071E3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="28" cy="16" r="3" fill="#0071E3"/>
-                  </svg>
-                  <span class="sidebar-brand-name">converge</span>
-                </div>
-
-                <div class="sidebar-nav">
-                  <div class="sidebar-item active">
-                    <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm0 7a1 1 0 011-1h10a1 1 0 011 1v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3z"/>
-                    </svg>
-                    <span>Campaigns</span>
-                  </div>
-                  <div class="sidebar-item">
-                    <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M4 2a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H4zm1 3h6v2H5V5zm0 4h6v2H5V9z"/>
-                    </svg>
-                    <span>Deliverables</span>
-                  </div>
-                  <div class="sidebar-item">
-                    <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M13 3a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1h10zm-1 2H4v6h8V5z"/>
-                    </svg>
-                    <span>Agencies</span>
-                  </div>
-                  <div class="sidebar-item">
-                    <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 4v1.07a2.5 2.5 0 011.53 1.05.75.75 0 11-1.22.88 1 1 0 00-.81-.5v2.24a2.5 2.5 0 01-1.5-1.07.75.75 0 111.24-.85c.16.23.4.37.76.42V7.18a2.5 2.5 0 011.5-2.18V4.75a.75.75 0 011.5 0v.25z"/>
-                    </svg>
-                    <span>INR Ledger</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="sidebar-bottom">
-                <div class="sidebar-item">
-                  <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 01-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 01.872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 012.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 012.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 01.872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 01-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 01-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 110-5.86 2.929 2.929 0 010 5.86z"/>
-                  </svg>
-                  <span>Settings</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Right Main Stage inside Card -->
-            <div class="console-main">
-              <!-- Console Top Header -->
-              <div class="console-top-bar">
-                <div class="console-breadcrumb">
-                  <span class="crumb-dim">Campaign</span>
-                  <span class="crumb-slash">/</span>
-                  <span class="crumb-active">{{ campaignSummary.name }}</span>
-                </div>
-                <div class="console-badge">
-                  <span class="pulse-dot"></span>
-                  <span>Live Campaign</span>
-                </div>
-              </div>
-
-              <!-- 4 Metric Cards Grid -->
-              <div class="metrics-grid">
-                <div class="metric-box">
-                  <span class="metric-label">Campaign Budget</span>
-                  <span class="metric-val">{{ campaignSummary.budget }}</span>
-                </div>
-                <div class="metric-box">
-                  <span class="metric-label">Verified Reach</span>
-                  <span class="metric-val highlight">{{ campaignSummary.verifiedReach }}</span>
-                </div>
-                <div class="metric-box">
-                  <span class="metric-label">Deliverables</span>
-                  <span class="metric-val">{{ campaignSummary.deliverablesCount }}</span>
-                </div>
-                <div class="metric-box">
-                  <span class="metric-label">Payout Balance</span>
-                  <span class="metric-val">{{ campaignSummary.payoutBalance }}</span>
-                </div>
-              </div>
-
-              <!-- Deliverables Table -->
-              <div class="table-wrapper">
-                <div class="table-label-row">
-                  <span class="table-section-title">Deliverables</span>
-                  <span class="table-section-sub">Real-time status & payout sync</span>
-                </div>
-                <table class="apple-table">
-                  <thead>
-                    <tr>
-                      <th>Deliverable</th>
-                      <th>Creator</th>
-                      <th>Format</th>
-                      <th>Content URL</th>
-                      <th>Reach</th>
-                      <th>Status</th>
-                      <th class="col-right">INR Payout</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (item of deliverables; track item.name) {
-                      <tr>
-                        <td class="cell-name">{{ item.name }}</td>
-                        <td class="cell-muted">{{ item.creator }}</td>
-                        <td>
-                          <span class="format-tag">{{ item.format }}</span>
-                        </td>
-                        <td class="cell-link">
-                          <span class="url-preview">{{ item.url }}</span>
-                        </td>
-                        <td class="cell-num">{{ item.reach }}</td>
-                        <td>
-                          @if (item.status === 'Verified') {
-                            <span class="status-pill status-verified">
-                              <span class="status-dot"></span>
-                              Verified
-                            </span>
-                          } @else {
-                            <span class="status-pill status-audit">
-                              <span class="status-dot"></span>
-                              Under Audit
-                            </span>
-                          }
-                        </td>
-                        <td class="cell-payout">{{ item.payout }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================
-         4. Section 2: From brief to payout. Three simple steps.
-         ======================================================== -->
-    <section id="workflow-section" class="workflow-section">
-      <div class="section-container">
-        <div class="section-header-left">
-          <div class="section-eyebrow">HOW IT WORKS · END-TO-END WORKFLOW</div>
-          <h2 class="section-title">
-            From brief to payout.<br>
-            Three simple steps.
-          </h2>
-          <p class="section-desc">
-            Eliminate endless back-and-forth messaging and manual proof-of-work checks.
-          </p>
-        </div>
-
-        <div class="steps-grid">
-          @for (step of steps; track step.number) {
-            <div class="step-card">
-              <div class="step-card-header">
-                <span class="step-num-badge">{{ step.number }}</span>
-                <span class="step-role-tag">{{ step.targetRole }}</span>
-              </div>
-
-              <h3 class="step-title">{{ step.title }}</h3>
-              <p class="step-text">{{ step.description }}</p>
-
-              <div class="step-preview-box">
-                <span class="preview-box-label">{{ step.previewLabel }}</span>
-                @if (step.previewIsLink) {
-                  <span class="preview-box-val link-val">{{ step.previewValue }}</span>
-                } @else {
-                  <span class="preview-box-val" [class.success-val]="step.number === '03'">{{ step.previewValue }}</span>
-                }
-                <span class="preview-box-sub">{{ step.previewNote }}</span>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================
-         5. Section 3: Real numbers. Not another screenshot.
-         ======================================================== -->
-    <section id="metrics-section" class="numbers-section">
-      <div class="section-container">
-        <div class="split-grid">
-          <!-- Left Column Copy -->
-          <div class="split-col-text">
-            <div class="section-eyebrow">VERIFIED PERFORMANCE</div>
-            <h2 class="split-title">
-              Real numbers.<br>
-              Not another screenshot.
-            </h2>
-            <p class="split-desc">
-              We pull verified live metrics directly from official platform APIs. Say goodbye to fabricated insights screenshots and outdated engagement decks.
-            </p>
-            <a routerLink="/login" class="apple-text-link">
-              <span>Learn about automated audit</span>
-              <span class="arrow">→</span>
-            </a>
-          </div>
-
-          <!-- Right Column Performance Card -->
-          <div class="split-col-visual">
-            <div class="perf-card">
-              <span class="perf-card-header">Total Campaign Verified Impressions</span>
-              <div class="perf-big-stat">12,48,600</div>
-              <p class="perf-subtext">Real views validated across live creator posts</p>
-
-              <div class="perf-stats-row">
-                <div class="perf-sub-stat">
-                  <span class="stat-number">18</span>
-                  <span class="stat-caption">Deliverables Verified</span>
-                </div>
-                <div class="perf-sub-stat">
-                  <span class="stat-number">6.4%</span>
-                  <span class="stat-caption">Avg Engagement Rate</span>
-                </div>
-              </div>
-
-              <div class="perf-footer-bar">
-                <div class="live-indicator">
-                  <span class="check-icon">✓</span>
-                  <span class="indicator-title">Verified Live Source</span>
-                </div>
-                <span class="indicator-source">Official platform API feed</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================
-         6. Section 4: Two teams. One shared truth.
-         ======================================================== -->
-    <section class="teams-section">
-      <div class="section-container">
-        <div class="section-header-center">
-          <h2 class="section-title-center">Two teams. One shared truth.</h2>
-          <p class="section-desc-center">Keep everyone aligned without the follow-ups.</p>
-        </div>
-
-        <div class="teams-grid">
-          <!-- For Brands -->
-          <div class="team-card">
-            <div class="team-badge">FOR BRANDS</div>
-            <h3 class="team-title">Stay in control. Not in the weeds.</h3>
-            <p class="team-desc">
-              Set budgets, invite agencies, and see which deliverables are fulfilled in real-time.
-            </p>
-            <div class="team-pills-row">
-              <span class="pill-chip">Executive Oversight</span>
-              <span class="pill-chip">Budget Caps (INR)</span>
-              <span class="pill-chip">Instant Approvals</span>
-            </div>
-          </div>
-
-          <!-- For Agencies -->
-          <div class="team-card">
-            <div class="team-badge">FOR AGENCIES</div>
-            <h3 class="team-title">Less chasing. More creating.</h3>
-            <p class="team-desc">
-              Submit live post links, eliminate manual client decks, and trigger automated milestone payouts.
-            </p>
-            <div class="team-pills-row">
-              <span class="pill-chip">Zero Manual Decks</span>
-              <span class="pill-chip">Deliverable Pacing</span>
-              <span class="pill-chip">Fast Sign-off</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================
-         7. Section 5: Close the campaign. Not 12 spreadsheets.
-         ======================================================== -->
-    <section class="reconcile-section">
-      <div class="section-container">
-        <div class="split-grid reverse-split">
-          <!-- Left Visual: Ledger Table -->
-          <div class="split-col-visual">
-            <div class="reconcile-card">
-              <div class="reconcile-header">
-                <span class="reconcile-title">Summer essentials — Reconciliation</span>
-                <span class="reconcile-sub">June 2026 · All deliverables accounted</span>
-              </div>
-
-              <div class="reconcile-table-wrapper">
-                <table class="reconcile-table">
-                  <thead>
-                    <tr>
-                      <th>Agency / Partner</th>
-                      <th>Deliverables</th>
-                      <th>Settlement</th>
-                      <th class="col-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (row of ledgerItems; track row.agency) {
-                      <tr>
-                        <td class="ledger-agency">{{ row.agency }}</td>
-                        <td class="ledger-deliv">{{ row.deliverables }}</td>
-                        <td class="ledger-budget">{{ row.budget }}</td>
-                        <td class="col-right">
-                          <span class="settled-pill">
-                            <span class="green-dot"></span>
-                            {{ row.status }}
-                          </span>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="reconcile-footer">
-                <a routerLink="/login" class="excel-link">
-                  <span>Generate 1-click Excel audit workbook</span>
-                  <span class="arrow">→</span>
-                </a>
-                <span class="reconcile-caption">Complete financial ledger and timestamped audit trail.</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right Column Copy -->
-          <div class="split-col-text">
-            <div class="section-eyebrow">INR FINANCIAL LEDGER</div>
-            <h2 class="split-title">
-              Close the campaign.<br>
-              Not 12 spreadsheets.
-            </h2>
-            <p class="split-desc">
-              Reconcile every rupee against active creator deliverables and export executive-ready Excel ledgers that match bank statements.
-            </p>
-            <a routerLink="/login" class="apple-text-link">
-              <span>See how reconciliation works</span>
-              <span class="arrow">→</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================
-         8. Section 6: FAQ ("A little more clarity.")
-         ======================================================== -->
-    <section id="faq-section" class="faq-section">
-      <div class="section-container">
-        <div class="faq-layout">
-          <div class="faq-left">
-            <h2 class="faq-title">A little more clarity.</h2>
-            <p class="faq-desc">Frequently asked questions about Converge.</p>
-          </div>
-
-          <div class="faq-right">
-            @for (faq of faqs; track faq.question; let i = $index) {
-              <div class="faq-item" [class.faq-open]="openFaqIndex() === i">
-                <button type="button" class="faq-trigger" (click)="toggleFaq(i)">
-                  <span class="faq-question">{{ faq.question }}</span>
-                  <span class="faq-chevron" [class.rotated]="openFaqIndex() === i">
-                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-                      <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </span>
-                </button>
-                @if (openFaqIndex() === i) {
-                  <div class="faq-answer">
-                    <p>{{ faq.answer }}</p>
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================
-         9. Section 7: Final CTA ("Your next campaign. Minus the chaos.")
-         ======================================================== -->
-    <section class="cta-banner-section">
-      <div class="cta-banner-container">
-        <h2 class="cta-headline">
-          Your next campaign.<br>
-          Minus the chaos.
-        </h2>
-        <p class="cta-subtext">
-          Bring your brands, agencies, and metrics together.
-        </p>
-        <button type="button" (click)="openDemoModal()" class="btn-banner-primary">
-          <span>Book a demo</span>
-        </button>
-      </div>
-    </section>
-  </main>
-
-  <!-- ========================================================
-       10. Footer (Apple Minimalist Footer)
-       ======================================================== -->
-  <footer class="footer">
-    <div class="footer-container">
-      <div class="footer-left">
-        <div class="footer-brand">
-          <img src="/assets/converge-logo.svg" alt="Converge" class="footer-logo-img" />
-        </div>
-        <p class="footer-tagline">The deliverable verification platform.</p>
-      </div>
-
-      <div class="footer-right">
-        <nav class="footer-links">
-          <a routerLink="/privacy" class="footer-link">Privacy</a>
-          <a routerLink="/terms" class="footer-link">Terms of Service</a>
-          <a routerLink="/docs" class="footer-link">Documentation</a>
-          <span class="footer-link">Status</span>
-        </nav>
-        <p class="footer-copy">© 2026 Converge Inc. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
-
-  <!-- ========================================================
-       11. Book a Demo Modal (Clean Apple Dialog)
-       ======================================================== -->
-  @if (showDemoModal()) {
-    <div class="modal-backdrop" (click)="closeDemoModal()">
-      <div class="modal-dialog" (click)="$event.stopPropagation()">
-        <div class="modal-header">
+  @if (showTermsModal()) {
+    <div class="modal-backdrop" (click)="showTermsModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <div class="modal-badge-icon">📄</div>
           <div>
-            <h3 class="modal-title">Book an Enterprise Demo</h3>
-            <p class="modal-desc">See live deliverable audits and INR reconciliation in action.</p>
+            <h3>Terms of Service</h3>
+            <p>Platform Agreement & Deliverable Verification</p>
           </div>
-          <button type="button" class="modal-close-btn" (click)="closeDemoModal()">×</button>
         </div>
-
-        <form (ngSubmit)="submitDemoRequest()" class="modal-form">
-          <div class="form-group">
-            <label class="form-label" for="demoEmail">Work Email</label>
-            <input
-              id="demoEmail"
-              type="email"
-              [(ngModel)]="demoEmail"
-              name="demoEmail"
-              placeholder="alex@brand.com"
-              class="form-input"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="demoCompany">Brand or Agency Name</label>
-            <input
-              id="demoCompany"
-              type="text"
-              [(ngModel)]="demoCompany"
-              name="demoCompany"
-              placeholder="Acme Co. or Velocity Agency"
-              class="form-input"
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="demoMessage">Campaign Focus</label>
-            <textarea
-              id="demoMessage"
-              [(ngModel)]="demoMessage"
-              name="demoMessage"
-              rows="3"
-              placeholder="Tell us about your creator rosters, deliverable volume, or INR budget size..."
-              class="form-textarea"
-            ></textarea>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn-modal-ghost" (click)="closeDemoModal()">Cancel</button>
-            <button type="submit" class="btn-modal-primary" [disabled]="isSubmittingDemo()">
-              @if (isSubmittingDemo()) {
-                <span>Submitting...</span>
-              } @else {
-                <span>Schedule Demo</span>
-              }
-            </button>
-          </div>
-        </form>
+        <div class="modal-body-content">
+          <p><strong>1. Deliverables Auditing:</strong> Submitting URLs validates real-time platform metrics to maintain audit-grade pacing.</p>
+          <p><strong>2. Financial Ledgers:</strong> INR budgets and payouts are reconciled based on milestone agreements verified by participating brands.</p>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn-modal-close" (click)="showTermsModal.set(false)">Close</button>
+        </div>
       </div>
     </div>
   }
