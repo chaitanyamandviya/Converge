@@ -48,6 +48,7 @@ export class LoginComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly agreeTerms = signal(false);
+  readonly hasShakeError = signal(false);
 
   // Brand dropdown & search
   readonly brandDropdownOpen = signal(false);
@@ -229,9 +230,20 @@ export class LoginComponent implements OnInit {
 
   private autoDismissTimer: any = null;
 
+  triggerShake(): void {
+    this.hasShakeError.set(false);
+    setTimeout(() => {
+      this.hasShakeError.set(true);
+      setTimeout(() => {
+        this.hasShakeError.set(false);
+      }, 500);
+    }, 10);
+  }
+
   showError(msg: string): void {
     this.successMessage.set('');
     this.errorMessage.set(msg);
+    this.triggerShake();
     if (this.autoDismissTimer) clearTimeout(this.autoDismissTimer);
     this.autoDismissTimer = setTimeout(() => {
       this.errorMessage.set('');

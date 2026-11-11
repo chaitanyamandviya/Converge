@@ -69,7 +69,7 @@
       </div>
 
       <!-- Main Card Surface -->
-      <div class="w-full max-w-[480px] bg-surface-container-lowest rounded-2xl shadow-xl shadow-black/5 p-6 sm:p-8 relative transition-all duration-300">
+      <div class="w-full max-w-[480px] bg-surface-container-lowest rounded-2xl shadow-xl shadow-black/5 p-6 sm:p-8 relative transition-all duration-300" [class.animate-shake]="hasShakeError()">
         
         <!-- Segmented Capsule Toggle: Sign In vs Create Account -->
         @if (mode() !== 'forgot') {
@@ -182,8 +182,8 @@
                   [ngClass]="role() === 'BRAND_MANAGER' 
                     ? 'border-primary bg-primary text-on-primary shadow-sm font-semibold' 
                     : 'border-transparent bg-surface-container-low hover:bg-surface-container text-on-surface'"
-                  class="role-pill h-10 px-4 rounded-full border text-center transition-all duration-150 flex items-center justify-center gap-2 font-label-md text-label-md cursor-pointer">
-                  <span class="w-2 h-2 rounded-full bg-[#FBBC05]"></span>
+                  class="role-pill h-10 px-4 rounded-full border text-center transition-all duration-150 flex items-center justify-center gap-2 font-label-md text-label-md cursor-pointer select-none">
+                  <span class="w-2 h-2 rounded-full bg-[#FBBC05] transition-transform duration-200" [class.role-dot-active]="role() === 'BRAND_MANAGER'"></span>
                   <span>Brand</span>
                 </button>
                 <button 
@@ -192,8 +192,8 @@
                   [ngClass]="role() === 'AGENCY_MANAGER' 
                     ? 'border-primary bg-primary text-on-primary shadow-sm font-semibold' 
                     : 'border-transparent bg-surface-container-low hover:bg-surface-container text-on-surface'"
-                  class="role-pill h-10 px-4 rounded-full border text-center transition-all duration-150 flex items-center justify-center gap-2 font-label-md text-label-md cursor-pointer">
-                  <span class="w-2 h-2 rounded-full bg-[#4285F4]"></span>
+                  class="role-pill h-10 px-4 rounded-full border text-center transition-all duration-150 flex items-center justify-center gap-2 font-label-md text-label-md cursor-pointer select-none">
+                  <span class="w-2 h-2 rounded-full bg-[#4285F4] transition-transform duration-200" [class.role-dot-active]="role() === 'AGENCY_MANAGER'"></span>
                   <span>Agency</span>
                 </button>
               </div>
@@ -203,18 +203,18 @@
           <!-- Conditional Field: Brand Manager in Sign Up mode (Brand / Organization Name) -->
           @if (mode() === 'signup' && role() === 'BRAND_MANAGER') {
             <div class="transition-all duration-200 animate-fadeIn">
-              <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1" for="brand-name">
+              <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1 font-medium" for="brand-name">
                 Brand / Organization Name
               </label>
-              <div class="relative">
+              <div class="relative input-interactive-group">
                 <input 
                   id="brand-name" 
                   type="text"
                   [(ngModel)]="organizationName" 
                   name="organizationName"
                   placeholder="e.g. Blitz Studios or Nike"
-                  class="w-full h-11 px-4 pl-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-[#4285F4]/30 transition-all duration-200">
-                <span class="material-symbols-outlined absolute left-3.5 top-3 text-[18px] text-outline-variant">domain</span>
+                  class="input-interactive-field w-full h-11 px-4 pl-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
+                <span class="material-symbols-outlined input-leading-icon absolute left-3.5 top-3 text-[18px] text-outline-variant pointer-events-none transition-all duration-200">domain</span>
               </div>
             </div>
           }
@@ -222,18 +222,18 @@
           <!-- Conditional Field: Agency Manager in Sign Up mode (Agency Workspace Name) -->
           @if (mode() === 'signup' && role() === 'AGENCY_MANAGER') {
             <div class="transition-all duration-200 animate-fadeIn">
-              <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1" for="agency-workspace-name">
+              <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1 font-medium" for="agency-workspace-name">
                 Agency Name / Workspace
               </label>
-              <div class="relative">
+              <div class="relative input-interactive-group">
                 <input 
                   id="agency-workspace-name" 
                   type="text"
                   [(ngModel)]="organizationName" 
                   name="agencyWorkspaceName"
                   placeholder="e.g. Apex Digital or Horizon Agency"
-                  class="w-full h-11 px-4 pl-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-[#4285F4]/30 transition-all duration-200">
-                <span class="material-symbols-outlined absolute left-3.5 top-3 text-[18px] text-outline-variant">apartment</span>
+                  class="input-interactive-field w-full h-11 px-4 pl-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
+                <span class="material-symbols-outlined input-leading-icon absolute left-3.5 top-3 text-[18px] text-outline-variant pointer-events-none transition-all duration-200">apartment</span>
               </div>
             </div>
 
@@ -300,28 +300,28 @@
           <!-- Full Name (Only for Sign Up) -->
           @if (mode() === 'signup') {
             <div class="transition-all duration-200 animate-fadeIn">
-              <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1" for="user-name">
+              <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1 font-medium" for="user-name">
                 Full Name
               </label>
-              <div class="relative">
+              <div class="relative input-interactive-group">
                 <input 
                   id="user-name" 
                   type="text" 
                   [(ngModel)]="fullName" 
                   name="fullName"
                   placeholder="Maya Lin" 
-                  class="w-full h-11 px-4 pl-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-[#4285F4]/30 transition-all duration-200">
-                <span class="material-symbols-outlined absolute left-3.5 top-3 text-[18px] text-outline-variant">person</span>
+                  class="input-interactive-field w-full h-11 px-4 pl-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
+                <span class="material-symbols-outlined input-leading-icon absolute left-3.5 top-3 text-[18px] text-outline-variant pointer-events-none transition-all duration-200">person</span>
               </div>
             </div>
           }
 
           <!-- Email Address Input -->
           <div>
-            <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1" for="user-email">
+            <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1 font-medium" for="user-email">
               {{ mode() === 'signup' ? 'Work Email' : 'Email address' }}
             </label>
-            <div class="relative">
+            <div class="relative input-interactive-group">
               <input 
                 id="user-email" 
                 type="email" 
@@ -329,15 +329,15 @@
                 name="email"
                 required 
                 placeholder="name@company.com" 
-                class="w-full h-11 px-4 pl-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-[#4285F4]/30 transition-all duration-200">
-              <span class="material-symbols-outlined absolute left-3.5 top-3 text-[18px] text-outline-variant">alternate_email</span>
+                class="input-interactive-field w-full h-11 px-4 pl-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
+              <span class="material-symbols-outlined input-leading-icon absolute left-3.5 top-3 text-[18px] text-outline-variant pointer-events-none transition-all duration-200">alternate_email</span>
             </div>
           </div>
 
           <!-- Password Input -->
           <div>
             <div class="flex items-center justify-between mb-1.5 pl-1 pr-1">
-              <label class="font-label-sm text-label-sm text-on-surface" for="user-password">
+              <label class="font-label-sm text-label-sm text-on-surface font-medium" for="user-password">
                 {{ mode() === 'forgot' ? 'New Password' : 'Password' }}
               </label>
               @if (mode() === 'login') {
@@ -346,7 +346,7 @@
                 </button>
               }
             </div>
-            <div class="relative">
+            <div class="relative input-interactive-group">
               <input 
                 id="user-password" 
                 [type]="showPassword() ? 'text' : 'password'" 
@@ -354,8 +354,8 @@
                 name="password"
                 required 
                 placeholder="••••••••••••" 
-                class="w-full h-11 px-4 pl-10 pr-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-[#4285F4]/30 transition-all duration-200">
-              <span class="material-symbols-outlined absolute left-3.5 top-3 text-[18px] text-outline-variant">lock</span>
+                class="input-interactive-field w-full h-11 px-4 pl-10 pr-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
+              <span class="material-symbols-outlined input-leading-icon absolute left-3.5 top-3 text-[18px] text-outline-variant pointer-events-none transition-all duration-200">lock</span>
               <button 
                 type="button" 
                 (click)="togglePasswordVisibility()" 
@@ -430,18 +430,18 @@
           <!-- Confirm Password (Sign Up & Forgot modes) -->
           @if (mode() === 'signup' || mode() === 'forgot') {
             <div class="transition-all duration-200 animate-fadeIn">
-              <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1" for="user-confirm-password">
+              <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1 font-medium" for="user-confirm-password">
                 Confirm password
               </label>
-              <div class="relative">
+              <div class="relative input-interactive-group">
                 <input 
                   id="user-confirm-password" 
                   [type]="showConfirmPassword() ? 'text' : 'password'" 
                   [(ngModel)]="confirmPassword" 
                   name="confirmPassword"
                   placeholder="••••••••••••" 
-                  class="w-full h-11 px-4 pl-10 pr-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-[#4285F4]/30 transition-all duration-200">
-                <span class="material-symbols-outlined absolute left-3.5 top-3 text-[18px] text-outline-variant">lock_reset</span>
+                  class="input-interactive-field w-full h-11 px-4 pl-10 pr-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
+                <span class="material-symbols-outlined input-leading-icon absolute left-3.5 top-3 text-[18px] text-outline-variant pointer-events-none transition-all duration-200">lock_reset</span>
                 <button 
                   type="button" 
                   (click)="toggleConfirmPasswordVisibility()" 
@@ -454,12 +454,12 @@
               <div class="min-h-[22px] px-1 pt-1.5 flex items-center transition-all duration-200">
                 @if (confirmPassword().length > 0) {
                   @if (passwordsMatch()) {
-                    <div class="flex items-center gap-1.5 font-label-sm text-[12px] text-[#34A853] animate-fadeIn">
+                    <div class="flex items-center gap-1.5 font-label-sm text-[12px] text-[#34A853] spring-pop">
                       <span class="material-symbols-outlined text-[16px] text-[#34A853]">check_circle</span>
-                      <span>Passwords match</span>
+                      <span class="font-medium">Passwords match</span>
                     </div>
                   } @else {
-                    <div class="flex items-center gap-1.5 font-label-sm text-[12px] text-[#D93025] animate-fadeIn">
+                    <div class="flex items-center gap-1.5 font-label-sm text-[12px] text-[#D93025] spring-pop">
                       <span class="material-symbols-outlined text-[16px] text-[#D93025]">error_outline</span>
                       <span>Passwords do not match yet</span>
                     </div>

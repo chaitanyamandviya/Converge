@@ -28,6 +28,13 @@ export class LandingComponent implements OnInit {
   readonly showPrivacyModal = signal(false);
   readonly showTermsModal = signal(false);
 
+  // Mobile Character Spotlight State
+  readonly activeSpotlight = signal<'brand' | 'agency' | 'creator' | null>(null);
+
+  setSpotlight(character: 'brand' | 'agency' | 'creator' | null): void {
+    this.activeSpotlight.set(character);
+  }
+
   ngOnInit(): void {
     setTimeout(() => {
       this.isAppBooting.set(false);

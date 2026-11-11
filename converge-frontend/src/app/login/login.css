@@ -25,7 +25,79 @@
   max-height: 320px;
 }
 
-/* Animations */
+/* ========================================================
+   Interactive Field & Icon Styles
+   ======================================================== */
+.input-interactive-group:focus-within .input-leading-icon {
+  color: #4285F4 !important;
+  transform: scale(1.06);
+}
+
+.input-interactive-field {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(203, 213, 225, 0.5);
+}
+
+.input-interactive-field:hover:not(:focus):not(.field-error) {
+  border-color: #cbd5e1;
+  background-color: #fbf9f6;
+}
+
+.input-interactive-field:focus:not(.field-error) {
+  border-color: #4285F4 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.15), 0 2px 4px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+.input-interactive-field:active {
+  transform: translateY(0);
+}
+
+/* Field Error state */
+.input-interactive-field.field-error {
+  border-color: #EA4335 !important;
+  box-shadow: 0 0 0 4px rgba(234, 67, 53, 0.15) !important;
+  background-color: #fffbfa !important;
+}
+
+/* ========================================================
+   Micro-Interaction Animations
+   ======================================================== */
+/* Shake keyframe animation for validation error */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.animate-shake {
+  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Radio indicator gentle pulse */
+@keyframes dotPulse {
+  0% { transform: scale(0.95); opacity: 0.85; }
+  50% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.95; }
+}
+
+.role-dot-active {
+  animation: dotPulse 1.8s ease-in-out infinite;
+}
+
+/* Spring pop for match badge */
+@keyframes springPopIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.spring-pop {
+  animation: springPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Strong password celebrations */
 @keyframes strongPulse { 
   0% { transform: scale(1); } 
   50% { transform: scale(1.04); } 
@@ -90,4 +162,14 @@
 
 .sparkle-dot-3 { 
   animation: dotFloat3 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
