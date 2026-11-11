@@ -83,91 +83,144 @@
         </div>
 
         <!-- ========================================================
-             3. Hero Interactive Product Card ("Summer essentials")
+             3. Hero Interactive Console Card ("Summer essentials")
              ======================================================== -->
         <div id="preview-stage" class="stage-wrapper">
           <div class="console-card">
-            <!-- Console Top Header -->
-            <div class="console-top-bar">
-              <div class="console-breadcrumb">
-                <span class="crumb-dim">Campaign</span>
-                <span class="crumb-slash">/</span>
-                <span class="crumb-active">{{ campaignSummary.name }}</span>
+            <!-- Left Mini Sidebar inside Card -->
+            <div class="console-sidebar">
+              <div class="sidebar-top">
+                <div class="sidebar-logo">
+                  <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                    <path d="M5 6L15 16L5 26" stroke="#1D1D1F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M13 6L23 16L13 26" stroke="#0071E3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="28" cy="16" r="3" fill="#0071E3"/>
+                  </svg>
+                  <span class="sidebar-brand-name">converge</span>
+                </div>
+
+                <div class="sidebar-nav">
+                  <div class="sidebar-item active">
+                    <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm0 7a1 1 0 011-1h10a1 1 0 011 1v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3z"/>
+                    </svg>
+                    <span>Campaigns</span>
+                  </div>
+                  <div class="sidebar-item">
+                    <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M4 2a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H4zm1 3h6v2H5V5zm0 4h6v2H5V9z"/>
+                    </svg>
+                    <span>Deliverables</span>
+                  </div>
+                  <div class="sidebar-item">
+                    <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M13 3a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1h10zm-1 2H4v6h8V5z"/>
+                    </svg>
+                    <span>Agencies</span>
+                  </div>
+                  <div class="sidebar-item">
+                    <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 4v1.07a2.5 2.5 0 011.53 1.05.75.75 0 11-1.22.88 1 1 0 00-.81-.5v2.24a2.5 2.5 0 01-1.5-1.07.75.75 0 111.24-.85c.16.23.4.37.76.42V7.18a2.5 2.5 0 011.5-2.18V4.75a.75.75 0 011.5 0v.25z"/>
+                    </svg>
+                    <span>INR Ledger</span>
+                  </div>
+                </div>
               </div>
-              <div class="console-badge">
-                <span class="pulse-dot"></span>
-                <span>Live Campaign</span>
+
+              <div class="sidebar-bottom">
+                <div class="sidebar-item">
+                  <svg class="sb-icon" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 01-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 01.872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 012.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 012.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 01.872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 01-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 01-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 110-5.86 2.929 2.929 0 010 5.86z"/>
+                  </svg>
+                  <span>Settings</span>
+                </div>
               </div>
             </div>
 
-            <!-- 4 Metric Cards Grid -->
-            <div class="metrics-grid">
-              <div class="metric-box">
-                <span class="metric-label">Campaign Budget</span>
-                <span class="metric-val">{{ campaignSummary.budget }}</span>
+            <!-- Right Main Stage inside Card -->
+            <div class="console-main">
+              <!-- Console Top Header -->
+              <div class="console-top-bar">
+                <div class="console-breadcrumb">
+                  <span class="crumb-dim">Campaign</span>
+                  <span class="crumb-slash">/</span>
+                  <span class="crumb-active">{{ campaignSummary.name }}</span>
+                </div>
+                <div class="console-badge">
+                  <span class="pulse-dot"></span>
+                  <span>Live Campaign</span>
+                </div>
               </div>
-              <div class="metric-box">
-                <span class="metric-label">Verified Reach</span>
-                <span class="metric-val highlight">{{ campaignSummary.verifiedReach }}</span>
-              </div>
-              <div class="metric-box">
-                <span class="metric-label">Deliverables</span>
-                <span class="metric-val">{{ campaignSummary.deliverablesCount }}</span>
-              </div>
-              <div class="metric-box">
-                <span class="metric-label">Payout Balance</span>
-                <span class="metric-val">{{ campaignSummary.payoutBalance }}</span>
-              </div>
-            </div>
 
-            <!-- Deliverables Table -->
-            <div class="table-wrapper">
-              <div class="table-label-row">
-                <span class="table-section-title">Deliverables</span>
-                <span class="table-section-sub">Real-time status & payout sync</span>
+              <!-- 4 Metric Cards Grid -->
+              <div class="metrics-grid">
+                <div class="metric-box">
+                  <span class="metric-label">Campaign Budget</span>
+                  <span class="metric-val">{{ campaignSummary.budget }}</span>
+                </div>
+                <div class="metric-box">
+                  <span class="metric-label">Verified Reach</span>
+                  <span class="metric-val highlight">{{ campaignSummary.verifiedReach }}</span>
+                </div>
+                <div class="metric-box">
+                  <span class="metric-label">Deliverables</span>
+                  <span class="metric-val">{{ campaignSummary.deliverablesCount }}</span>
+                </div>
+                <div class="metric-box">
+                  <span class="metric-label">Payout Balance</span>
+                  <span class="metric-val">{{ campaignSummary.payoutBalance }}</span>
+                </div>
               </div>
-              <table class="apple-table">
-                <thead>
-                  <tr>
-                    <th>Deliverable</th>
-                    <th>Creator</th>
-                    <th>Format</th>
-                    <th>Content URL</th>
-                    <th>Reach</th>
-                    <th>Status</th>
-                    <th class="col-right">INR Payout</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (item of deliverables; track item.name) {
+
+              <!-- Deliverables Table -->
+              <div class="table-wrapper">
+                <div class="table-label-row">
+                  <span class="table-section-title">Deliverables</span>
+                  <span class="table-section-sub">Real-time status & payout sync</span>
+                </div>
+                <table class="apple-table">
+                  <thead>
                     <tr>
-                      <td class="cell-name">{{ item.name }}</td>
-                      <td class="cell-muted">{{ item.creator }}</td>
-                      <td>
-                        <span class="format-tag">{{ item.format }}</span>
-                      </td>
-                      <td class="cell-link">
-                        <span class="url-preview">{{ item.url }}</span>
-                      </td>
-                      <td class="cell-num">{{ item.reach }}</td>
-                      <td>
-                        @if (item.status === 'Verified') {
-                          <span class="status-pill status-verified">
-                            <span class="status-dot"></span>
-                            Verified
-                          </span>
-                        } @else {
-                          <span class="status-pill status-audit">
-                            <span class="status-dot"></span>
-                            Under Audit
-                          </span>
-                        }
-                      </td>
-                      <td class="cell-payout">{{ item.payout }}</td>
+                      <th>Deliverable</th>
+                      <th>Creator</th>
+                      <th>Format</th>
+                      <th>Content URL</th>
+                      <th>Reach</th>
+                      <th>Status</th>
+                      <th class="col-right">INR Payout</th>
                     </tr>
-                  }
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    @for (item of deliverables; track item.name) {
+                      <tr>
+                        <td class="cell-name">{{ item.name }}</td>
+                        <td class="cell-muted">{{ item.creator }}</td>
+                        <td>
+                          <span class="format-tag">{{ item.format }}</span>
+                        </td>
+                        <td class="cell-link">
+                          <span class="url-preview">{{ item.url }}</span>
+                        </td>
+                        <td class="cell-num">{{ item.reach }}</td>
+                        <td>
+                          @if (item.status === 'Verified') {
+                            <span class="status-pill status-verified">
+                              <span class="status-dot"></span>
+                              Verified
+                            </span>
+                          } @else {
+                            <span class="status-pill status-audit">
+                              <span class="status-dot"></span>
+                              Under Audit
+                            </span>
+                          }
+                        </td>
+                        <td class="cell-payout">{{ item.payout }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

@@ -37,7 +37,7 @@
   --radius-md: 12px;
 
   --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-elevated: 0 12px 32px -8px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-elevated: 0 16px 40px -10px rgba(0, 0, 0, 0.09), 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 * {
@@ -335,6 +335,7 @@
 
 /* ==========================================================================
    3. Hero Interactive Console Card ("Summer essentials")
+   Two-Pane Desktop Workspace (Sidebar + Main Stage)
    ========================================================================== */
 .stage-wrapper {
   width: 100%;
@@ -346,24 +347,103 @@
   border: 1px solid var(--apple-border);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-elevated);
-  padding: 28px 32px 32px;
   text-align: left;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  overflow: hidden;
+}
+
+/* Left Mini Sidebar inside Card */
+.console-sidebar {
+  background: var(--apple-canvas);
+  border-right: 1px solid var(--apple-border);
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sidebar-top {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+}
+
+.sidebar-brand-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--apple-dark);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: var(--apple-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sidebar-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--apple-dark);
+}
+
+.sidebar-item.active {
+  background: var(--apple-white);
+  color: var(--apple-blue);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sb-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.sidebar-bottom {
+  border-top: 1px solid var(--apple-border);
+  padding-top: 12px;
+}
+
+/* Right Main Stage inside Card */
+.console-main {
+  padding: 24px 28px 28px;
+  background: var(--apple-white);
 }
 
 .console-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 20px;
+  padding-bottom: 18px;
   border-bottom: 1px solid var(--apple-border);
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .console-breadcrumb {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .crumb-dim {
@@ -383,11 +463,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--apple-green);
   background: var(--apple-green-tint);
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
 }
 
@@ -401,29 +481,29 @@
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 28px;
+  gap: 14px;
+  margin-bottom: 24px;
 }
 
 .metric-box {
   background: var(--apple-canvas);
   border: 1px solid var(--apple-border);
   border-radius: var(--radius-md);
-  padding: 16px 18px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .metric-label {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--apple-muted);
   text-transform: capitalize;
 }
 
 .metric-val {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--apple-dark);
@@ -447,7 +527,7 @@
 }
 
 .table-section-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--apple-dark);
 }
@@ -460,22 +540,22 @@
 .apple-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 .apple-table thead th {
   text-align: left;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--apple-muted);
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--apple-border);
 }
 
 .apple-table tbody td {
-  padding: 14px 12px;
+  padding: 12px 10px;
   border-bottom: 1px solid var(--apple-border);
   color: var(--apple-dark);
   vertical-align: middle;
@@ -500,18 +580,18 @@
 
 .format-tag {
   display: inline-block;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
   color: var(--apple-muted);
   background: var(--apple-canvas);
   border: 1px solid var(--apple-border);
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: var(--radius-sm);
 }
 
 .cell-link {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--apple-blue);
 }
 
@@ -529,9 +609,9 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: var(--radius-pill);
 }
 
@@ -1447,6 +1527,12 @@
   .hero-headline {
     font-size: 48px;
   }
+  .console-card {
+    grid-template-columns: 1fr;
+  }
+  .console-sidebar {
+    display: none;
+  }
   .metrics-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1480,8 +1566,8 @@
   .metrics-grid {
     grid-template-columns: 1fr;
   }
-  .console-card {
-    padding: 20px 16px;
+  .console-main {
+    padding: 18px 14px;
   }
   .table-wrapper {
     overflow-x: auto;
