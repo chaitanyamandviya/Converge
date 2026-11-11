@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/healthz", "/api/health", "/").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/**").authenticated()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
