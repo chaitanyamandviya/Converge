@@ -24,22 +24,22 @@
   <!-- ========================================================
        Top Header
        ======================================================== -->
-  <header class="relative z-10 w-full">
-    <div class="h-16 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
+  <header class="relative z-10 w-full border-b border-[#E5E2DE]/40 bg-surface/80 backdrop-blur-md">
+    <div class="h-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between">
       
       <!-- Logo Link -->
-      <a routerLink="/" class="flex items-center gap-space-sm group focus:outline-none no-underline" title="Back to Converge">
-        <img src="/assets/converge-icon.svg" alt="Converge Logo" class="w-8 h-8 object-contain flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
+      <a routerLink="/" class="flex items-center gap-2.5 sm:gap-3 group focus:outline-none no-underline" title="Back to Converge">
+        <img src="/assets/converge-logo.png" alt="Converge Logo" class="w-8 h-8 object-contain flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
         <span class="font-headline-sm text-headline-sm text-primary tracking-tight font-bold text-[19px]">Converge</span>
       </a>
 
       <!-- Right Header Tools -->
-      <div class="flex items-center gap-space-md">
-        <div class="flex items-center gap-space-xs text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors duration-150 px-2 py-1 rounded">
+      <div class="flex items-center gap-4 sm:gap-6">
+        <div class="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors duration-150 px-2 py-1 rounded">
           <span class="material-symbols-outlined text-[18px]">language</span>
           <span class="font-label-sm text-label-sm">EN</span>
         </div>
-        <button type="button" (click)="showHelpModal.set(true)" class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-150 bg-transparent border-0 cursor-pointer">
+        <button type="button" (click)="showHelpModal.set(true)" class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition-colors duration-150 bg-transparent border-0 cursor-pointer p-0 font-medium">
           Help
         </button>
       </div>
@@ -535,15 +535,15 @@
   <!-- ========================================================
        Footer
        ======================================================== -->
-  <footer class="relative z-10 w-full py-6">
-    <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-space-sm font-label-sm text-label-sm text-on-surface-variant">
-      <div class="flex items-center gap-space-xs">
+  <footer class="relative z-10 w-full py-8 border-t border-[#E5E2DE]/50 bg-surface">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4 font-label-sm text-label-sm text-on-surface-variant text-center sm:text-left">
+      <div class="flex items-center gap-2">
         <span>© 2025 Converge Technologies Inc.</span>
       </div>
-      <div class="flex items-center gap-space-lg">
-        <button type="button" (click)="showPrivacyModal.set(true)" class="hover:text-on-surface transition-colors duration-150 bg-transparent border-0 cursor-pointer p-0">Privacy</button>
-        <button type="button" (click)="showTermsModal.set(true)" class="hover:text-on-surface transition-colors duration-150 bg-transparent border-0 cursor-pointer p-0">Terms</button>
-        <button type="button" (click)="showHelpModal.set(true)" class="hover:text-on-surface transition-colors duration-150 bg-transparent border-0 cursor-pointer p-0">Contact</button>
+      <div class="flex items-center justify-center gap-6 sm:gap-8">
+        <button type="button" (click)="showPrivacyModal.set(true)" class="hover:text-on-surface transition-colors duration-150 bg-transparent border-0 cursor-pointer p-0 text-[13px] font-medium">Privacy</button>
+        <button type="button" (click)="showTermsModal.set(true)" class="hover:text-on-surface transition-colors duration-150 bg-transparent border-0 cursor-pointer p-0 text-[13px] font-medium">Terms</button>
+        <button type="button" (click)="showHelpModal.set(true)" class="hover:text-on-surface transition-colors duration-150 bg-transparent border-0 cursor-pointer p-0 text-[13px] font-medium">Contact</button>
       </div>
     </div>
   </footer>

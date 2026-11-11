@@ -4,12 +4,12 @@
        Top Navigation Bar
        ======================================================== -->
   <header class="fixed top-0 left-0 right-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] border-b border-[#E5E2DE]/40">
-    <div class="h-16 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
+    <div class="h-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between">
       
       <div class="flex items-center gap-10">
         <!-- Brand Logo -->
-        <a routerLink="/" class="flex items-center gap-2.5 group no-underline" title="Converge">
-          <img src="/assets/converge-icon.svg" alt="Converge Logo" class="w-8 h-8 object-contain rounded-md flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
+        <a routerLink="/" class="flex items-center gap-2.5 sm:gap-3 group no-underline" title="Converge">
+          <img src="/assets/converge-logo.png" alt="Converge Logo" class="w-8 h-8 object-contain flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
           <span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface text-[20px]">Converge</span>
         </a>
 
@@ -43,7 +43,7 @@
       <!-- ========================================================
            Hero Section: Brands. Agencies. Creators. Connected.
            ======================================================== -->
-      <section class="relative w-full overflow-hidden px-6 lg:px-12 pt-8 pb-16 flex flex-col items-center text-center">
+      <section class="relative w-full overflow-hidden px-4 sm:px-6 lg:px-12 pt-8 pb-16 flex flex-col items-center text-center">
         
         <!-- Floating Background Doodle Accents -->
         <svg class="absolute top-12 left-10 w-12 h-12 text-[#FBBC05] opacity-80 animate-pulse pointer-events-none sparkle-float" fill="none" viewBox="0 0 48 48">
@@ -99,7 +99,7 @@
         </div>
 
         <!-- Centerpiece Google-Coded Bespoke SVG Illustration -->
-        <div class="relative w-full max-w-4xl mx-auto py-4 select-none illustration-stage">
+        <div class="relative w-full max-w-4xl mx-auto py-2 sm:py-4 select-none illustration-stage overflow-hidden">
           <svg class="w-full h-auto drop-shadow-sm transition-transform duration-700 hover:scale-[1.01]" fill="none" viewBox="0 0 920 460" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="blueGlow" x1="0%" x2="100%" y1="0%" y2="100%">
@@ -247,8 +247,8 @@
       <!-- ========================================================
            3-Point Showcase: Vignette Doodles
            ======================================================== -->
-      <section class="w-full max-w-5xl mx-auto px-6 py-20" id="vignettes">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-16 text-center">
+      <section class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-20" id="vignettes">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10 sm:gap-16 text-center">
           
           <!-- Vignette 1: Pure Handshake Spark -->
           <div class="group flex flex-col items-center cursor-default">
@@ -303,7 +303,7 @@
       <!-- ========================================================
            Clean Airy Google-Style Sign Up
            ======================================================== -->
-      <section class="w-full max-w-2xl mx-auto px-6 pt-10 pb-28 text-center flex flex-col items-center relative">
+      <section class="w-full max-w-2xl mx-auto px-4 sm:px-6 pt-10 pb-20 sm:pb-28 text-center flex flex-col items-center relative">
         <!-- Star Doodle Accent -->
         <div class="mb-4 inline-flex items-center justify-center">
           <svg class="w-10 h-10 text-[#FBBC05] animate-bounce" fill="none" viewBox="0 0 40 40">
@@ -311,27 +311,27 @@
           </svg>
         </div>
 
-        <h2 class="font-headline-md text-headline-md text-on-surface mb-2 font-bold text-[28px]">
+        <h2 class="font-headline-md text-headline-md text-on-surface mb-2 font-bold text-[24px] sm:text-[28px]">
           Ready to meet your match?
         </h2>
-        <p class="font-body-md text-body-md text-on-surface-variant mb-8">
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8 max-w-md">
           Join the quiet revolution in creative collaboration.
         </p>
 
         <!-- Google Search-Style Elevated Pill Input -->
         <form class="w-full max-w-md flex items-center bg-surface-container-lowest rounded-full px-3 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.1)] transition-all focus-within:ring-2 focus-within:ring-[#4285F4]/30" (submit)="submitWaitlist()">
-          <span class="material-symbols-outlined text-[#4285F4] ml-2 text-[22px]">auto_awesome</span>
+          <span class="material-symbols-outlined text-[#4285F4] ml-2 text-[22px] flex-shrink-0">auto_awesome</span>
           <input 
             type="email" 
             [(ngModel)]="workEmail" 
             name="workEmail" 
             required 
             placeholder="Enter your work email" 
-            class="w-full bg-transparent border-0 px-3 py-2 text-on-surface placeholder:text-on-surface-variant/60 font-body-md text-body-md focus:outline-none focus:ring-0">
+            class="w-full min-w-0 bg-transparent border-0 px-3 py-2 text-on-surface placeholder:text-on-surface-variant/60 font-body-md text-body-md focus:outline-none focus:ring-0">
           <button 
             type="submit" 
             [disabled]="isJoining()"
-            class="h-10 px-6 rounded-full bg-[#1b1c1a] text-on-primary font-label-md text-label-md hover:bg-neutral-800 transition-transform active:scale-95 flex-shrink-0 cursor-pointer border-0 text-white font-medium disabled:opacity-50">
+            class="h-10 px-5 sm:px-6 rounded-full bg-[#1b1c1a] text-on-primary font-label-md text-label-md hover:bg-neutral-800 transition-transform active:scale-95 flex-shrink-0 cursor-pointer border-0 text-white font-medium disabled:opacity-50">
             {{ isJoining() ? 'Joining...' : 'Join' }}
           </button>
         </form>
@@ -354,18 +354,18 @@
   <!-- ========================================================
        Footer
        ======================================================== -->
-  <footer class="w-full bg-surface py-12 border-t border-[#E5E2DE]/50">
-    <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6">
-      <div class="flex items-center gap-6">
+  <footer class="w-full bg-surface py-8 sm:py-12 border-t border-[#E5E2DE]/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 text-center sm:text-left">
+      <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-6">
         <span class="font-body-sm text-body-sm text-on-surface-variant">© 2025 Converge Systems, Inc.</span>
         <span class="hidden sm:inline text-outline-variant">·</span>
         <span class="font-body-sm text-body-sm text-on-surface-variant">All rights reserved.</span>
       </div>
 
-      <nav class="flex items-center gap-6">
+      <nav class="flex items-center justify-center gap-6 sm:gap-8">
         <a routerLink="/" class="font-body-sm transition-colors text-on-surface no-underline font-medium">Overview</a>
-        <button type="button" (click)="showPrivacyModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer p-0">Privacy</button>
-        <button type="button" (click)="showTermsModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer p-0">Terms</button>
+        <button type="button" (click)="showPrivacyModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer p-0 font-medium">Privacy</button>
+        <button type="button" (click)="showTermsModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer p-0 font-medium">Terms</button>
       </nav>
     </div>
   </footer>
