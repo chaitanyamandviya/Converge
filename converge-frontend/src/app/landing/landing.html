@@ -1,0 +1,1007 @@
+<div class="landing-page" data-node-id="39:30">
+  <!-- ========================================================
+       1. Navigation Bar
+       ======================================================== -->
+  <header class="navbar" data-node-id="32:12586">
+    <div class="nav-logo" data-node-id="32:12587">
+      <a routerLink="/" class="logo-link">
+        <img src="/assets/converge-logo.svg" alt="Converge" class="nav-logo-img" data-node-id="32:12588" />
+      </a>
+    </div>
+
+    <nav class="nav-links" data-node-id="32:12589">
+      <button type="button" (click)="scrollToSection('capabilities')" class="nav-item" data-node-id="32:12590">Product</button>
+      <button type="button" (click)="scrollToSection('how-it-works')" class="nav-item" data-node-id="32:12591">How it works</button>
+      <button type="button" (click)="scrollToSection('for-teams')" class="nav-item" data-node-id="32:12592">For teams</button>
+      <button type="button" (click)="scrollToSection('faqs')" class="nav-item" data-node-id="32:12593">FAQs</button>
+    </nav>
+
+    <div class="nav-actions" data-node-id="32:12594">
+      <a routerLink="/login" class="btn-primary btn-sm" data-node-id="32:12596">
+        <span data-node-id="32:12597">Log in</span>
+        <img src="/assets/arrow-up-right.svg" alt="" class="btn-icon-sm" data-node-id="32:13137" />
+      </a>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       2. Hero Section
+       ======================================================== -->
+  <section class="hero-section" data-node-id="32:12585">
+    <div class="hero-content" data-node-id="32:12599">
+      <!-- Category Pill -->
+      <div class="category-pill" data-node-id="32:12600">
+        <div class="section-label" data-node-id="32:12601">
+          <span class="marker marker-blue" data-node-id="32:12602"></span>
+          <span class="label-text" data-node-id="32:12603">MARKETING, IN PERSPECTIVE</span>
+        </div>
+      </div>
+
+      <!-- Main Heading -->
+      <h1 class="hero-headline" data-node-id="32:12604">
+        Good campaigns.<br>Great perspective.
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="hero-description" data-node-id="32:12605">
+        Bring your campaigns, creators, and analytics into focus. Less chasing numbers. More seeing what matters.
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="hero-actions" data-node-id="32:12606">
+        <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="btn-primary btn-lg" data-node-id="32:12607">
+          <span data-node-id="32:12608">Create an account</span>
+          <img src="/assets/arrow-up-right.svg" alt="" class="btn-icon" data-node-id="32:13140" />
+        </a>
+        <button (click)="scrollToSection('capabilities')" type="button" class="btn-outline btn-lg" data-node-id="32:12610">
+          <span data-node-id="32:12611">Explore the product</span>
+          <img src="/assets/arrow-up-right-dark.svg" alt="" class="btn-icon" data-node-id="32:13143" />
+        </button>
+      </div>
+
+      <p class="hero-subtext" data-node-id="32:12613">
+        Your campaigns. Your collaborators. One shared view.
+      </p>
+
+      <!-- ========================================================
+           Product Stage / Dashboard Preview
+           ======================================================== -->
+      <div class="product-stage" data-node-id="32:12614">
+        <!-- Floating Mascot Art -->
+        <div class="perspective-mascot" data-node-id="32:12615">
+          <div class="mascot-frame" data-node-id="32:13062">
+            <div class="mascot-piece piece-eyeball" data-node-id="32:13063">
+              <img src="/assets/eyeball.svg" alt="" />
+            </div>
+            <div class="mascot-piece piece-magnifier-handle" data-node-id="32:13070">
+              <img src="/assets/magnifier-handle.svg" alt="" />
+            </div>
+            <div class="mascot-piece piece-magnifier-ring" data-node-id="32:13073">
+              <img src="/assets/magnifier-ring.svg" alt="" />
+            </div>
+            <div class="mascot-piece piece-spark" data-node-id="32:13076">
+              <img src="/assets/yellow-spark.svg" alt="" />
+            </div>
+            <div class="mascot-piece piece-green-accent" data-node-id="32:13078">
+              <img src="/assets/green-accent.svg" alt="" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Window Card -->
+        <div class="dashboard-preview-card" data-node-id="32:12616">
+          <!-- Sidebar -->
+          <aside class="dashboard-sidebar" data-node-id="32:12617">
+            <div class="sidebar-brand" data-node-id="32:12618">Aster & Co. ↗</div>
+            <div class="sidebar-category" data-node-id="32:12619">WORKSPACE</div>
+            <div class="sidebar-menu">
+              <div class="sidebar-item active" data-node-id="32:12620">
+                <img src="/assets/layout-dashboard.svg" alt="" class="sidebar-icon" data-node-id="32:13146" />
+                <span data-node-id="32:12622">Overview</span>
+              </div>
+              <div class="sidebar-item" data-node-id="32:12623">
+                <img src="/assets/megaphone.svg" alt="" class="sidebar-icon" data-node-id="32:13149" />
+                <span data-node-id="32:12625">Campaigns</span>
+              </div>
+              <div class="sidebar-item" data-node-id="32:12626">
+                <img src="/assets/building-2.svg" alt="" class="sidebar-icon" data-node-id="32:13152" />
+                <span data-node-id="32:12628">Agencies</span>
+              </div>
+              <div class="sidebar-item" data-node-id="32:12629">
+                <img src="/assets/users.svg" alt="" class="sidebar-icon" data-node-id="32:13155" />
+                <span data-node-id="32:12631">Creators</span>
+              </div>
+              <div class="sidebar-item" data-node-id="32:12632">
+                <img src="/assets/panels-top-left.svg" alt="" class="sidebar-icon" data-node-id="32:13158" />
+                <span data-node-id="32:12634">Content library</span>
+              </div>
+            </div>
+            <div class="sidebar-user" data-node-id="32:12635">
+              <span class="user-avatar-tag">JL</span>
+              <span class="user-name">Jamie Lee</span>
+            </div>
+          </aside>
+
+          <!-- Main Overview Content -->
+          <main class="dashboard-body" data-node-id="32:12636">
+            <div class="workspace-bar" data-node-id="32:12637">
+              <span data-node-id="32:12638">Aster & Co. / Overview</span>
+            </div>
+
+            <div class="dashboard-heading" data-node-id="32:12640">
+              <div class="intro-titles" data-node-id="32:12641">
+                <h3 class="dashboard-title" data-node-id="32:12642">The whole picture.</h3>
+                <p class="dashboard-sub" data-node-id="32:12643">Autumn essentials · Partnership overview</p>
+              </div>
+              <button type="button" class="export-btn" data-node-id="32:12644">
+                <span data-node-id="32:12645">Export report ↗</span>
+              </button>
+            </div>
+
+            <!-- Summary 4 Metrics -->
+            <div class="summary-metrics" data-node-id="32:12646">
+              <div class="metric-card" data-node-id="32:12647">
+                <span class="metric-label" data-node-id="32:12648">Views</span>
+                <span class="metric-value" data-node-id="32:12649">2.40M</span>
+                <span class="metric-detail" data-node-id="32:12650">36 content items</span>
+              </div>
+              <div class="metric-card" data-node-id="32:12651">
+                <span class="metric-label" data-node-id="32:12652">Engagements</span>
+                <span class="metric-value" data-node-id="32:12653">120K</span>
+                <span class="metric-detail" data-node-id="32:12654">Likes + comments</span>
+              </div>
+              <div class="metric-card" data-node-id="32:12655">
+                <span class="metric-label" data-node-id="32:12656">Creator spend</span>
+                <span class="metric-value" data-node-id="32:12657">₹48,000</span>
+                <span class="metric-detail" data-node-id="32:12658">Agreed budget · INR</span>
+              </div>
+              <div class="metric-card" data-node-id="32:12659">
+                <span class="metric-label" data-node-id="32:12660">Insights coverage</span>
+                <span class="metric-value" data-node-id="32:12661">75%</span>
+                <span class="metric-detail" data-node-id="32:12662">36 of 48 items</span>
+              </div>
+            </div>
+
+            <!-- Chart & Follow-up Row -->
+            <div class="performance-followup-row" data-node-id="32:12663">
+              <div class="performance-chart-box" data-node-id="32:12664">
+                <div class="chart-header" data-node-id="32:12665">
+                  <span class="chart-title" data-node-id="32:12666">Content performance</span>
+                  <span class="chart-period" data-node-id="32:12667">Oct 1–28, 2026</span>
+                </div>
+                <div class="chart-canvas-area" data-node-id="32:12668">
+                  <div class="chart-gridline" style="top: 0;"></div>
+                  <div class="chart-gridline" style="top: 35px;"></div>
+                  <div class="chart-gridline" style="top: 70px;"></div>
+                  <div class="chart-gridline" style="top: 105px;"></div>
+                  <img src="/assets/views-area.svg" alt="" class="chart-layer area-layer" data-node-id="32:12673" />
+                  <img src="/assets/views-trend.svg" alt="" class="chart-layer trend-layer" data-node-id="32:12674" />
+                  <div class="chart-axis-labels">
+                    <span data-node-id="32:12675">Oct 1</span>
+                    <span data-node-id="32:12676">Oct 28</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Follow-up Alert Box -->
+              <div class="followup-box" data-node-id="32:12677">
+                <div class="followup-title" data-node-id="32:12678">A little follow-up</div>
+                <p class="followup-desc" data-node-id="32:12679">
+                  8 content URLs missing 4 awaiting authorized insights
+                </p>
+                <a routerLink="/login" class="followup-link" data-node-id="32:12680">Review content slots →</a>
+                <div class="followup-progress-bar" data-node-id="32:12681">
+                  <div class="progress-fill" style="width: 75%;" data-node-id="32:12682"></div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       3. Scope Strip
+       ======================================================== -->
+  <section class="scope-strip" data-node-id="32:12684">
+    <p class="scope-caption" data-node-id="32:12685">
+      Built for everything that goes into a campaign.
+    </p>
+    <div class="scope-tags">
+      <div class="scope-tag" data-node-id="32:12686">
+        <span class="marker marker-blue" data-node-id="32:12687"></span>
+        <span class="scope-label" data-node-id="32:12688">Campaigns</span>
+      </div>
+      <div class="scope-tag" data-node-id="32:12689">
+        <span class="marker marker-yellow" data-node-id="32:12690"></span>
+        <span class="scope-label" data-node-id="32:12691">Agencies</span>
+      </div>
+      <div class="scope-tag" data-node-id="32:12692">
+        <span class="marker marker-coral" data-node-id="32:12693"></span>
+        <span class="scope-label" data-node-id="32:12694">Creators</span>
+      </div>
+      <div class="scope-tag" data-node-id="32:12695">
+        <span class="marker marker-green" data-node-id="32:12696"></span>
+        <span class="scope-label" data-node-id="32:12697">Content</span>
+      </div>
+      <div class="scope-tag" data-node-id="32:12698">
+        <span class="marker marker-sky" data-node-id="32:12699"></span>
+        <span class="scope-label" data-node-id="32:12700">Analytics</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       4. The Bigger Picture (Features Section)
+       ======================================================== -->
+  <section id="capabilities" class="capabilities-section" data-node-id="32:12701">
+    <div class="section-label" data-node-id="32:12702">
+      <span class="marker marker-blue" data-node-id="32:12703"></span>
+      <span class="label-text" data-node-id="32:12704">THE BIGGER PICTURE</span>
+    </div>
+
+    <div class="capabilities-header" data-node-id="32:12705">
+      <h2 class="section-heading" data-node-id="32:12707">
+        A lot goes into marketing. It all comes together here.
+      </h2>
+      <p class="section-subtext" data-node-id="32:12708">
+        A little structure for the moving parts. A lot more room for the good ideas.
+      </p>
+    </div>
+
+    <!-- 3 Feature Cards Grid -->
+    <div class="feature-cards-grid" data-node-id="32:12709">
+      <!-- Card 1: Campaign Tracking -->
+      <div class="feature-card" data-node-id="32:12710">
+        <div class="card-category-row" data-node-id="32:12711">
+          <span class="card-category" data-node-id="32:12712">CAMPAIGN TRACKING</span>
+          <div class="icon-badge badge-sky" data-node-id="32:12713">
+            <img src="/assets/layers.svg" alt="" class="badge-icon" data-node-id="32:13161" />
+          </div>
+        </div>
+
+        <div class="feature-sketch" data-node-id="32:12715">
+          <div class="sketch-row" data-node-id="32:12716">
+            <span class="sketch-dot dot-sky" data-node-id="32:12717"></span>
+            <span class="sketch-label" data-node-id="32:12718">Autumn essentials</span>
+            <span class="sketch-bar bar-blue" style="width: 80px;" data-node-id="32:12719"></span>
+          </div>
+          <div class="sketch-row" data-node-id="32:12720">
+            <span class="sketch-dot dot-sky" data-node-id="32:12721"></span>
+            <span class="sketch-label" data-node-id="32:12722">Creator launch</span>
+            <span class="sketch-bar bar-gray" style="width: 62px;" data-node-id="32:12723"></span>
+          </div>
+          <div class="sketch-row" data-node-id="32:12724">
+            <span class="sketch-dot dot-sky" data-node-id="32:12725"></span>
+            <span class="sketch-label" data-node-id="32:12726">Always-on social</span>
+            <span class="sketch-bar bar-gray" style="width: 44px;" data-node-id="32:12727"></span>
+          </div>
+        </div>
+
+        <h3 class="card-title" data-node-id="32:12728">Every moving part, mapped.</h3>
+        <p class="card-desc" data-node-id="32:12729">
+          Campaigns, agencies, creators, and content. Give the whole team a clear place to start.
+        </p>
+      </div>
+
+      <!-- Card 2: Meaningful Analytics -->
+      <div class="feature-card" data-node-id="32:12730">
+        <div class="card-category-row" data-node-id="32:12731">
+          <span class="card-category" data-node-id="32:12732">MEANINGFUL ANALYTICS</span>
+          <div class="icon-badge badge-yellow" data-node-id="32:12733">
+            <img src="/assets/chart-no-axes.svg" alt="" class="badge-icon" data-node-id="32:13164" />
+          </div>
+        </div>
+
+        <div class="feature-sketch" data-node-id="32:12735">
+          <div class="sketch-row" data-node-id="32:12736">
+            <span class="sketch-dot dot-yellow" data-node-id="32:12737"></span>
+            <span class="sketch-label" data-node-id="32:12738">Views</span>
+            <span class="sketch-bar bar-blue" style="width: 80px;" data-node-id="32:12739"></span>
+          </div>
+          <div class="sketch-row" data-node-id="32:12740">
+            <span class="sketch-dot dot-yellow" data-node-id="32:12741"></span>
+            <span class="sketch-label" data-node-id="32:12742">Engagements</span>
+            <span class="sketch-bar bar-gray" style="width: 62px;" data-node-id="32:12743"></span>
+          </div>
+          <div class="sketch-row" data-node-id="32:12744">
+            <span class="sketch-dot dot-yellow" data-node-id="32:12745"></span>
+            <span class="sketch-label" data-node-id="32:12746">Agreed spend</span>
+            <span class="sketch-bar bar-gray" style="width: 44px;" data-node-id="32:12747"></span>
+          </div>
+        </div>
+
+        <h3 class="card-title" data-node-id="32:12748">Numbers with context.</h3>
+        <p class="card-desc" data-node-id="32:12749">
+          Look beyond a single metric. See performance alongside spend, content, and coverage.
+        </p>
+      </div>
+
+      <!-- Card 3: Team Alignment -->
+      <div class="feature-card" data-node-id="32:12750">
+        <div class="card-category-row" data-node-id="32:12751">
+          <span class="card-category" data-node-id="32:12752">TEAM ALIGNMENT</span>
+          <div class="icon-badge badge-coral" data-node-id="32:12753">
+            <img src="/assets/users-1.svg" alt="" class="badge-icon" data-node-id="32:13167" />
+          </div>
+        </div>
+
+        <div class="feature-sketch" data-node-id="32:12755">
+          <div class="sketch-row" data-node-id="32:12756">
+            <span class="sketch-dot dot-coral" data-node-id="32:12757"></span>
+            <span class="sketch-label" data-node-id="32:12758">Brand team</span>
+            <span class="sketch-bar bar-blue" style="width: 80px;" data-node-id="32:12759"></span>
+          </div>
+          <div class="sketch-row" data-node-id="32:12760">
+            <span class="sketch-dot dot-coral" data-node-id="32:12761"></span>
+            <span class="sketch-label" data-node-id="32:12762">Agency partners</span>
+            <span class="sketch-bar bar-gray" style="width: 62px;" data-node-id="32:12763"></span>
+          </div>
+          <div class="sketch-row" data-node-id="32:12764">
+            <span class="sketch-dot dot-coral" data-node-id="32:12765"></span>
+            <span class="sketch-label" data-node-id="32:12766">Creator network</span>
+            <span class="sketch-bar bar-gray" style="width: 44px;" data-node-id="32:12767"></span>
+          </div>
+        </div>
+
+        <h3 class="card-title" data-node-id="32:12768">A shared point of view.</h3>
+        <p class="card-desc" data-node-id="32:12769">
+          Keep collaborators on the same page, from the first brief to the wrap-up report.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       5. From Brief to Big Picture (Campaign Management)
+       ======================================================== -->
+  <section class="campaign-mgmt-section" data-node-id="32:12770">
+    <div class="campaign-copy" data-node-id="32:12771">
+      <div class="section-label" data-node-id="32:12772">
+        <span class="marker marker-blue" data-node-id="32:12773"></span>
+        <span class="label-text" data-node-id="32:12774">FROM BRIEF TO BIG PICTURE</span>
+      </div>
+
+      <h2 class="section-heading" data-node-id="32:12775">
+        Less “where is it?” More “here it is.”
+      </h2>
+
+      <p class="section-desc" data-node-id="32:12776">
+        Give every campaign a home. Keep deliverables, creator partnerships, and agreed budgets together, so nothing gets lost between tabs.
+      </p>
+
+      <div class="benefits-list" data-node-id="32:12777">
+        <div class="benefit-item" data-node-id="32:12778">
+          <img src="/assets/check.svg" alt="" class="check-icon" data-node-id="32:13170" />
+          <span data-node-id="32:12780">See who owns what, at a glance</span>
+        </div>
+        <div class="benefit-item" data-node-id="32:12781">
+          <img src="/assets/check.svg" alt="" class="check-icon" data-node-id="32:13173" />
+          <span data-node-id="32:12783">Spot missing content before the wrap-up</span>
+        </div>
+        <div class="benefit-item" data-node-id="32:12784">
+          <img src="/assets/check.svg" alt="" class="check-icon" data-node-id="32:13176" />
+          <span data-node-id="32:12786">Keep agencies and creators in the loop</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campaign Desk Desk Preview Card -->
+    <div class="campaign-desk-container" data-node-id="32:12787">
+      <div class="desk-window-bar" data-node-id="32:12788">
+        <span class="desk-title" data-node-id="32:12789">THE CAMPAIGN DESK</span>
+        <span class="desk-subtitle" data-node-id="32:12790">Sample workspace</span>
+      </div>
+
+      <!-- White Inner Card -->
+      <div class="desk-inner-card" data-node-id="32:12791">
+        <div class="desk-card-header" data-node-id="32:12792">
+          <div class="campaign-title-group" data-node-id="32:12793">
+            <span class="campaign-tag" data-node-id="32:12794">ASTER & CO. / OCTOBER</span>
+            <h4 class="campaign-name" data-node-id="32:12795">Autumn essentials</h4>
+          </div>
+          <div class="status-pill-green" data-node-id="32:12796">
+            <span data-node-id="32:12797">● In progress</span>
+          </div>
+        </div>
+
+        <div class="campaign-meta-row" data-node-id="32:12798">
+          <div class="meta-item" data-node-id="32:12799">
+            <span class="meta-label" data-node-id="32:12800">PARTNERS</span>
+            <span class="meta-val" data-node-id="32:12801">4 agencies · 24 creators</span>
+          </div>
+          <div class="meta-item" data-node-id="32:12802">
+            <span class="meta-label" data-node-id="32:12803">AGREED SPEND</span>
+            <span class="meta-val" data-node-id="32:12804">₹48,000 INR</span>
+          </div>
+        </div>
+
+        <!-- Segmented Progress Bar -->
+        <div class="desk-progress-segments" data-node-id="32:12805">
+          <span class="segment segment-blue" data-node-id="32:12806"></span>
+          <span class="segment segment-green" data-node-id="32:12807"></span>
+          <span class="segment segment-yellow" data-node-id="32:12808"></span>
+          <span class="segment segment-gray" data-node-id="32:12809"></span>
+        </div>
+      </div>
+
+      <!-- Deliverables Box -->
+      <div class="deliverables-box" data-node-id="32:12810">
+        <div class="deliverable-row" data-node-id="32:12811">
+          <span class="status-marker marker-green" data-node-id="32:12812"></span>
+          <span class="deliverable-name" data-node-id="32:12813">Creator briefs</span>
+          <span class="deliverable-status" data-node-id="32:12814">24 of 24 shared</span>
+        </div>
+        <div class="deliverable-row" data-node-id="32:12815">
+          <span class="status-marker marker-blue" data-node-id="32:12816"></span>
+          <span class="deliverable-name" data-node-id="32:12817">Content URLs</span>
+          <span class="deliverable-status" data-node-id="32:12818">40 of 48 added</span>
+        </div>
+        <div class="deliverable-row" data-node-id="32:12819">
+          <span class="status-marker marker-coral" data-node-id="32:12820"></span>
+          <span class="deliverable-name" data-node-id="32:12821">Authorized insights</span>
+          <span class="deliverable-status" data-node-id="32:12822">36 of 48 available</span>
+        </div>
+      </div>
+
+      <p class="desk-note" data-node-id="32:12823">
+        All the little details. Finally in one place.
+      </p>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       6. Make Sense, Not Spreadsheets (Analytics in Deep Blue)
+       ======================================================== -->
+  <section class="analytics-section" data-node-id="32:12824">
+    <!-- Left: Analytics Preview Box -->
+    <div class="analytics-preview-wrap" data-node-id="32:12825">
+      <!-- View controls -->
+      <div class="analytics-tabs" data-node-id="32:12826">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeAnalyticsTab() === 'performance'"
+          (click)="setAnalyticsTab('performance')"
+          data-node-id="32:12827"
+        >
+          Performance
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeAnalyticsTab() === 'agency'"
+          (click)="setAnalyticsTab('agency')"
+          data-node-id="32:12829"
+        >
+          By agency
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeAnalyticsTab() === 'creator'"
+          (click)="setAnalyticsTab('creator')"
+          data-node-id="32:12831"
+        >
+          By creator
+        </button>
+      </div>
+
+      <!-- Report Card -->
+      <div class="analytics-report-card" data-node-id="32:12833">
+        @if (activeAnalyticsTab() === 'performance') {
+          <div class="report-header" data-node-id="32:12834">
+            <span class="report-title" data-node-id="32:12835">Attention, in perspective.</span>
+            <span class="sample-tag-dark" data-node-id="32:12836">CAMPAIGN ROLLUP</span>
+          </div>
+
+          <div class="report-metric-row" data-node-id="32:12837">
+            <div class="report-views-col" data-node-id="32:12838">
+              <span class="report-views-num" data-node-id="32:12839">2.40M</span>
+              <span class="report-views-sub" data-node-id="32:12840">Content views · October 2026</span>
+            </div>
+
+            <div class="report-legend" data-node-id="32:12841">
+              <div class="legend-row" data-node-id="32:12842">
+                <span class="legend-key key-blue" data-node-id="32:12843"></span>
+                <span class="legend-text" data-node-id="32:12844">Views</span>
+              </div>
+              <div class="legend-row" data-node-id="32:12845">
+                <span class="legend-key key-coral" data-node-id="32:12846"></span>
+                <span class="legend-text" data-node-id="32:12847">Engagements</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Performance Plot SVG Area -->
+          <div class="plot-canvas-area" data-node-id="32:12848">
+            <div class="plot-gridline" style="top: 0;"></div>
+            <div class="plot-gridline" style="top: 40px;"></div>
+            <div class="plot-gridline" style="top: 80px;"></div>
+            <div class="plot-gridline" style="top: 120px;"></div>
+
+            <img src="/assets/views-trend-1.svg" alt="" class="plot-layer trend-blue" data-node-id="32:12853" />
+            <img src="/assets/engagements-trend.svg" alt="" class="plot-layer trend-coral" data-node-id="32:12854" />
+
+            <div class="plot-dates-row" data-node-id="32:12855">
+              <span data-node-id="32:12856">Oct 1</span>
+              <span data-node-id="32:12857">Oct 7</span>
+              <span data-node-id="32:12858">Oct 14</span>
+              <span data-node-id="32:12859">Oct 21</span>
+              <span data-node-id="32:12860">Oct 28</span>
+            </div>
+          </div>
+
+          <!-- Coverage Footer -->
+          <div class="report-footer" data-node-id="32:12861">
+            <span class="coverage-statement" data-node-id="32:12862">36 of 48 content items have authorized insights</span>
+            <span class="coverage-pct" data-node-id="32:12863">75% coverage</span>
+          </div>
+        } @else if (activeAnalyticsTab() === 'agency') {
+          <div class="report-header">
+            <span class="report-title">Contribution by partner agency.</span>
+            <span class="sample-tag-dark">4 PARTNER AGENCIES</span>
+          </div>
+
+          <div class="report-metric-row">
+            <div class="report-views-col">
+              <span class="report-views-num">₹48,000</span>
+              <span class="report-views-sub">Total committed budget across 48 slots</span>
+            </div>
+            <div class="report-legend">
+              <div class="legend-row">
+                <span class="legend-key key-blue"></span>
+                <span class="legend-text">Views Share</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-breakdown-list">
+            <div class="breakdown-row">
+              <div class="breakdown-meta">
+                <strong>North Collective</strong>
+                <span>8 creators · ₹16,000 · 1.20M views</span>
+              </div>
+              <div class="breakdown-bar-track"><div class="breakdown-bar-fill" style="width: 50%; background: #3D5EAB;"></div></div>
+            </div>
+            <div class="breakdown-row">
+              <div class="breakdown-meta">
+                <strong>Social House</strong>
+                <span>6 creators · ₹12,000 · 580K views</span>
+              </div>
+              <div class="breakdown-bar-track"><div class="breakdown-bar-fill" style="width: 28%; background: #527E5A;"></div></div>
+            </div>
+            <div class="breakdown-row">
+              <div class="breakdown-meta">
+                <strong>Studio Eight</strong>
+                <span>5 creators · ₹10,000 · 360K views</span>
+              </div>
+              <div class="breakdown-bar-track"><div class="breakdown-bar-fill" style="width: 18%; background: #E4664B;"></div></div>
+            </div>
+            <div class="breakdown-row">
+              <div class="breakdown-meta">
+                <strong>Kindred Talent</strong>
+                <span>5 creators · ₹10,000 · 260K views</span>
+              </div>
+              <div class="breakdown-bar-track"><div class="breakdown-bar-fill" style="width: 14%; background: #F4D943;"></div></div>
+            </div>
+          </div>
+
+          <div class="report-footer">
+            <span class="coverage-statement">All 4 partner agencies active on Autumn Essentials</span>
+            <span class="coverage-pct">100% allocated</span>
+          </div>
+        } @else {
+          <div class="report-header">
+            <span class="report-title">Top performing creators.</span>
+            <span class="sample-tag-dark">META GRAPH API v26.0</span>
+          </div>
+
+          <div class="report-metric-row">
+            <div class="report-views-col">
+              <span class="report-views-num">4.75%</span>
+              <span class="report-views-sub">Average engagement rate across 24 creators</span>
+            </div>
+            <div class="report-legend">
+              <div class="legend-row">
+                <span class="legend-key key-coral"></span>
+                <span class="legend-text">Verified Reach</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-breakdown-list">
+            <div class="breakdown-row">
+              <div class="breakdown-meta">
+                <strong>@emma.rose · North Collective</strong>
+                <span>3 / 3 Reels live · 280,000 views · 5.4% ER</span>
+              </div>
+              <div class="breakdown-bar-track"><div class="breakdown-bar-fill" style="width: 88%; background: #E4664B;"></div></div>
+            </div>
+            <div class="breakdown-row">
+              <div class="breakdown-meta">
+                <strong>@liam.chen · Social House</strong>
+                <span>2 / 2 Reels live · 215,000 views · 4.9% ER</span>
+              </div>
+              <div class="breakdown-bar-track"><div class="breakdown-bar-fill" style="width: 72%; background: #3D5EAB;"></div></div>
+            </div>
+            <div class="breakdown-row">
+              <div class="breakdown-meta">
+                <strong>@maya.lin · Studio Eight</strong>
+                <span>3 / 3 Reels live · 194,000 views · 4.6% ER</span>
+              </div>
+              <div class="breakdown-bar-track"><div class="breakdown-bar-fill" style="width: 64%; background: #527E5A;"></div></div>
+            </div>
+            <div class="breakdown-row">
+              <div class="breakdown-meta">
+                <strong>@noah.vance · Kindred Talent</strong>
+                <span>2 / 2 Reels live · 168,000 views · 4.2% ER</span>
+              </div>
+              <div class="breakdown-bar-track"><div class="breakdown-bar-fill" style="width: 55%; background: #243F82;"></div></div>
+            </div>
+          </div>
+
+          <div class="report-footer">
+            <span class="coverage-statement">Live insights synced via Instagram Graph API</span>
+            <span class="coverage-pct">24 creators active</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Right: Analytics Copy -->
+    <div class="analytics-copy-col" data-node-id="32:12864">
+      <div class="section-label" data-node-id="32:12865">
+        <span class="marker marker-yellow" data-node-id="32:12866"></span>
+        <span class="label-text text-cream" data-node-id="32:12867">MAKE SENSE, NOT SPREADSHEETS</span>
+      </div>
+
+      <h2 class="section-heading text-cream" data-node-id="32:12868">
+        Find the signal. Leave the noise behind.
+      </h2>
+
+      <p class="section-desc text-light" data-node-id="32:12869">
+        See what your content is doing, compare contributions, and understand the gaps. A clearer view of the numbers behind your next move.
+      </p>
+
+      <p class="section-desc-sm text-light" data-node-id="32:12870">
+        Authorized insights stay in context. Missing data is shown as missing—not mistaken for zero.
+      </p>
+
+      <a routerLink="/login" class="btn-cream btn-lg" data-node-id="32:12871">
+        <span data-node-id="32:12872">Explore your overview</span>
+        <img src="/assets/arrow-up-right-dark.svg" alt="" class="btn-icon" data-node-id="32:13179" />
+      </a>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       7. How It Works (3 Steps)
+       ======================================================== -->
+  <section id="how-it-works" class="how-it-works-section" data-node-id="32:12874">
+    <div class="section-label" data-node-id="32:12875">
+      <span class="marker marker-blue" data-node-id="32:12876"></span>
+      <span class="label-text" data-node-id="32:12877">A CLEARER WAY TO WORK</span>
+    </div>
+
+    <div class="workflow-intro-row" data-node-id="32:12878">
+      <h2 class="section-heading" data-node-id="32:12880">
+        From scattered to connected.
+      </h2>
+      <p class="section-subtext" data-node-id="32:12881">
+        Three steps. One shared perspective.
+      </p>
+    </div>
+
+    <div class="workflow-steps-grid" data-node-id="32:12882">
+      <!-- Step 01 -->
+      <div class="step-card" data-node-id="32:12883">
+        <div class="step-card-header" data-node-id="32:12884">
+          <span class="step-num" data-node-id="32:12885">01 /</span>
+          <div class="step-badge badge-sky" data-node-id="32:12886">
+            <img src="/assets/flag.svg" alt="" class="step-icon" data-node-id="32:13182" />
+          </div>
+        </div>
+        <h3 class="step-title" data-node-id="32:12888">Set the scene.</h3>
+        <p class="step-desc" data-node-id="32:12889">
+          Create a campaign, add your dates, and define the scope. Give the work a little structure.
+        </p>
+      </div>
+
+      <!-- Step 02 -->
+      <div class="step-card" data-node-id="32:12890">
+        <div class="step-card-header" data-node-id="32:12891">
+          <span class="step-num" data-node-id="32:12892">02 /</span>
+          <div class="step-badge badge-yellow" data-node-id="32:12893">
+            <img src="/assets/users-2.svg" alt="" class="step-icon" data-node-id="32:13185" />
+          </div>
+        </div>
+        <h3 class="step-title" data-node-id="32:12895">Bring the team in.</h3>
+        <p class="step-desc" data-node-id="32:12896">
+          Add agency partners, creators, and content. Keep deliverables and agreed spend connected.
+        </p>
+      </div>
+
+      <!-- Step 03 -->
+      <div class="step-card" data-node-id="32:12897">
+        <div class="step-card-header" data-node-id="32:12898">
+          <span class="step-num" data-node-id="32:12899">03 /</span>
+          <div class="step-badge badge-coral" data-node-id="32:12900">
+            <img src="/assets/chart-pie.svg" alt="" class="step-icon" data-node-id="32:13188" />
+          </div>
+        </div>
+        <h3 class="step-title" data-node-id="32:12902">See it come together.</h3>
+        <p class="step-desc" data-node-id="32:12903">
+          Review available insights, follow up on the gaps, and share a report with your team.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       8. Made For Marketing Teams (Collaboration Section)
+       ======================================================== -->
+  <section id="for-teams" class="teams-section" data-node-id="32:12904">
+    <div class="teams-banner" data-node-id="32:12905">
+      <!-- Left: Many Minds Art Stage (Unified Collaborative Illustration) -->
+      <div class="team-art-column" data-node-id="32:12906">
+        <div class="team-art-stage" data-node-id="32:12907">
+          <svg class="team-unified-svg" viewBox="0 0 430 286" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Brand, Agency, and Creator Teams Collaborating">
+            <!-- Soft background accents -->
+            <circle cx="215" cy="143" r="112" fill="#DCE5D0" fill-opacity="0.7" />
+            <path d="M54 78L62 64L70 78L54 78Z" fill="#9AC7D8" />
+            <circle cx="372" cy="68" r="9" fill="#F4D943" stroke="#202321" stroke-width="2" />
+
+            <!-- Central Shared Campaign Canvas -->
+            <rect x="86" y="34" width="258" height="164" rx="14" fill="#FFFCF3" stroke="#202321" stroke-width="2.4" />
+            <rect x="86" y="34" width="258" height="28" rx="14" fill="#DCEBF0" stroke="#202321" stroke-width="2.4" />
+            <circle cx="104" cy="48" r="4" fill="#E4664B" />
+            <circle cx="117" cy="48" r="4" fill="#F4D943" />
+            <circle cx="130" cy="48" r="4" fill="#527E5A" />
+
+            <!-- Shared Chart & Sunburst Badge -->
+            <circle cx="294" cy="92" r="18" fill="#F4D943" stroke="#202321" stroke-width="2.2" />
+            <rect x="108" y="76" width="92" height="8" rx="4" fill="#243F82" />
+            <rect x="108" y="92" width="64" height="6" rx="3" fill="#9AC7D8" />
+
+            <path d="M108 168 H320" stroke="#202321" stroke-width="2" stroke-linecap="round" />
+            <path d="M116 156 L158 130 L196 142 L242 112 L276 124 L312 104" stroke="#2852D6" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="158" cy="130" r="4.5" fill="#FFFCF3" stroke="#202321" stroke-width="2.2" />
+            <circle cx="242" cy="112" r="4.5" fill="#FFFCF3" stroke="#202321" stroke-width="2.2" />
+            <circle cx="312" cy="104" r="5" fill="#E4664B" stroke="#202321" stroke-width="2.2" />
+
+            <!-- Role Avatar 1: Brand Lead (Coral Badge Left) -->
+            <g>
+              <rect x="28" y="152" width="114" height="96" rx="14" fill="#EF806D" stroke="#202321" stroke-width="2.4" />
+              <circle cx="85" cy="184" r="18" fill="#FFFCF3" stroke="#202321" stroke-width="2.2" />
+              <circle cx="85" cy="179" r="6" fill="#202321" />
+              <path d="M74 194C77 188 93 188 96 194" stroke="#202321" stroke-width="2.2" stroke-linecap="round" />
+              <rect x="46" y="214" width="78" height="18" rx="9" fill="#FFFCF3" stroke="#202321" stroke-width="1.8" />
+              <text x="85" y="226" text-anchor="middle" fill="#202321" font-family="Inter, sans-serif" font-size="9" font-weight="700">BRAND LEAD</text>
+            </g>
+
+            <!-- Role Avatar 2: Agency Partner (Blue Badge Center) -->
+            <g>
+              <rect x="158" y="168" width="114" height="96" rx="14" fill="#2852D6" stroke="#202321" stroke-width="2.4" />
+              <circle cx="215" cy="200" r="18" fill="#FFFCF3" stroke="#202321" stroke-width="2.2" />
+              <circle cx="215" cy="195" r="6" fill="#202321" />
+              <path d="M204 210C207 204 223 204 226 210" stroke="#202321" stroke-width="2.2" stroke-linecap="round" />
+              <rect x="174" y="230" width="82" height="18" rx="9" fill="#F4D943" stroke="#202321" stroke-width="1.8" />
+              <text x="215" y="242" text-anchor="middle" fill="#202321" font-family="Inter, sans-serif" font-size="9" font-weight="700">AGENCY TEAM</text>
+            </g>
+
+            <!-- Role Avatar 3: Creator Manager (Green Badge Right) -->
+            <g>
+              <rect x="288" y="152" width="114" height="96" rx="14" fill="#386A57" stroke="#202321" stroke-width="2.4" />
+              <circle cx="345" cy="184" r="18" fill="#FFFCF3" stroke="#202321" stroke-width="2.2" />
+              <circle cx="345" cy="179" r="6" fill="#202321" />
+              <path d="M334 194C337 188 353 188 356 194" stroke="#202321" stroke-width="2.2" stroke-linecap="round" />
+              <rect x="304" y="214" width="82" height="18" rx="9" fill="#DCEBF0" stroke="#202321" stroke-width="1.8" />
+              <text x="345" y="226" text-anchor="middle" fill="#202321" font-family="Inter, sans-serif" font-size="9" font-weight="700">CREATOR OPS</text>
+            </g>
+          </svg>
+        </div>
+        <p class="team-caption" data-node-id="32:12908">
+          Different hats. Same big picture.
+        </p>
+      </div>
+
+      <!-- Right: Team Roles Copy -->
+      <div class="team-copy-column" data-node-id="32:12909">
+        <div class="section-label" data-node-id="32:12910">
+          <span class="marker marker-blue" data-node-id="32:12911"></span>
+          <span class="label-text" data-node-id="32:12912">FOR THE PEOPLE BEHIND THE CAMPAIGN</span>
+        </div>
+
+        <h2 class="section-heading" data-node-id="32:12913">
+          Many minds. One point of view.
+        </h2>
+
+        <p class="section-desc" data-node-id="32:12914">
+          Whether you own the brand, manage the agency, or coordinate the creators, Converge gives the work a common language.
+        </p>
+
+        <div class="team-roles-grid" data-node-id="32:12915">
+          <div class="team-role-item" data-node-id="32:12916">
+            <h4 class="role-name" data-node-id="32:12917">Brand teams</h4>
+            <p class="role-desc" data-node-id="32:12918">See the full campaign.</p>
+          </div>
+          <div class="team-role-item" data-node-id="32:12919">
+            <h4 class="role-name" data-node-id="32:12920">Agencies</h4>
+            <p class="role-desc" data-node-id="32:12921">Keep partners aligned.</p>
+          </div>
+          <div class="team-role-item" data-node-id="32:12922">
+            <h4 class="role-name" data-node-id="32:12923">Creator managers</h4>
+            <p class="role-desc" data-node-id="32:12924">Track every deliverable.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       9. FAQ Section (Accordion)
+       ======================================================== -->
+  <section id="faqs" class="faq-section" data-node-id="32:12925">
+    <div class="faq-intro" data-node-id="32:12926">
+      <div class="section-label" data-node-id="32:12927">
+        <span class="marker marker-blue" data-node-id="32:12928"></span>
+        <span class="label-text" data-node-id="32:12929">A LITTLE MORE CLARITY</span>
+      </div>
+
+      <h2 class="section-heading" data-node-id="32:12930">
+        Good questions. Clear answers.
+      </h2>
+
+      <p class="section-desc" data-node-id="32:12931">
+        A few things you might be wondering before bringing it all together.
+      </p>
+    </div>
+
+    <!-- Accordion List -->
+    <div class="faq-accordion" data-node-id="32:12932">
+      @for (faq of faqs; track $index) {
+        <div class="faq-item" [class.open]="openFaqIndex() === $index">
+          <button type="button" class="faq-question-btn" (click)="toggleFaq($index)">
+            <span class="faq-question-text">{{ faq.question }}</span>
+            <img
+              [src]="openFaqIndex() === $index ? '/assets/minus.svg' : '/assets/plus.svg'"
+              alt=""
+              class="faq-toggle-icon"
+            />
+          </button>
+          @if (openFaqIndex() === $index) {
+            <p class="faq-answer-text">{{ faq.answer }}</p>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ========================================================
+       10. Final Invitation Banner
+       ======================================================== -->
+  <section class="final-invitation-banner" data-node-id="32:12955">
+    <div class="section-label" data-node-id="32:12956">
+      <span class="marker marker-blue" data-node-id="32:12957"></span>
+      <span class="label-text" data-node-id="32:12958">EVERYTHING, IN PERSPECTIVE</span>
+    </div>
+
+    <h2 class="invitation-heading" data-node-id="32:12959">
+      Big ideas deserve<br>the whole picture.
+    </h2>
+
+    <p class="invitation-desc" data-node-id="32:12960">
+      Bring your next campaign into focus with Converge.
+    </p>
+
+    <div class="invitation-actions" data-node-id="32:12961">
+      <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="btn-primary btn-lg" data-node-id="32:12962">
+        <span data-node-id="32:12963">Onboard your workspace</span>
+        <img src="/assets/arrow-up-right.svg" alt="" class="btn-icon" data-node-id="32:13206" />
+      </a>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       11. Footer
+       ======================================================== -->
+  <footer class="landing-footer" data-node-id="32:12968">
+    <div class="footer-columns" data-node-id="32:12969">
+      <!-- Brand column -->
+      <div class="footer-brand" data-node-id="32:12970">
+        <div class="footer-logo-wrapper" data-node-id="32:12971">
+          <a routerLink="/" class="logo-link">
+            <img src="/assets/converge-logo.svg" alt="Converge" class="footer-logo-img" data-node-id="32:12972" />
+          </a>
+        </div>
+        <p class="footer-tagline" data-node-id="32:12973">
+          Campaigns, people, and performance. Better together.
+        </p>
+      </div>
+
+      <!-- Links Column 1: Product -->
+      <div class="footer-link-group" data-node-id="32:12974">
+        <span class="group-title" data-node-id="32:12975">Product</span>
+        <button type="button" (click)="scrollToSection('capabilities')" class="group-link" data-node-id="32:12976">Campaign tracking</button>
+        <button type="button" (click)="scrollToSection('capabilities')" class="group-link" data-node-id="32:12977">Analytics</button>
+        <button type="button" (click)="scrollToSection('for-teams')" class="group-link" data-node-id="32:12978">Collaboration</button>
+      </div>
+
+      <!-- Links Column 2: Explore -->
+      <div class="footer-link-group" data-node-id="32:12979">
+        <span class="group-title" data-node-id="32:12980">Explore</span>
+        <button type="button" (click)="scrollToSection('how-it-works')" class="group-link" data-node-id="32:12981">How it works</button>
+        <button type="button" (click)="scrollToSection('for-teams')" class="group-link" data-node-id="32:12982">For teams</button>
+        <button type="button" (click)="scrollToSection('faqs')" class="group-link" data-node-id="32:12983">FAQs</button>
+      </div>
+
+      <!-- Links Column 3: Your workspace -->
+      <div class="footer-link-group" data-node-id="32:12984">
+        <span class="group-title" data-node-id="32:12985">Your workspace</span>
+        <a routerLink="/login" class="group-link" data-node-id="32:12987">Log in</a>
+        <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="group-link" data-node-id="32:12986">Create account</a>
+        <button type="button" (click)="showFeedbackModal.set(true)" class="group-link" data-node-id="32:12988">Feedback & queries</button>
+      </div>
+    </div>
+
+    <!-- Bottom line -->
+    <div class="footer-bottom-line" data-node-id="32:12989">
+      <span class="footer-legal" data-node-id="32:12990">© 2026 Converge. A clearer perspective.</span>
+
+      <!-- Brand Palette Swatches -->
+      <div class="brand-swatches" data-node-id="32:12991">
+        <span class="swatch" style="background-color: #3D5EAB;" data-node-id="32:12992"></span>
+        <span class="swatch" style="background-color: #F4D943;" data-node-id="32:12993"></span>
+        <span class="swatch" style="background-color: #242522;" data-node-id="32:12994"></span>
+        <span class="swatch" style="background-color: #E4664B;" data-node-id="32:12995"></span>
+        <span class="swatch" style="background-color: #527E5A;" data-node-id="32:12996"></span>
+        <span class="swatch" style="background-color: #9AC7D8;" data-node-id="32:12997"></span>
+      </div>
+
+      <div class="footer-legal-links" data-node-id="32:12998">
+        <button type="button" (click)="showFeedbackModal.set(true)" class="legal-link" data-node-id="32:12999">Contact & Support</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Feedback & Queries Modal (Powered by Resend to chaitanyamandviya7@gmail.com) -->
+  @if (showFeedbackModal()) {
+    <div class="landing-modal-backdrop" (click)="showFeedbackModal.set(false)">
+      <div class="landing-modal-card" (click)="$event.stopPropagation()">
+        <div class="landing-modal-head">
+          <h3>Send Feedback or Query</h3>
+          <button type="button" class="landing-modal-close" (click)="showFeedbackModal.set(false)">✕</button>
+        </div>
+        <p class="landing-modal-sub">
+          Your message will be delivered directly to <strong>chaitanyamandviya7@gmail.com</strong> via Resend.
+        </p>
+        <div class="landing-modal-field">
+          <label>Your Email Address</label>
+          <input
+            type="email"
+            [ngModel]="feedbackEmail()"
+            (ngModelChange)="feedbackEmail.set($event)"
+            placeholder="you@example.com"
+          />
+        </div>
+        <div class="landing-modal-field">
+          <label>Feedback or Question *</label>
+          <textarea
+            rows="3"
+            [ngModel]="feedbackMessage()"
+            (ngModelChange)="feedbackMessage.set($event)"
+            placeholder="Tell us how we can help or share your feedback..."
+          ></textarea>
+        </div>
+        <div class="landing-modal-actions">
+          <button type="button" class="btn-outline btn-sm" (click)="showFeedbackModal.set(false)">Cancel</button>
+          <button type="button" class="btn-primary btn-sm" [disabled]="isSendingFeedback()" (click)="submitFeedback()">
+            <span>{{ isSendingFeedback() ? 'Sending...' : 'Send Email' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

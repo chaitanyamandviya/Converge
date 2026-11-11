@@ -1,0 +1,1086 @@
+<div class="overview-view">
+  <!-- Top View Header -->
+  <header class="overview-header">
+    <div class="campaign-title-group">
+      <span class="campaign-tag">
+        {{ isAdmin() ? 'SYSTEM ADMIN CONSOLE' : (isAgency() ? 'AGENCY PORTAL' : (selectedCampaignId() === null ? 'MULTI-CAMPAIGN PORTFOLIO' : 'CAMPAIGN INSIGHTS')) }}
+      </span>
+      <h1 class="campaign-title">
+        {{ isAdmin() ? 'Converge Master Console' : (isAgency() ? 'Agency Partner Workspace' : (selectedCampaignId() === null ? 'Consolidated Portfolio' : (selectedCampaign()?.name || overview().activeCampaignName))) }}
+      </h1>
+      <p class="campaign-desc">
+        @if (isAdmin()) {
+          Platform-level control: oversee brand workspaces, enterprise agency connections, and outbound Resend emails.
+        } @else if (isAgency()) {
+          Manage your contracted creator roster and live Instagram deliverable insights.
+        } @else if (selectedCampaignId() === null) {
+          {{ campaigns().length > 0 ? ('Consolidated multi-campaign analytics across ' + campaigns().length + ' active campaign(s) and partner agencies.') : 'No campaigns active yet — launch your first campaign below.' }}
+        } @else {
+          Timeframe: <strong>{{ selectedCampaign()?.timeframe || 'Active' }}</strong> · Allocated Budget: <strong>₹{{ formatInr(selectedCampaign()?.totalAgreedSpend) }}</strong>
+        }
+      </p>
+    </div>
+
+    <div class="header-actions">
+      @if (isAdmin()) {
+        <button type="button" class="btn-action-primary" (click)="openBrandModal = true">
+          <img src="/assets/plus.svg" alt="" class="btn-icon" />
+          <span>Add brand</span>
+        </button>
+      } @else if (isAgency()) {
+        <a routerLink="/content-library" class="btn-action-primary">
+          <img src="/assets/panels-top-left.svg" alt="" class="btn-icon" />
+          <span>Submit deliverables</span>
+        </a>
+      } @else {
+        <button type="button" class="btn-action-outline" (click)="exportReport()" title="Export Executive 5-Sheet Excel Workbook">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>Export report ↗</span>
+        </button>
+        <button type="button" class="btn-action-primary" (click)="openCampaignModal = true">
+          <img src="/assets/plus.svg" alt="" class="btn-icon" />
+          <span>New campaign</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  <!-- Brand Campaign Switcher & Portfolio Toolbar (Brand Workspace only) -->
+  @if (!isAdmin() && !isAgency()) {
+    <div class="campaign-switcher-toolbar">
+      <div class="campaign-tabs-list">
+        <button
+          type="button"
+          class="camp-tab"
+          [class.active]="selectedCampaignId() === null"
+          (click)="selectCampaign(null)"
+        >
+          <span class="tab-icon">🌐</span>
+          <span class="tab-title">Consolidated (All Campaigns)</span>
+          @if (campaigns().length > 0) {
+            <span class="tab-badge">{{ campaigns().length }}</span>
+          }
+        </button>
+
+        @for (camp of campaigns(); track camp.id) {
+          <button
+            type="button"
+            class="camp-tab"
+            [class.active]="selectedCampaignId() === camp.id"
+            (click)="selectCampaign(camp.id!)"
+          >
+            <span class="tab-dot" [class.active]="camp.status === 'ACTIVE'"></span>
+            <span class="tab-title">{{ camp.name }}</span>
+            <span class="tab-budget">₹{{ formatInr(camp.totalAgreedSpend) }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Metric Highlights Grid -->
+  @if (isAdmin()) {
+    <!-- System Admin Governance Metrics (Zero campaign views/likes) -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-label">REGISTERED BRANDS</span>
+        <div class="metric-val-row">
+          <span class="metric-value">{{ brands().length }}</span>
+        </div>
+        <div class="metric-trend-row">
+          <img src="/assets/views-trend-1.svg" alt="" class="trend-spark" />
+        </div>
+        <span class="metric-footnote positive">Enterprise brand workspaces</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">CONNECTED AGENCIES</span>
+        <div class="metric-val-row">
+          <span class="metric-value">{{ agencies().length }}</span>
+        </div>
+        <div class="metric-trend-row">
+          <img src="/assets/views-trend.svg" alt="" class="trend-spark" />
+        </div>
+        <span class="metric-footnote positive">Partner agency accounts</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">ROSTERED CREATORS</span>
+        <div class="metric-val-row">
+          <span class="metric-value">{{ overview().totalCreators }}</span>
+        </div>
+        <div class="metric-trend-row">
+          <img src="/assets/engagements-trend.svg" alt="" class="trend-spark" />
+        </div>
+        <span class="metric-footnote positive">Talent across all agencies</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">TOTAL PLATFORM SPEND</span>
+        <div class="metric-val-row">
+          <span class="metric-value">₹{{ formatInr(overview().spend) }}</span>
+        </div>
+        <div class="metric-progress-bar">
+          <div class="progress-fill" [style.width.%]="overview().spend > 0 ? 100 : 0"></div>
+        </div>
+        <span class="metric-footnote positive">{{ overview().spend > 0 ? 'Committed platform budget' : 'No budget deployed yet' }}</span>
+      </div>
+    </section>
+  } @else {
+    <!-- Brand / Agency Workspace Metrics -->
+    <section class="metrics-grid">
+      @if (isAgency()) {
+        <div class="metric-card">
+          <span class="metric-label">DELIVERABLES COVERAGE</span>
+          <div class="metric-val-row">
+            <span class="metric-value">{{ overview().contentSlotsFilled }} / {{ overview().totalContentSlots }}</span>
+          </div>
+          <div class="metric-progress-bar">
+            <div class="progress-fill" [style.width.%]="overview().coveragePercent"></div>
+          </div>
+          <span class="metric-footnote positive">{{ overview().totalContentSlots > 0 ? (overview().coveragePercent + '% live insights synced') : 'No deliverables submitted yet' }}</span>
+        </div>
+      } @else {
+        <div class="metric-card">
+          <span class="metric-label">TOTAL COMMITTED SPEND</span>
+          <div class="metric-val-row">
+            <span class="metric-value">₹{{ formatInr(overview().spend) }}</span>
+          </div>
+          <div class="metric-progress-bar">
+            <div class="progress-fill" [style.width.%]="overview().spend > 0 ? 100 : 0"></div>
+          </div>
+          <span class="metric-footnote positive">{{ overview().spend > 0 ? 'Committed campaign budget' : 'No budget deployed yet' }}</span>
+        </div>
+      }
+
+      <div class="metric-card">
+        <span class="metric-label">{{ isAgency() ? 'AGENCY VIEWS DELIVERED' : 'TOTAL VIEWS' }}</span>
+        <div class="metric-val-row">
+          <span class="metric-value">{{ overview().views | number }}</span>
+        </div>
+        <div class="metric-trend-row">
+          <img src="/assets/views-trend.svg" alt="" class="trend-spark" />
+        </div>
+        <span class="metric-footnote positive">{{ overview().views > 0 ? 'Live synced reach' : 'Awaiting live posts' }}</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">{{ isAgency() ? 'AGENCY ENGAGEMENTS' : 'TOTAL LIKES' }}</span>
+        <div class="metric-val-row">
+          <span class="metric-value">{{ overview().likes | number }}</span>
+        </div>
+        <div class="metric-trend-row">
+          <img src="/assets/engagements-trend.svg" alt="" class="trend-spark" />
+        </div>
+        <span class="metric-footnote positive">{{ overview().likes > 0 ? 'Verified engagements' : 'No engagements recorded yet' }}</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">{{ isAgency() ? 'ACTIVE ROSTER TALENT' : 'ONBOARDED CREATORS' }}</span>
+        <div class="metric-val-row">
+          <span class="metric-value">{{ overview().totalCreators }}</span>
+        </div>
+        <div class="metric-trend-row">
+          <img src="/assets/views-trend-1.svg" alt="" class="trend-spark" />
+        </div>
+        <span class="metric-footnote positive">Rostered accounts</span>
+      </div>
+    </section>
+  }
+
+  <!-- Split Row: Admin Brands View vs Brand/Agency View -->
+  @if (isAdmin()) {
+    <!-- Admin View: Brand Workspaces & Connected Agency Hierarchy (Full User Directory) -->
+    <div class="admin-hierarchy-container">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Brand Workspaces & Connected Agency Hierarchy</h2>
+          <p class="card-sub">Platform user directory: review registered brand managers and the partner agencies operating under each brand workspace.</p>
+        </div>
+      </div>
+
+      @if (brands().length === 0) {
+        <div class="empty-state-box">
+          <p>No brands onboarded yet. Click <strong>+ Add brand</strong> above to register your first Brand Workspace and trigger a Set-Password invitation email.</p>
+        </div>
+      } @else {
+        <div class="brand-hierarchy-list">
+          @for (brand of brands(); track brand.id || brand.name) {
+            <div class="brand-hierarchy-card">
+              <!-- Brand Workspace Header -->
+              <div class="brand-card-top">
+                <div class="brand-identity-col">
+                  <div class="brand-avatar-box">
+                    @if (brand.logoUrl) {
+                      <img [src]="brand.logoUrl" alt="" class="brand-avatar-img" (error)="brand.logoUrl = ''" />
+                    } @else {
+                      {{ (brand.name || 'B')[0].toUpperCase() }}
+                    }
+                  </div>
+                  <div class="brand-info">
+                    <div class="brand-title-line">
+                      <h3 class="brand-name-heading">{{ brand.name }}</h3>
+                      <span class="brand-role-chip">BRAND WORKSPACE</span>
+                      @if (brand.status === 'PENDING_APPROVAL') {
+                        <span class="status-badge-pending">PENDING APPROVAL</span>
+                      } @else if (brand.status === 'DEACTIVATED') {
+                        <span class="status-badge-deactivated">DEACTIVATED</span>
+                      } @else {
+                        <span class="status-badge-active">{{ brand.status || 'ACTIVE' }}</span>
+                      }
+                    </div>
+                    <div class="brand-meta-line">
+                      <span class="user-email-tag">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Manager: <strong>{{ brand.primaryManagerEmail || brand.contactEmail || '—' }}</strong>
+                      </span>
+                      <span class="dot-sep">·</span>
+                      <span class="category-tag">{{ brand.category || 'General' }}</span>
+                      @if (brand.websiteUrl) {
+                        <span class="dot-sep">·</span>
+                        <a [href]="brand.websiteUrl" target="_blank" rel="noopener" class="brand-web-link">
+                          {{ brand.websiteUrl }} ↗
+                        </a>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Brand Actions Toolbar -->
+                <div class="brand-actions-bar">
+                  <button
+                    type="button"
+                    class="btn-table-action"
+                    title="Edit Brand"
+                    [disabled]="processingBrandId() === brand.id"
+                    (click)="openEditBrand(brand)"
+                  >
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-table-action danger"
+                    title="Delete Brand"
+                    [disabled]="processingBrandId() === brand.id"
+                    (click)="deleteBrand(brand)"
+                  >
+                    @if (processingBrandId() === brand.id && processingBrandAction() === 'delete') {
+                      <span class="btn-spinner dark"></span>
+                      <span>Deleting...</span>
+                    } @else {
+                      <span>Delete</span>
+                    }
+                  </button>
+                </div>
+              </div>
+
+              <!-- Nested Agencies Section Under This Brand -->
+              <div class="nested-agencies-container">
+                <div class="nested-section-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>CONNECTED PARTNER AGENCIES ({{ getAgenciesForBrand(brand).length }})</span>
+                </div>
+
+                @if (getAgenciesForBrand(brand).length === 0) {
+                  <div class="nested-empty-agencies">
+                    No partner agencies onboarded by this brand yet. (Agency invitations are managed directly by the Brand Manager).
+                  </div>
+                } @else {
+                  <div class="nested-agencies-table-wrap">
+                    <table class="nested-agencies-table">
+                      <thead>
+                        <tr>
+                          <th>AGENCY</th>
+                          <th>AGENCY MANAGER (USER)</th>
+                          <th>CATEGORY</th>
+                          <th>ROSTERED TALENT</th>
+                          <th>COMMITTED SPEND</th>
+                          <th>STATUS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (agency of getAgenciesForBrand(brand); track agency.id || agency.name) {
+                          <tr>
+                            <td class="agency-title-td">
+                              <div class="agency-cell-wrap">
+                                <span class="agency-bullet-circle" [style.background-color]="agency.avatarColor || '#243F82'">{{ agency.name[0] }}</span>
+                                <div>
+                                  <strong class="agency-name-text">{{ agency.name }}</strong>
+                                  @if (agency.websiteUrl) {
+                                    <a [href]="agency.websiteUrl" target="_blank" rel="noopener" class="agency-sub-link">
+                                      {{ agency.websiteUrl }} ↗
+                                    </a>
+                                  }
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="manager-user-chip">
+                                <span class="manager-email">{{ agency.email }}</span>
+                                <span class="user-badge agency-role">AGENCY MANAGER</span>
+                              </div>
+                            </td>
+                            <td><span class="tag-pill">{{ agency.category || 'General' }}</span></td>
+                            <td><strong class="number-data">{{ agency.creatorsCount }}</strong> creators</td>
+                            <td><strong class="spend-data">₹{{ formatInr(agency.spend) }}</strong></td>
+                            <td>
+                              @if (agency.status === 'PENDING_APPROVAL') {
+                                <span class="status-chip pending">PENDING APPROVAL</span>
+                              } @else if (agency.status === 'DEACTIVATED') {
+                                <span class="status-chip deactivated">DEACTIVATED</span>
+                              } @else {
+                                <span class="status-chip active">{{ agency.status || 'ACTIVE' }}</span>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Independent / Global Agencies (if any unassigned to a brand) -->
+      @if (unassignedAgencies().length > 0) {
+        <div class="unassigned-agencies-card" style="margin-top: 24px;">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title" style="font-size: 15px;">Independent / Global Partner Agencies ({{ unassignedAgencies().length }})</h3>
+              <p class="card-sub">Agencies registered across platform without a single parent brand link</p>
+            </div>
+          </div>
+          <div class="nested-agencies-table-wrap">
+            <table class="nested-agencies-table">
+              <thead>
+                <tr>
+                  <th>AGENCY</th>
+                  <th>AGENCY MANAGER (USER)</th>
+                  <th>CATEGORY</th>
+                  <th>ROSTERED TALENT</th>
+                  <th>COMMITTED SPEND</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (agency of unassignedAgencies(); track agency.id || agency.name) {
+                  <tr>
+                    <td class="agency-title-td">
+                      <div class="agency-cell-wrap">
+                        <span class="agency-bullet-circle" [style.background-color]="agency.avatarColor || '#243F82'">{{ agency.name[0] }}</span>
+                        <strong class="agency-name-text">{{ agency.name }}</strong>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="manager-user-chip">
+                        <span class="manager-email">{{ agency.email }}</span>
+                        <span class="user-badge agency-role">AGENCY MANAGER</span>
+                      </div>
+                    </td>
+                    <td><span class="tag-pill">{{ agency.category || 'General' }}</span></td>
+                    <td><strong class="number-data">{{ agency.creatorsCount }}</strong> creators</td>
+                    <td><strong class="spend-data">₹{{ formatInr(agency.spend) }}</strong></td>
+                    <td><span class="status-chip active">{{ agency.status || 'ACTIVE' }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Brand / Agency View -->
+
+    <!-- ========================================================
+         Landing Page Promised Feature Suite:
+         1. Interactive Analytics ("Attention, in perspective." / Tabs)
+         2. Operational Health ("The Campaign Desk" & "A little follow-up")
+         ======================================================== -->
+    <div class="landing-promised-analytics-hub">
+      <!-- Left Column: Deep Navy Interactive Analytics Card -->
+      <div class="analytics-card-dark">
+        <!-- View Controls / Tabs -->
+        <div class="analytics-tabs-bar">
+          <button
+            type="button"
+            class="hub-tab-btn"
+            [class.active]="activeAnalyticsTab() === 'performance'"
+            (click)="setAnalyticsTab('performance')"
+          >
+            Performance
+          </button>
+          <button
+            type="button"
+            class="hub-tab-btn"
+            [class.active]="activeAnalyticsTab() === 'agency'"
+            (click)="setAnalyticsTab('agency')"
+          >
+            By agency
+          </button>
+          <button
+            type="button"
+            class="hub-tab-btn"
+            [class.active]="activeAnalyticsTab() === 'creator'"
+            (click)="setAnalyticsTab('creator')"
+          >
+            By creator
+          </button>
+        </div>
+
+        <!-- Tab 1: Performance Plot -->
+        @if (activeAnalyticsTab() === 'performance') {
+          <div class="hub-report-card">
+            <div class="hub-report-header">
+              <span class="hub-report-title">Attention, in perspective.</span>
+              <span class="hub-tag-dark">{{ selectedCampaign() ? selectedCampaign()!.name.toUpperCase() : 'CAMPAIGN ROLLUP' }}</span>
+            </div>
+
+            <div class="hub-report-metric-row">
+              <div class="hub-views-col">
+                <span class="hub-views-num">{{ (overview().views || 0) | number }}</span>
+                <span class="hub-views-sub">Content views · {{ overview().contentSlotsFilled || withInsightsCount() }} live deliverable(s)</span>
+              </div>
+
+              <div class="hub-report-legend">
+                <div class="hub-legend-row">
+                  <span class="hub-legend-key key-blue"></span>
+                  <span class="hub-legend-text">Views</span>
+                </div>
+                <div class="hub-legend-row">
+                  <span class="hub-legend-key key-coral"></span>
+                  <span class="hub-legend-text">Engagements</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SVG Multi-Line Trend Chart Canvas -->
+            <div class="hub-canvas-area">
+              <svg viewBox="0 0 600 130" class="hub-plot-svg" preserveAspectRatio="none">
+                <line x1="0" y1="20" x2="600" y2="20" stroke="rgba(246, 244, 236, 0.08)" stroke-width="1" />
+                <line x1="0" y1="60" x2="600" y2="60" stroke="rgba(246, 244, 236, 0.08)" stroke-width="1" />
+                <line x1="0" y1="100" x2="600" y2="100" stroke="rgba(246, 244, 236, 0.08)" stroke-width="1" />
+
+                <defs>
+                  <linearGradient id="hubViewsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3D5EAB" stop-opacity="0.45"/>
+                    <stop offset="100%" stop-color="#3D5EAB" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+
+                <path [attr.d]="viewsAreaPath()" fill="url(#hubViewsGradient)" />
+                <path [attr.d]="viewsLinePath()" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" />
+                <path [attr.d]="engagementsLinePath()" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round" />
+              </svg>
+
+              <div class="hub-dates-row">
+                @for (d of chartDates(); track d) {
+                  <span>{{ d }}</span>
+                }
+              </div>
+            </div>
+
+            <!-- Coverage Footer -->
+            <div class="hub-report-footer">
+              <span class="hub-coverage-statement">
+                {{ withInsightsCount() }} of {{ contentItems().length }} content items have authorized insights
+              </span>
+              <span class="hub-coverage-pct">{{ coveragePercent() }}% coverage</span>
+            </div>
+          </div>
+        }
+
+        <!-- Tab 2: By Agency Breakdown -->
+        @if (activeAnalyticsTab() === 'agency') {
+          <div class="hub-report-card">
+            <div class="hub-report-header">
+              <span class="hub-report-title">Contribution by partner agency.</span>
+              <span class="hub-tag-dark">{{ agencies().length }} PARTNER AGENCIES</span>
+            </div>
+
+            <div class="hub-report-metric-row">
+              <div class="hub-views-col">
+                <span class="hub-views-num">₹{{ formatInr(overview().spend) }}</span>
+                <span class="hub-views-sub">Total committed budget across {{ contentItems().length }} deliverable slots</span>
+              </div>
+              <div class="hub-report-legend">
+                <div class="hub-legend-row">
+                  <span class="hub-legend-key key-blue"></span>
+                  <span class="hub-legend-text">Views Share</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hub-breakdown-list">
+              @if (agencyBreakdown().length === 0) {
+                <div class="hub-empty-breakdown">
+                  No agencies connected to this workspace yet.
+                </div>
+              } @else {
+                @for (ag of agencyBreakdown(); track ag.name) {
+                  <div class="hub-breakdown-row">
+                    <div class="hub-breakdown-meta">
+                      <strong>{{ ag.name }}</strong>
+                      <span>{{ ag.creatorsCount }} creators · ₹{{ formatInr(ag.spend) }} · {{ ag.views | number }} views</span>
+                    </div>
+                    <div class="hub-bar-track">
+                      <div class="hub-bar-fill" [style.width.%]="ag.viewsShare" [style.background-color]="ag.color"></div>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="hub-report-footer">
+              <span class="hub-coverage-statement">All {{ agencies().length }} partner agencies connected</span>
+              <span class="hub-coverage-pct">{{ agencies().length > 0 ? '100% active' : '0% connected' }}</span>
+            </div>
+          </div>
+        }
+
+        <!-- Tab 3: By Creator Breakdown -->
+        @if (activeAnalyticsTab() === 'creator') {
+          <div class="hub-report-card">
+            <div class="hub-report-header">
+              <span class="hub-report-title">Top creator contribution.</span>
+              <span class="hub-tag-dark">{{ creators().length }} ROSTERED CREATORS</span>
+            </div>
+
+            <div class="hub-report-metric-row">
+              <div class="hub-views-col">
+                <span class="hub-views-num">{{ (overview().views || 0) | number }}</span>
+                <span class="hub-views-sub">Delivered reach across {{ creators().length }} creator profiles</span>
+              </div>
+              <div class="hub-report-legend">
+                <div class="hub-legend-row">
+                  <span class="hub-legend-key key-blue"></span>
+                  <span class="hub-legend-text">Views Share</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hub-breakdown-list">
+              @if (creatorBreakdown().length === 0) {
+                <div class="hub-empty-breakdown">
+                  No creators rostered under active agencies yet.
+                </div>
+              } @else {
+                @for (cr of creatorBreakdown(); track cr.handle) {
+                  <div class="hub-breakdown-row">
+                    <div class="hub-breakdown-meta">
+                      <strong>{{ cr.name }} ({{ cr.handle }})</strong>
+                      <span>{{ cr.agencyName }} · {{ cr.deliverablesCount }} deliverables · {{ cr.views | number }} views</span>
+                    </div>
+                    <div class="hub-bar-track">
+                      <div class="hub-bar-fill" [style.width.%]="cr.viewsShare" [style.background-color]="cr.color"></div>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="hub-report-footer">
+              <span class="hub-coverage-statement">{{ creators().length }} total contracted talent</span>
+              <span class="hub-coverage-pct">Verified Talent</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Right Column: Campaign Desk & A Little Follow-up -->
+      <div class="hub-desk-col">
+        <!-- Card 1: The Campaign Desk -->
+        <div class="hub-campaign-desk">
+          <div class="hub-desk-window-bar">
+            <span class="hub-desk-title">THE CAMPAIGN DESK</span>
+            <span class="hub-desk-subtitle">{{ selectedCampaign() ? 'Active Focus' : 'Consolidated' }}</span>
+          </div>
+
+          <div class="hub-desk-inner-card">
+            <div class="hub-desk-card-header">
+              <div class="hub-camp-title-group">
+                <span class="hub-camp-tag">{{ (user()?.organizationName || 'BRAND').toUpperCase() }}</span>
+                <h4 class="hub-camp-name">{{ selectedCampaign()?.name || overview().activeCampaignName || 'Active Workspace' }}</h4>
+              </div>
+              <div class="hub-status-pill">
+                <span>● In progress</span>
+              </div>
+            </div>
+
+            <div class="hub-camp-meta-row">
+              <div class="hub-meta-item">
+                <span class="hub-meta-label">PARTNERS</span>
+                <span class="hub-meta-val">{{ agencies().length }} agencies · {{ overview().totalCreators }} creators</span>
+              </div>
+              <div class="hub-meta-item">
+                <span class="hub-meta-label">AGREED SPEND</span>
+                <span class="hub-meta-val">₹{{ formatInr(overview().spend) }} INR</span>
+              </div>
+            </div>
+
+            <!-- Segmented Progress Bar -->
+            <div class="hub-progress-segments">
+              <span class="hub-segment seg-blue" [style.width.%]="deskSegments().insightsWidth" title="With Insights"></span>
+              <span class="hub-segment seg-green" [style.width.%]="deskSegments().awaitingWidth" title="Awaiting Insights"></span>
+              <span class="hub-segment seg-yellow" [style.width.%]="deskSegments().missingWidth" title="Missing URLs"></span>
+              <span class="hub-segment seg-gray" [style.width.%]="deskSegments().remainingWidth" title="Open Slots"></span>
+            </div>
+
+            <!-- Deliverables Checklist -->
+            <div class="hub-deliverables-box">
+              <div class="hub-deliverable-row">
+                <span class="hub-marker marker-green"></span>
+                <span class="hub-deliv-name">Creator talent</span>
+                <span class="hub-deliv-status">{{ overview().totalCreators }} active</span>
+              </div>
+              <div class="hub-deliverable-row">
+                <span class="hub-marker marker-blue"></span>
+                <span class="hub-deliv-name">Content URLs</span>
+                <span class="hub-deliv-status">{{ contentItems().length }} added</span>
+              </div>
+              <div class="hub-deliverable-row">
+                <span class="hub-marker marker-coral"></span>
+                <span class="hub-deliv-name">Authorized insights</span>
+                <span class="hub-deliv-status">{{ withInsightsCount() }} of {{ contentItems().length }} available</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: A Little Follow-up -->
+        <div class="hub-followup-card">
+          <div class="hub-followup-header">
+            <div class="hub-followup-title">A little follow-up</div>
+            <span class="hub-followup-badge">{{ missingUrlsCount() + awaitingInsightsCount() }} actions</span>
+          </div>
+          <p class="hub-followup-desc">
+            @if (missingUrlsCount() > 0 || awaitingInsightsCount() > 0) {
+              <strong>{{ missingUrlsCount() }} content URLs missing</strong> · {{ awaitingInsightsCount() }} awaiting authorized insights.
+            } @else {
+              All content items are up to date and verified with live insights.
+            }
+          </p>
+          <a routerLink="/content-library" class="hub-followup-link">Review content slots →</a>
+          <div class="hub-followup-progress-bar">
+            <div class="hub-progress-fill" [style.width.%]="coveragePercent()"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Campaigns Portfolio Table (Consolidated View) -->
+    @if (!isAdmin() && !isAgency() && selectedCampaignId() === null && campaigns().length > 0) {
+      <div class="card campaigns-portfolio-card">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title">All Campaigns Portfolio</h2>
+            <p class="card-sub">Multi-campaign directory: select any campaign to inspect its specific performance insights, creator roster, and spend metrics.</p>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table class="campaigns-table">
+            <thead>
+              <tr>
+                <th>CAMPAIGN NAME</th>
+                <th>TIMEFRAME</th>
+                <th>COMMITTED BUDGET</th>
+                <th>VIEWS DELIVERED</th>
+                <th>ENGAGEMENTS</th>
+                <th>DELIVERABLES (INSIGHTS)</th>
+                <th>STATUS</th>
+                <th class="th-actions">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (camp of campaigns(); track camp.id) {
+                <tr>
+                  <td class="camp-title-td">
+                    <div class="camp-cell-name">
+                      <strong class="camp-name-text">{{ camp.name }}</strong>
+                      <span class="camp-brand-sub">{{ camp.brandName || 'Brand Workspace' }}</span>
+                    </div>
+                  </td>
+                  <td><span class="timeframe-pill">{{ camp.timeframe }}</span></td>
+                  <td><strong class="budget-data">₹{{ formatInr(camp.totalAgreedSpend) }}</strong></td>
+                  <td><strong class="number-data">{{ (camp.totalViews || 0) | number }}</strong></td>
+                  <td><strong class="number-data">{{ ((camp.totalLikes || 0) + (camp.totalComments || 0)) | number }}</strong></td>
+                  <td><span class="insights-ratio-badge">{{ camp.contentWithInsights || '0 / 0' }}</span></td>
+                  <td><span class="status-chip active">{{ camp.status || 'ACTIVE' }}</span></td>
+                  <td class="td-actions">
+                    <div class="action-dropdown-container">
+                      <button
+                        type="button"
+                        class="btn-action-trigger"
+                        (click)="toggleActionMenu(camp.id, $event)"
+                        title="Campaign actions"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="5" r="2"/>
+                          <circle cx="12" cy="12" r="2"/>
+                          <circle cx="12" cy="19" r="2"/>
+                        </svg>
+                        <span>Actions</span>
+                        <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" style="opacity: 0.7;"><path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+                      </button>
+                      @if (openMenuId() === camp.id) {
+                        <div class="action-dropdown-menu" (click)="$event.stopPropagation()">
+                          <button type="button" class="dropdown-item" (click)="selectCampaign(camp.id!); closeMenu()">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8Z"/><circle cx="8" cy="8" r="2"/></svg>
+                            <span>View Insights</span>
+                          </button>
+                          <div class="dropdown-divider"></div>
+                          <button type="button" class="dropdown-item danger" (click)="deleteCampaign(camp); closeMenu()">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 4h11"/><path d="M5.5 4V2.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V4"/><path d="M4 4l.7 9.5a1.5 1.5 0 0 0 1.5 1.5h3.6a1.5 1.5 0 0 0 1.5-1.5L12 4"/></svg>
+                            <span>Delete Campaign</span>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- Single Campaign Specific Hero Bar (Campaign-Specific View) -->
+    @if (!isAdmin() && !isAgency() && selectedCampaignId() !== null) {
+      <div class="card campaign-detail-hero-card">
+        <div class="camp-hero-left">
+          <span class="camp-hero-tag">Active Campaign Focus</span>
+          <h2 class="camp-hero-title">{{ selectedCampaign()?.name }}</h2>
+          <div class="camp-hero-meta">
+            <span>📅 {{ selectedCampaign()?.timeframe }}</span>
+            <span>•</span>
+            <span>💰 Allocated Budget: <strong>₹{{ formatInr(selectedCampaign()?.totalAgreedSpend) }}</strong></span>
+            @if (selectedCampaign()?.assignedAgencyNames) {
+              <span>•</span>
+              <span class="camp-partner-agency-pill">🏢 Agencies: {{ selectedCampaign()?.assignedAgencyNames }}</span>
+            }
+            <span>•</span>
+            <span class="status-chip active">{{ selectedCampaign()?.status || 'ACTIVE' }}</span>
+          </div>
+        </div>
+        <div class="camp-hero-actions">
+          <button type="button" class="btn-hero-secondary" (click)="selectCampaign(null)">
+            ← Back to Consolidated Portfolio
+          </button>
+          <button type="button" class="btn-hero-danger" (click)="deleteCampaign(selectedCampaign()!)">
+            Delete Campaign
+          </button>
+        </div>
+      </div>
+    }
+
+    <div class="portal-split-row">
+      <!-- Participating Agencies Card (hidden for agency managers to protect competitor isolation) -->
+      @if (!isAgency()) {
+        <div class="card agency-summary-card">
+          <div class="card-head">
+            <div>
+              <h2 class="card-title">Participating Agencies</h2>
+              <p class="card-sub">{{ agencies().length }} agencies connected to your workspace</p>
+            </div>
+            <a routerLink="/agencies" class="card-link">Manage agencies ↗</a>
+          </div>
+
+          @if (agencies().length === 0) {
+            <div class="empty-state-box">
+              <p>No partner agencies onboarded yet. Go to <a routerLink="/agencies">Agencies</a> to invite an agency.</p>
+            </div>
+          } @else {
+            <div class="agency-pills-list">
+              @for (agency of agencies(); track agency.id || agency.name) {
+                <div class="agency-mini-row">
+                  <div class="agency-mini-left">
+                    <span class="agency-bullet" [style.background-color]="agency.avatarColor"></span>
+                    <div>
+                      <span class="mini-agency-name">{{ agency.name }}</span>
+                      <span class="mini-agency-category">{{ agency.email }} · {{ agency.category }}</span>
+                    </div>
+                  </div>
+                  <div class="agency-mini-right">
+                    @if (agency.status === 'PENDING_APPROVAL') {
+                      <button
+                        type="button"
+                        class="btn-approve"
+                        [disabled]="processingAgencyId() === agency.id"
+                        (click)="approveAgency(agency)"
+                      >
+                        @if (processingAgencyId() === agency.id) {
+                          <span class="btn-spinner"></span>
+                          <span>Approving...</span>
+                        } @else {
+                          <span>✓ Approve Agency</span>
+                        }
+                      </button>
+                    } @else {
+                      <span class="mini-agency-creators">{{ agency.creatorsCount }} creators</span>
+                      <span class="mini-agency-spend">₹{{ formatInr(agency.spend) }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Deliverables Status Card (100% Real Database Counts) -->
+      <div class="card content-status-card" [style.grid-column]="isAgency() ? '1 / -1' : 'auto'">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title">Deliverables Status</h2>
+            <p class="card-sub">Real-time tracking of {{ overview().totalContentSlots }} campaign assets</p>
+          </div>
+          <a routerLink="/content-library" class="card-link">Manage library ↗</a>
+        </div>
+
+        <div class="status-bars-container">
+          <div class="status-bar-row">
+            <div class="status-bar-meta">
+              <span class="status-name">With Live Insights</span>
+              <span class="status-count">{{ overview().contentSlotsFilled }} / {{ overview().totalContentSlots }} ({{ overview().coveragePercent }}%)</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill green-bar" [style.width.%]="overview().coveragePercent"></div>
+            </div>
+          </div>
+
+          <div class="status-bar-row">
+            <div class="status-bar-meta">
+              <span class="status-name">Missing URLs</span>
+              <span class="status-count">{{ overview().missingUrlsCount }} / {{ overview().totalContentSlots }}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill orange-bar" [style.width.%]="overview().totalContentSlots > 0 ? (overview().missingUrlsCount * 100 / overview().totalContentSlots) : 0"></div>
+            </div>
+          </div>
+
+          <div class="status-bar-row">
+            <div class="status-bar-meta">
+              <span class="status-name">Awaiting Insights (&lt;24h)</span>
+              <span class="status-count">{{ overview().awaitingInsightsCount }} / {{ overview().totalContentSlots }}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill blue-bar" [style.width.%]="overview().totalContentSlots > 0 ? (overview().awaitingInsightsCount * 100 / overview().totalContentSlots) : 0"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Add Brand (Admin only — Single Brand Manager Email & Triggers Set-Password Email) -->
+  @if (openBrandModal) {
+    <div class="modal-backdrop" (click)="openBrandModal = false">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Register New Brand Workspace</h3>
+          <button class="close-btn" (click)="openBrandModal = false">✕</button>
+        </div>
+        <form (ngSubmit)="submitBrand()">
+          <div class="form-group">
+            <label>Brand Name *</label>
+            <input type="text" [(ngModel)]="newBrandName" name="name" required placeholder="e.g. Lumina Health" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Brand Website URL (if available)</label>
+            <div class="website-input-row">
+              <input type="url" [(ngModel)]="newBrandWebsiteUrl" (blur)="newBrandWebsiteUrl && !newBrandLogoUrl ? fetchBrandLogo('new') : null" name="websiteUrl" placeholder="https://luminahealth.com" class="form-input" />
+              <button type="button" class="btn-fetch-logo" (click)="fetchBrandLogo('new')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                <span>Fetch Logo</span>
+              </button>
+            </div>
+            @if (newBrandLogoUrl) {
+              <div class="logo-preview-chip">
+                <img [src]="newBrandLogoUrl" alt="Brand Logo" class="preview-logo-thumb" (error)="newBrandLogoUrl = ''" />
+                <span class="preview-logo-text">Detected Logo Preview</span>
+                <button type="button" class="btn-clear-logo" (click)="newBrandLogoUrl = ''" title="Clear logo">✕</button>
+              </div>
+            }
+          </div>
+          <div class="form-group">
+            <label>Brand Manager Email *</label>
+            <input type="email" [(ngModel)]="newBrandManagerEmail" name="managerEmail" required placeholder="manager@luminahealth.com" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Primary Vertical *</label>
+            <app-custom-select
+              [(ngModel)]="newBrandCategory"
+              name="category"
+              [options]="primaryVerticals"
+              placeholder="Select Primary Vertical"
+            ></app-custom-select>
+          </div>
+          <p class="modal-helper-note">
+            An invitation email with a <strong>Set Initial Password</strong> link will be triggered automatically for the Brand Manager.
+          </p>
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" [disabled]="isSubmittingBrand()" (click)="openBrandModal = false">Cancel</button>
+            <button type="submit" class="btn-submit" [disabled]="isSubmittingBrand()">
+              @if (isSubmittingBrand()) {
+                <span class="btn-spinner"></span>
+                <span>Creating & Sending...</span>
+              } @else {
+                <span>Create Brand & Send Invite</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Edit Brand (Admin only) -->
+  @if (openEditBrandModal) {
+    <div class="modal-backdrop" (click)="openEditBrandModal = false">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Edit Brand Workspace</h3>
+          <button class="close-btn" (click)="openEditBrandModal = false">✕</button>
+        </div>
+        <form (ngSubmit)="submitEditBrand()">
+          <div class="form-group">
+            <label>Brand Name *</label>
+            <input type="text" [(ngModel)]="editBrandName" name="editBrandName" required class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Brand Website URL (if available)</label>
+            <div class="website-input-row">
+              <input type="url" [(ngModel)]="editBrandWebsiteUrl" (blur)="editBrandWebsiteUrl && !editBrandLogoUrl ? fetchBrandLogo('edit') : null" name="editBrandWebsiteUrl" class="form-input" />
+              <button type="button" class="btn-fetch-logo" (click)="fetchBrandLogo('edit')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                <span>Fetch Logo</span>
+              </button>
+            </div>
+            @if (editBrandLogoUrl) {
+              <div class="logo-preview-chip">
+                <img [src]="editBrandLogoUrl" alt="Brand Logo" class="preview-logo-thumb" (error)="editBrandLogoUrl = ''" />
+                <span class="preview-logo-text">Detected Logo Preview</span>
+                <button type="button" class="btn-clear-logo" (click)="editBrandLogoUrl = ''" title="Clear logo">✕</button>
+              </div>
+            }
+          </div>
+          <div class="form-group">
+            <label>Brand Manager Email *</label>
+            <input type="email" [(ngModel)]="editBrandManagerEmail" name="editBrandManagerEmail" required class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Primary Vertical *</label>
+            <app-custom-select
+              [(ngModel)]="editBrandCategory"
+              name="editBrandCategory"
+              [options]="primaryVerticals"
+              placeholder="Select Primary Vertical"
+            ></app-custom-select>
+          </div>
+
+          @if (selectedBrandForEdit) {
+            <div class="edit-quick-actions" style="margin-top: 14px; padding: 12px; background: rgba(36, 63, 130, 0.04); border-radius: 10px; border: 1px solid rgba(36, 63, 130, 0.1);">
+              <div style="font-size: 11.5px; font-weight: 700; color: #243F82; margin-bottom: 8px;">Workspace Access & Invites</div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                @if (selectedBrandForEdit.status === 'PENDING_APPROVAL') {
+                  <button type="button" class="btn-table-action" style="background: #059669; color: #fff; border: none;" (click)="approveBrand(selectedBrandForEdit)">
+                    ✓ Approve Workspace
+                  </button>
+                }
+                <button type="button" class="btn-table-action" (click)="resendBrandInvite(selectedBrandForEdit)">
+                  <span>Resend Invite Email</span>
+                </button>
+                <button type="button" class="btn-table-action warn" (click)="toggleBrandStatus(selectedBrandForEdit)">
+                  <span>{{ selectedBrandForEdit.status === 'DEACTIVATED' ? 'Activate Account' : 'Deactivate Account' }}</span>
+                </button>
+              </div>
+            </div>
+          }
+
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" [disabled]="isSubmittingEditBrand()" (click)="openEditBrandModal = false">Cancel</button>
+            <button type="submit" class="btn-submit" [disabled]="isSubmittingEditBrand()">
+              @if (isSubmittingEditBrand()) {
+                <span class="btn-spinner"></span>
+                <span>Saving...</span>
+              } @else {
+                <span>Save Changes</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Create Campaign (Brand Manager only) -->
+  @if (openCampaignModal) {
+    <div class="modal-backdrop" (click)="openCampaignModal = false">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Create New Campaign</h3>
+          <button class="close-btn" (click)="openCampaignModal = false">✕</button>
+        </div>
+        <form (ngSubmit)="submitCampaign()">
+          <div class="form-group">
+            <label>Campaign Name *</label>
+            <input type="text" [(ngModel)]="newCampaignName" name="name" required placeholder="e.g. Winter Glow 2026" class="form-input" />
+          </div>
+          <div class="form-row-dates">
+            <div class="form-group">
+              <label>Start Date *</label>
+              <input type="date" [(ngModel)]="newCampaignStartDate" name="startDate" required class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>End Date *</label>
+              <input type="date" [(ngModel)]="newCampaignEndDate" [min]="newCampaignStartDate" name="endDate" required class="form-input" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Total Budget (₹)</label>
+            <input type="number" min="0" step="1000" [(ngModel)]="newCampaignBudget" name="budget" placeholder="e.g. 500000" class="form-input" />
+          </div>
+
+          @if (agencies().length > 0) {
+            <div class="form-group">
+              <label>Participating Partner Agencies</label>
+              <div class="agency-selection-box">
+                @for (ag of agencies(); track ag.id) {
+                  <label class="agency-check-item">
+                    <input
+                      type="checkbox"
+                      [checked]="isAgencySelectedForCampaign(ag.name)"
+                      (change)="toggleCampaignAgency(ag.name)"
+                    />
+                    <span class="agency-check-name">{{ ag.name }}</span>
+                  </label>
+                }
+              </div>
+              <span class="field-hint">Partner agencies authorized to roster creators for this campaign</span>
+            </div>
+          }
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" [disabled]="isSubmittingCampaign()" (click)="openCampaignModal = false">Cancel</button>
+            <button type="submit" class="btn-submit" [disabled]="isSubmittingCampaign()">
+              @if (isSubmittingCampaign()) {
+                <span class="btn-spinner"></span>
+                <span>Launching...</span>
+              } @else {
+                <span>Launch Campaign</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

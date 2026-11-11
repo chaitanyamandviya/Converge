@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 32" fill="none" height="32" width="132">
+  <style>
+    .wordmark {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 800;
+      font-size: 27px;
+      letter-spacing: -0.9px;
+    }
+  </style>
+  <text x="0" y="24" class="wordmark">
+    <tspan fill="#2C54A6">c</tspan><tspan fill="#F4DA40">o</tspan><tspan fill="#1F2124">nv</tspan><tspan fill="#DC543B">e</tspan><tspan fill="#4C825A">rg</tspan><tspan fill="#8DC3E2">e</tspan>
+  </text>
+</svg>

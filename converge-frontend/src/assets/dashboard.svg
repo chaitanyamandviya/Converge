@@ -1,0 +1,22 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="276.5" height="160.5" viewBox="0 0 276.5 160.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="dashboard">
+<path id="Vector" d="M23.25 1.25007L275.25 24.2501L254.25 159.25L1.25001 134.25L23.25 1.25007Z" fill="#F5EBD5" stroke-width="2.5" stroke-linejoin="round" stroke="#20211F"/>
+<path id="Vector_2" d="M20.25 21.2501L272.25 44.2501" stroke-width="2" stroke="#20211F"/>
+<path id="Vector_3" d="M33.25 16.2501C34.9069 16.2501 36.25 14.9069 36.25 13.2501C36.25 11.5932 34.9069 10.2501 33.25 10.2501C31.5932 10.2501 30.25 11.5932 30.25 13.2501C30.25 14.9069 31.5932 16.2501 33.25 16.2501Z" fill="#F17F6C"/>
+<path id="Vector_4" d="M44.25 17.2501C45.9069 17.2501 47.25 15.9069 47.25 14.2501C47.25 12.5932 45.9069 11.2501 44.25 11.2501C42.5932 11.2501 41.25 12.5932 41.25 14.2501C41.25 15.9069 42.5932 17.2501 44.25 17.2501Z" fill="#F2C943"/>
+<path id="Vector_5" d="M55.25 18.2501C56.9069 18.2501 58.25 16.9069 58.25 15.2501C58.25 13.5932 56.9069 12.2501 55.25 12.2501C53.5932 12.2501 52.25 13.5932 52.25 15.2501C52.25 16.9069 53.5932 18.2501 55.25 18.2501Z" fill="#245A46"/>
+<g id="rising-chart">
+<path id="Vector_6" d="M36.25 37.2501L29.25 82.2501L143.25 93.2501" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke="#20211F"/>
+<path id="Vector_7" d="M39.25 71.2501L63.25 59.2501L82.25 68.2501L112.25 47.2501L123.25 55.2501L146.25 37.2501" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke="#315CF4"/>
+</g>
+<g id="yellow-bars">
+<path id="Vector_8" d="M31.25 105.25L54.25 107.25L51.25 128.25L28.25 126.25L31.25 105.25Z" fill="#F2C943" stroke-width="1.8" stroke-linejoin="round" stroke="#20211F"/>
+<path id="Vector_9" d="M69.25 97.2501L92.25 99.2501L87.25 131.25L64.25 129.25L69.25 97.2501Z" fill="#F2C943" stroke-width="1.8" stroke-linejoin="round" stroke="#20211F"/>
+<path id="Vector_10" d="M107.25 88.2501L130.25 90.2501L123.25 135.25L100.25 133.25L107.25 88.2501Z" fill="#F2C943" stroke-width="1.8" stroke-linejoin="round" stroke="#20211F"/>
+</g>
+<g id="pie-chart">
+<path id="Vector_11" d="M198.25 98.2501L203.25 62.2501C182.25 59.2501 165.25 72.2501 162.25 92.2501C159.25 112.25 174.25 130.25 194.25 133.25C214.25 135.25 232.25 122.25 234.25 102.25L198.25 98.2501Z" fill="#BDDCE9" stroke-width="2" stroke-linejoin="round" stroke="#20211F"/>
+<path id="Vector_12" d="M207.25 94.2501L212.25 58.2501C232.25 62.2501 242.583 75.2501 243.25 97.2501L207.25 94.2501Z" fill="#315CF4" stroke-width="2" stroke-linejoin="round" stroke="#20211F"/>
+</g>
+</g>
+</svg>

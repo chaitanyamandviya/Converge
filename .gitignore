@@ -1,0 +1,53 @@
+# ==============================================================================
+# Converge Root .gitignore - Prevent Leaking Secrets, Build Artifacts & Caches
+# ==============================================================================
+
+# Secrets & Environment Files (CRITICAL)
+*.env
+.env
+.env.*
+!.env.example
+*.local.properties
+application-local.properties
+**/application-local.properties
+
+# Backend (Java / Maven)
+converge-backend/target/
+**/target/
+*.class
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
+
+# Frontend (Node / Angular)
+converge-frontend/node_modules/
+**/node_modules/
+converge-frontend/dist/
+**/dist/
+.angular/
+/.angular/cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs & Editor Configuration
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.project
+.classpath
+.settings/
+.factorypath
+
+# OS-Specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary Files
+*.log
+logs/
+tmp/
+temp/

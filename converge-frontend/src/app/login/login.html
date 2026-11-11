@@ -1,0 +1,902 @@
+<div class="login-page" data-node-id="32:13002">
+  <!-- Shared Reusable SVG Templates (DRY Principle) -->
+  <ng-template #eyeIconTpl>
+    <svg class="eye-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path class="eye-lid" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/>
+      <circle class="eye-pupil" cx="12" cy="12" r="3"/>
+      <line class="eye-slash" x1="3" y1="3" x2="21" y2="21"/>
+    </svg>
+  </ng-template>
+
+  <ng-template #errorBadgeIconTpl>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+      <circle cx="12" cy="12" r="9"></circle>
+      <line x1="12" y1="8" x2="12" y2="12.5"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+  </ng-template>
+
+  <!-- Left Side: Sign-In / Account Panel -->
+  <div class="signin-panel" data-node-id="32:13003">
+    <!-- Header -->
+    <header class="signin-header" data-node-id="32:13004">
+      <div class="logo-wrapper" data-node-id="32:13005">
+        <a routerLink="/" class="logo-link">
+          <img src="/assets/converge-logo.svg" alt="Converge" class="logo-img" />
+        </a>
+      </div>
+      <a routerLink="/" class="back-home-link" data-node-id="32:13007">
+        <img src="/assets/arrow-left.svg" alt="" class="back-icon" />
+        <span>Back to home</span>
+      </a>
+    </header>
+
+    <!-- Main Sign-In / Sign-Up Form -->
+    <div class="signin-content-wrapper">
+      @if (mode() === 'login') {
+        <form class="signin-form" (submit)="onLogin($event)" data-node-id="32:13010">
+          <!-- Welcome Header -->
+          <div class="welcome-block" data-node-id="32:13011">
+            <div class="section-label" data-node-id="32:13012">
+              <span class="marker" data-node-id="32:13013"></span>
+              <span class="label-text" data-node-id="32:13014">YOUR SHARED PERSPECTIVE</span>
+            </div>
+            <h1 class="welcome-heading" data-node-id="32:13015">Welcome back.</h1>
+            <p class="welcome-desc" data-node-id="32:13016">Your campaigns are ready for a fresh look.</p>
+          </div>
+
+          <!-- Google Sign-In Button (Official 4-Color Google G Emblem) -->
+          <button type="button" class="google-btn" (click)="onGoogleSignIn()" [disabled]="isLoading()" data-node-id="32:13017">
+            <svg class="google-g-svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4285F4" d="M23.49 12.275c0-.85-.075-1.665-.215-2.45H12v4.635h6.445c-.28 1.5-1.125 2.77-2.395 3.62v3.01h3.875c2.265-2.085 3.565-5.16 3.565-8.815z"/>
+              <path fill="#34A853" d="M12 23.975c3.23 0 5.94-1.07 7.92-2.885l-3.875-3.01c-1.07.72-2.44 1.145-4.045 1.145-3.11 0-5.745-2.1-6.685-4.925H1.31v3.105c1.97 3.915 6.02 6.57 10.69 6.57z"/>
+              <path fill="#FBBC05" d="M5.315 14.3c-.24-.72-.375-1.49-.375-2.285s.135-1.565.375-2.285V6.625H1.31C.475 8.285 0 10.145 0 12.015s.475 3.73 1.31 5.39l4.005-3.105z"/>
+              <path fill="#EA4335" d="M12 4.79c1.755 0 3.33.605 4.57 1.79l3.425-3.425C17.935 1.225 15.225.055 12 .055 7.33.055 3.28 2.71 1.31 6.625l4.005 3.105c.94-2.825 3.575-4.94 6.685-4.94z"/>
+            </svg>
+            <span class="google-action" data-node-id="32:13019">Continue with Google</span>
+          </button>
+
+          <!-- Separator -->
+          <div class="method-separator" data-node-id="32:13020">
+            <div class="divider" data-node-id="32:13021"></div>
+            <span class="separator-text" data-node-id="32:13022">or sign in with email</span>
+            <div class="divider" data-node-id="32:13023"></div>
+          </div>
+
+          <!-- Alert messages -->
+          @if (errorMessage()) {
+            <div class="alert alert-error" role="alert">
+              <div class="alert-badge error-badge">
+                <ng-container *ngTemplateOutlet="errorBadgeIconTpl"></ng-container>
+              </div>
+              <div class="alert-text-col">
+                <span class="alert-kicker">Authentication Notice</span>
+                <span class="alert-body">{{ errorMessage() }}</span>
+              </div>
+            </div>
+          }
+
+          @if (successMessage()) {
+            <div class="alert alert-success" role="status">
+              <div class="alert-badge success-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              </div>
+              <div class="alert-text-col">
+                <span class="alert-kicker">Application Queued</span>
+                <span class="alert-body">{{ successMessage() }}</span>
+              </div>
+            </div>
+          }
+
+          <!-- Email Field -->
+          <div class="form-field" data-node-id="32:13024">
+            <label for="email" class="field-label" data-node-id="32:13025">Email address</label>
+            <div class="input-wrapper" [class.input-error]="errorMessage() && !email()" data-node-id="32:13026">
+              <input
+                id="email"
+                type="email"
+                [ngModel]="email()"
+                (ngModelChange)="email.set($event)"
+                name="email"
+                placeholder="name@example.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="form-field" data-node-id="32:13028">
+            <label for="password" class="field-label" data-node-id="32:13029">Password</label>
+            <div class="input-wrapper password-wrapper" [class.input-error]="errorMessage() && !password()" data-node-id="32:13030">
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                [ngModel]="password()"
+                (ngModelChange)="password.set($event)"
+                name="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                class="eye-btn"
+                [class.is-visible]="showPassword()"
+                (click)="togglePasswordVisibility()"
+                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+                data-node-id="32:13235"
+              >
+                <ng-container *ngTemplateOutlet="eyeIconTpl"></ng-container>
+              </button>
+            </div>
+          </div>
+
+          <!-- Preferences (Remember Me & Forgot Password) -->
+          <div class="preferences-row" data-node-id="32:13033">
+            <label class="remember-label" data-node-id="32:13034">
+              <input
+                type="checkbox"
+                [checked]="rememberMe()"
+                (change)="toggleRememberMe()"
+                class="sr-only"
+              />
+              <span class="checkbox-box" [class.checked]="rememberMe()" data-node-id="32:13035"></span>
+              <span class="remember-text" data-node-id="32:13036">Remember me</span>
+            </label>
+            <button type="button" class="link-btn-text" (click)="setMode('forgot')">Forgot password?</button>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            class="submit-action-btn"
+            [disabled]="isLoading()"
+            data-node-id="32:13038"
+          >
+            @if (isLoading()) {
+              <span class="spinner"></span>
+              <span class="submit-label">Signing in...</span>
+            } @else {
+              <span class="submit-label" data-node-id="32:13039">Log in</span>
+              <img src="/assets/arrow-up-right.svg" alt="" class="submit-icon" data-node-id="32:13238" />
+            }
+          </button>
+
+          <!-- Create Account Row -->
+          <div class="account-creation-row" data-node-id="32:13041">
+            <span class="prompt-text" data-node-id="32:13042">New to Converge?</span>
+            <button type="button" class="link-btn-text bold" (click)="setMode('signup')">Create an account ↗</button>
+          </div>
+        </form>
+      } @else if (mode() === 'signup') {
+        <!-- Self-Onboarding View (Brand / Agency with Custom Dropdowns, Password Security Meter & Confirm Password) -->
+        <form class="signin-form" (submit)="onSignUp($event)">
+          <div class="welcome-block">
+            <div class="section-label">
+              <span class="marker"></span>
+              <span class="label-text">SELF-ONBOARDING APPLICATION</span>
+            </div>
+            <h1 class="welcome-heading">Create account.</h1>
+            <p class="welcome-desc">
+              @if (role() === 'BRAND_MANAGER') {
+                Register your Brand Workspace. System Admin approval activates your account.
+              } @else {
+                Register as a Partner Agency. Brand Manager approval activates your account.
+              }
+            </p>
+          </div>
+
+          @if (errorMessage()) {
+            <div class="alert alert-error" role="alert">
+              <div class="alert-badge error-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12.5"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <div class="alert-text-col">
+                <span class="alert-kicker">Validation Notice</span>
+                <span class="alert-body">{{ errorMessage() }}</span>
+              </div>
+            </div>
+          }
+
+          <!-- Custom Styled Account Role Dropdown (Strictly 2 Options: Brand Manager & Agency Manager) -->
+          <div class="form-field">
+            <label class="field-label">Account Role *</label>
+            <div class="custom-select-container">
+              <button
+                type="button"
+                class="custom-select-trigger"
+                [class.open]="roleDropdownOpen()"
+                (click)="roleDropdownOpen.set(!roleDropdownOpen()); categoryDropdownOpen.set(false); brandDropdownOpen.set(false)"
+              >
+                <span>{{ role() === 'BRAND_MANAGER' ? 'Brand Manager' : 'Agency Manager' }}</span>
+                <span class="chevron-icon" [class.rotated]="roleDropdownOpen()">▾</span>
+              </button>
+              @if (roleDropdownOpen()) {
+                <div class="custom-select-menu">
+                  <button
+                    type="button"
+                    class="custom-select-option"
+                    [class.selected]="role() === 'BRAND_MANAGER'"
+                    (click)="selectRole('BRAND_MANAGER')"
+                  >
+                    <span>Brand Manager</span>
+                    @if (role() === 'BRAND_MANAGER') {
+                      <span class="check-mark">✓</span>
+                    }
+                  </button>
+                  <button
+                    type="button"
+                    class="custom-select-option"
+                    [class.selected]="role() === 'AGENCY_MANAGER'"
+                    (click)="selectRole('AGENCY_MANAGER')"
+                  >
+                    <span>Agency Manager</span>
+                    @if (role() === 'AGENCY_MANAGER') {
+                      <span class="check-mark">✓</span>
+                    }
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Partner Brand Selection Dropdown (Shown when onboarding as an Agency Manager) -->
+          @if (role() === 'AGENCY_MANAGER') {
+            <div class="form-field">
+              <label class="field-label">Select Partner Brand *</label>
+              <div class="custom-select-container">
+                <button
+                  type="button"
+                  class="custom-select-trigger"
+                  [class.open]="brandDropdownOpen()"
+                  (click)="toggleBrandDropdown()"
+                >
+                  <span>
+                    {{ selectedBrandName() || (availableBrands().length > 0 ? availableBrands()[0].name : 'Select an active Brand Workspace') }}
+                  </span>
+                  <span class="chevron-icon" [class.rotated]="brandDropdownOpen()">▾</span>
+                </button>
+                @if (brandDropdownOpen()) {
+                  <div class="custom-select-menu">
+                    @if (availableBrands().length === 0) {
+                      <div class="custom-select-option" style="opacity: 0.7; cursor: default;">
+                        <span>No brands onboarded yet — System Admin must onboard a brand first</span>
+                      </div>
+                    } @else {
+                      @for (b of availableBrands(); track b.id) {
+                        <button
+                          type="button"
+                          class="custom-select-option"
+                          [class.selected]="selectedBrandId() === b.id"
+                          (click)="selectPartnerBrand(b)"
+                        >
+                          <span>{{ b.name }} <small style="opacity:0.65; margin-left:6px;">· {{ b.category || 'Brand Workspace' }}</small></span>
+                          @if (selectedBrandId() === b.id) {
+                            <span class="check-mark">✓</span>
+                          }
+                        </button>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="form-field">
+            <label class="field-label">
+              {{ role() === 'BRAND_MANAGER' ? 'Brand Name *' : 'Agency Name *' }}
+            </label>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                [ngModel]="organizationName()"
+                (ngModelChange)="organizationName.set($event)"
+                name="organizationName"
+                [placeholder]="role() === 'BRAND_MANAGER' ? 'e.g. Lumina Skincare' : 'e.g. Apex Talent Collective'"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label">
+              {{ role() === 'BRAND_MANAGER' ? 'Brand Website URL (if available)' : 'Agency Website / Portfolio URL (if available)' }}
+            </label>
+            <div class="input-wrapper">
+              <input
+                type="url"
+                [ngModel]="websiteUrl()"
+                (ngModelChange)="websiteUrl.set($event)"
+                name="websiteUrl"
+                [placeholder]="role() === 'BRAND_MANAGER' ? 'https://luminaskincare.com' : 'https://apextalent.co'"
+              />
+            </div>
+          </div>
+
+          <!-- Custom Styled Category Dropdown -->
+          <div class="form-field">
+            <label class="field-label">Primary Category / Vertical *</label>
+            <div class="custom-select-container">
+              <button
+                type="button"
+                class="custom-select-trigger"
+                [class.open]="categoryDropdownOpen()"
+                (click)="categoryDropdownOpen.set(!categoryDropdownOpen()); roleDropdownOpen.set(false)"
+              >
+                <span>{{ category() }}</span>
+                <span class="chevron-icon" [class.rotated]="categoryDropdownOpen()">▾</span>
+              </button>
+              @if (categoryDropdownOpen()) {
+                <div class="custom-select-menu">
+                  @for (cat of categoryOptions; track cat) {
+                    <button
+                      type="button"
+                      class="custom-select-option"
+                      [class.selected]="category() === cat"
+                      (click)="selectCategory(cat)"
+                    >
+                      <span>{{ cat }}</span>
+                      @if (category() === cat) {
+                        <span class="check-mark">✓</span>
+                      }
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label">Your Full Name *</label>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                [ngModel]="fullName()"
+                (ngModelChange)="fullName.set($event)"
+                name="fullName"
+                placeholder="e.g. Chaitanya Mandviya"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label">Email Address *</label>
+            <div class="input-wrapper">
+              <input
+                type="email"
+                [ngModel]="email()"
+                (ngModelChange)="email.set($event)"
+                name="email"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Password Field + Security Meter (Low, Medium, High) -->
+          <div class="form-field">
+            <div class="field-label-row">
+              <label class="field-label">Password *</label>
+              @if (passwordStrength() !== 'none') {
+                <span class="strength-badge" [ngClass]="passwordStrength()">
+                  Security: {{ passwordStrength() | uppercase }}
+                </span>
+              }
+            </div>
+            <div class="input-wrapper password-wrapper">
+              <input
+                [type]="showPassword() ? 'text' : 'password'"
+                [ngModel]="password()"
+                (ngModelChange)="password.set($event)"
+                name="password"
+                placeholder="Choose a strong password"
+                required
+              />
+              <button
+                type="button"
+                class="eye-btn"
+                [class.is-visible]="showPassword()"
+                (click)="togglePasswordVisibility()"
+                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+              >
+                <ng-container *ngTemplateOutlet="eyeIconTpl"></ng-container>
+              </button>
+            </div>
+            @if (passwordStrength() !== 'none') {
+              <div class="strength-meter-bars">
+                <span class="strength-bar active" [ngClass]="passwordStrength()"></span>
+                <span class="strength-bar" [class.active]="passwordStrength() === 'medium' || passwordStrength() === 'high'" [ngClass]="passwordStrength()"></span>
+                <span class="strength-bar" [class.active]="passwordStrength() === 'high'" [ngClass]="passwordStrength()"></span>
+              </div>
+            }
+          </div>
+
+          <!-- Confirm Password Field -->
+          <div class="form-field">
+            <div class="field-label-row">
+              <label class="field-label">Confirm Password *</label>
+              @if (confirmPassword()) {
+                <span class="match-indicator" [class.matched]="passwordsMatch()">
+                  {{ passwordsMatch() ? '✓ Passwords match' : '✕ Passwords do not match' }}
+                </span>
+              }
+            </div>
+            <div class="input-wrapper password-wrapper">
+              <input
+                [type]="showConfirmPassword() ? 'text' : 'password'"
+                [ngModel]="confirmPassword()"
+                (ngModelChange)="confirmPassword.set($event)"
+                name="confirmPassword"
+                placeholder="Re-enter your password"
+                required
+              />
+              <button
+                type="button"
+                class="eye-btn"
+                [class.is-visible]="showConfirmPassword()"
+                (click)="toggleConfirmPasswordVisibility()"
+                [attr.aria-label]="showConfirmPassword() ? 'Hide password' : 'Show password'"
+              >
+                <ng-container *ngTemplateOutlet="eyeIconTpl"></ng-container>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-action-btn" [disabled]="isLoading()">
+            @if (isLoading()) {
+              <span class="spinner"></span>
+              <span class="submit-label">Submitting for approval...</span>
+            } @else {
+              <span class="submit-label">Submit for approval</span>
+              <img src="/assets/arrow-up-right.svg" alt="" class="submit-icon" />
+            }
+          </button>
+
+          <div class="account-creation-row">
+            <span class="prompt-text">Already have an approved account?</span>
+            <button type="button" class="link-btn-text bold" (click)="setMode('login')">Sign in ↗</button>
+          </div>
+        </form>
+      } @else {
+        <!-- Forgot / Reset Password View with Password Security & Confirm New Password -->
+        <div class="signin-form">
+          <div class="welcome-block">
+            <div class="section-label">
+              <span class="marker"></span>
+              <span class="label-text">SECURITY RECOVERY</span>
+            </div>
+            <h1 class="welcome-heading">Reset password.</h1>
+            <p class="welcome-desc">Enter your account email and choose a new password.</p>
+          </div>
+
+          @if (errorMessage()) {
+            <div class="alert alert-error" role="alert">
+              <div class="alert-badge error-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12.5"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <div class="alert-text-col">
+                <span class="alert-kicker">Recovery Notice</span>
+                <span class="alert-body">{{ errorMessage() }}</span>
+              </div>
+            </div>
+          }
+
+          <div class="form-field">
+            <label class="field-label">Email Address *</label>
+            <div class="input-wrapper">
+              <input
+                type="email"
+                [ngModel]="email()"
+                (ngModelChange)="email.set($event)"
+                placeholder="chaitanyamandviya7@gmail.com"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-field">
+            <div class="field-label-row">
+              <label class="field-label">New Password *</label>
+              @if (passwordStrength() !== 'none') {
+                <span class="strength-badge" [ngClass]="passwordStrength()">
+                  Security: {{ passwordStrength() | uppercase }}
+                </span>
+              }
+            </div>
+            <div class="input-wrapper password-wrapper">
+              <input
+                [type]="showPassword() ? 'text' : 'password'"
+                [ngModel]="password()"
+                (ngModelChange)="password.set($event)"
+                placeholder="Enter new password"
+                required
+              />
+              <button
+                type="button"
+                class="eye-btn"
+                [class.is-visible]="showPassword()"
+                (click)="togglePasswordVisibility()"
+                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+              >
+                <ng-container *ngTemplateOutlet="eyeIconTpl"></ng-container>
+              </button>
+            </div>
+            @if (passwordStrength() !== 'none') {
+              <div class="strength-meter-bars">
+                <span class="strength-bar active" [ngClass]="passwordStrength()"></span>
+                <span class="strength-bar" [class.active]="passwordStrength() === 'medium' || passwordStrength() === 'high'" [ngClass]="passwordStrength()"></span>
+                <span class="strength-bar" [class.active]="passwordStrength() === 'high'" [ngClass]="passwordStrength()"></span>
+              </div>
+            }
+          </div>
+
+          <div class="form-field">
+            <div class="field-label-row">
+              <label class="field-label">Confirm New Password *</label>
+              @if (confirmPassword()) {
+                <span class="match-indicator" [class.matched]="passwordsMatch()">
+                  {{ passwordsMatch() ? '✓ Passwords match' : '✕ Passwords do not match' }}
+                </span>
+              }
+            </div>
+            <div class="input-wrapper password-wrapper">
+              <input
+                [type]="showConfirmPassword() ? 'text' : 'password'"
+                [ngModel]="confirmPassword()"
+                (ngModelChange)="confirmPassword.set($event)"
+                placeholder="Confirm new password"
+                required
+              />
+              <button
+                type="button"
+                class="eye-btn"
+                [class.is-visible]="showConfirmPassword()"
+                (click)="toggleConfirmPasswordVisibility()"
+                [attr.aria-label]="showConfirmPassword() ? 'Hide password' : 'Show password'"
+              >
+                <ng-container *ngTemplateOutlet="eyeIconTpl"></ng-container>
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="submit-action-btn" [disabled]="isLoading()" (click)="onForgotPassword()">
+            @if (isLoading()) {
+              <span class="spinner"></span>
+              <span class="submit-label">Updating password...</span>
+            } @else {
+              <span class="submit-label">Update password</span>
+              <img src="/assets/arrow-up-right.svg" alt="" class="submit-icon" />
+            }
+          </button>
+
+          <div class="account-creation-row">
+            <span class="prompt-text">Remember your password?</span>
+            <button type="button" class="link-btn-text bold" (click)="setMode('login')">Back to login ↗</button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Footer -->
+    <footer class="signin-footer" data-node-id="32:13045">
+      <span class="copyright" data-node-id="32:13046">© 2026 Converge</span>
+      <div class="support-links" data-node-id="32:13047">
+        <button type="button" class="footer-link-btn" (click)="showPrivacyModal.set(true)" data-node-id="32:13048">Privacy</button>
+        <button type="button" class="footer-link-btn" (click)="showHelpModal.set(true)" data-node-id="32:13049">Need help?</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Right Side: Perspective Panel (Restored Exact 8-Piece Figma Illustration) -->
+  <div class="perspective-panel" data-node-id="32:13050">
+    <div class="brand-pill" data-node-id="32:13051">
+      <span class="brand-pill-text" data-node-id="32:13052">A FRESH PERSPECTIVE STARTS HERE</span>
+    </div>
+
+    <h2 class="perspective-heading" data-node-id="32:13053">
+      All the pieces.<br>One clear picture.
+    </h2>
+
+    <!-- Unified Architectural Campaign Hub Illustration Stage -->
+    <div class="illustration-stage" data-node-id="32:13054">
+      <svg class="unified-perspective-svg" viewBox="0 0 520 300" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Converge Multi-Agency Campaign Hub">
+        <!-- Soft Ambient Glows -->
+        <circle cx="260" cy="150" r="120" fill="#6395EE" fill-opacity="0.12" />
+        <circle cx="380" cy="95" r="70" fill="#F4D943" fill-opacity="0.1" />
+
+        <!-- Desk / Foundation Base -->
+        <rect x="44" y="246" width="432" height="10" rx="5" fill="#182C5E" stroke="#6395EE" stroke-width="1.5" stroke-opacity="0.4" />
+
+        <!-- Central Analytics & Campaign Board -->
+        <g class="float-slow">
+          <rect x="128" y="34" width="268" height="178" rx="14" fill="#F6F4EC" stroke="#202321" stroke-width="2.4" />
+          <!-- Window Top Bar -->
+          <rect x="128" y="34" width="268" height="30" rx="14" fill="#E9EDDF" stroke="#202321" stroke-width="2.4" />
+          <circle cx="146" cy="49" r="4.5" fill="#E4664B" />
+          <circle cx="160" cy="49" r="4.5" fill="#F4D943" />
+          <circle cx="174" cy="49" r="4.5" fill="#527E5A" />
+          <rect x="316" y="43" width="64" height="12" rx="6" fill="#243F82" />
+
+          <!-- Metric Mini Cards inside Board -->
+          <rect x="146" y="78" width="72" height="44" rx="8" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.5" />
+          <rect x="154" y="86" width="32" height="6" rx="3" fill="#9AC7D8" />
+          <rect x="154" y="98" width="48" height="12" rx="4" fill="#243F82" />
+
+          <rect x="226" y="78" width="72" height="44" rx="8" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.5" />
+          <rect x="234" y="86" width="36" height="6" rx="3" fill="#F4D943" />
+          <rect x="234" y="98" width="46" height="12" rx="4" fill="#527E5A" />
+
+          <rect x="306" y="78" width="72" height="44" rx="8" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.5" />
+          <rect x="314" y="86" width="32" height="6" rx="3" fill="#E4664B" />
+          <rect x="314" y="98" width="50" height="12" rx="4" fill="#243F82" />
+
+          <!-- Live Performance Trend Curve -->
+          <path d="M148 186 H376" stroke="#DCE3EC" stroke-width="1.5" stroke-linecap="round" />
+          <path d="M148 156 H376" stroke="#DCE3EC" stroke-width="1.5" stroke-dasharray="4 4" stroke-linecap="round" />
+          <path d="M152 180 L198 162 L242 169 L292 142 L334 150 L372 128" stroke="#2852D6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="198" cy="162" r="4.5" fill="#F6F4EC" stroke="#2852D6" stroke-width="2.5" />
+          <circle cx="292" cy="142" r="4.5" fill="#F6F4EC" stroke="#2852D6" stroke-width="2.5" />
+          <circle cx="372" cy="128" r="5.5" fill="#F4D943" stroke="#202321" stroke-width="2" />
+        </g>
+
+        <!-- Left Floating Node: Brand Workspace Card -->
+        <g class="float-delayed">
+          <rect x="28" y="108" width="128" height="84" rx="12" fill="#FFFFFF" stroke="#202321" stroke-width="2.4" />
+          <rect x="42" y="122" width="28" height="28" rx="8" fill="#6395EE" stroke="#202321" stroke-width="1.8" />
+          <path d="M51 136L55 140L62 132" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+          <rect x="78" y="124" width="62" height="8" rx="4" fill="#243F82" />
+          <rect x="78" y="138" width="44" height="6" rx="3" fill="#9AC7D8" />
+          <rect x="42" y="162" width="100" height="14" rx="7" fill="#E9EDDF" />
+          <rect x="42" y="162" width="76" height="14" rx="7" fill="#527E5A" />
+        </g>
+
+        <!-- Right Floating Node: Partner Agency & Creator Insights Card -->
+        <g class="float-fast">
+          <rect x="364" y="116" width="132" height="92" rx="12" fill="#FFFFFF" stroke="#202321" stroke-width="2.4" />
+          <circle cx="390" cy="142" r="14" fill="#E4664B" stroke="#202321" stroke-width="1.8" />
+          <circle cx="390" cy="138" r="4" fill="#F6F4EC" />
+          <path d="M382 150C384 146 396 146 398 150" stroke="#F6F4EC" stroke-width="2" stroke-linecap="round" />
+          <rect x="412" y="134" width="68" height="8" rx="4" fill="#243F82" />
+          <rect x="412" y="146" width="50" height="6" rx="3" fill="#E4664B" />
+          <rect x="378" y="170" width="104" height="22" rx="6" fill="#F6F4EC" stroke="#202321" stroke-width="1.5" />
+          <circle cx="390" cy="181" r="4" fill="#527E5A" />
+          <rect x="400" y="178" width="66" height="6" rx="3" fill="#243F82" />
+        </g>
+
+        <!-- Bottom Connected Pill: Synced Status -->
+        <rect x="176" y="224" width="168" height="32" rx="16" fill="#F4D943" stroke="#202321" stroke-width="2.2" />
+        <circle cx="198" cy="240" r="5" fill="#202321" />
+        <rect x="212" y="236" width="112" height="8" rx="4" fill="#202321" />
+      </svg>
+    </div>
+
+    <div class="panel-explanation">
+      <p class="explanation-text">
+        Campaigns, partner agencies, creators, and live Instagram insights—connected in one shared workspace.
+      </p>
+      <div class="palette-signature">
+        <span class="color-swatch swatch-sky"></span>
+        <span class="color-swatch swatch-yellow"></span>
+        <span class="color-swatch swatch-coral"></span>
+        <span class="color-swatch swatch-green"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authentic Google Sign-In Account Chooser Modal (Matches Google OAuth 2-Column Dark Screen) -->
+  @if (showGoogleModal()) {
+    <div class="google-oauth-backdrop" (click)="showGoogleModal.set(false)">
+      <div class="google-oauth-shell" (click)="$event.stopPropagation()">
+        <div class="google-oauth-card">
+          <!-- Top Bar: Sign in with Google -->
+          <div class="google-oauth-topbar">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4285F4" d="M23.49 12.275c0-.85-.075-1.665-.215-2.45H12v4.635h6.445c-.28 1.5-1.125 2.77-2.395 3.62v3.01h3.875c2.265-2.085 3.565-5.16 3.565-8.815z"/>
+              <path fill="#34A853" d="M12 23.975c3.23 0 5.94-1.07 7.92-2.885l-3.875-3.01c-1.07.72-2.44 1.145-4.045 1.145-3.11 0-5.745-2.1-6.685-4.925H1.31v3.105c1.97 3.915 6.02 6.57 10.69 6.57z"/>
+              <path fill="#FBBC05" d="M5.315 14.3c-.24-.72-.375-1.49-.375-2.285s.135-1.565.375-2.285V6.625H1.31C.475 8.285 0 10.145 0 12.015s.475 3.73 1.31 5.39l4.005-3.105z"/>
+              <path fill="#EA4335" d="M12 4.79c1.755 0 3.33.605 4.57 1.79l3.425-3.425C17.935 1.225 15.225.055 12 .055 7.33.055 3.28 2.71 1.31 6.625l4.005 3.105c.94-2.825 3.575-4.94 6.685-4.94z"/>
+            </svg>
+            <span>Sign in with Google</span>
+          </div>
+
+          <!-- Two-Column Main Body -->
+          <div class="google-oauth-body">
+            <!-- Left Column: App Emblem + Heading -->
+            <div class="google-oauth-left">
+              <div class="google-app-badge" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <circle cx="8" cy="8" r="4" fill="#6395EE"/>
+                  <circle cx="16" cy="8" r="4" fill="#E3CE4B"/>
+                  <circle cx="8" cy="16" r="4" fill="#DC5648"/>
+                  <circle cx="16" cy="16" r="4" fill="#527E5A"/>
+                </svg>
+              </div>
+              <h2 class="google-choose-title">
+                {{ useAnotherGoogleAccount() ? 'Sign in' : 'Choose an account' }}
+              </h2>
+              <p class="google-choose-subtitle">
+                to continue to <span class="google-app-link">Converge</span>
+              </p>
+            </div>
+
+            <!-- Right Column: Account List or Email Entry -->
+            <div class="google-oauth-right">
+              @if (!useAnotherGoogleAccount()) {
+                <div class="google-chooser-list">
+                  @for (acc of systemGoogleAccounts(); track acc.email; let i = $index) {
+                    <button
+                      type="button"
+                      class="google-chooser-row"
+                      (click)="selectGoogleAccount(acc)"
+                      [disabled]="isLoading()"
+                    >
+                      <div
+                        class="google-chooser-avatar"
+                        [style.background]="acc.avatarColor || (i === 0 ? '#37474f' : '#0288d1')"
+                      >
+                        @if (i === 0) {
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="#e3e3e3">
+                            <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"/>
+                          </svg>
+                        } @else {
+                          {{ acc.avatarInitials }}
+                        }
+                      </div>
+                      <div class="google-chooser-meta">
+                        <span class="google-chooser-name">{{ acc.name }}</span>
+                        <span class="google-chooser-email">{{ acc.email }}</span>
+                      </div>
+                    </button>
+                  }
+
+                  <button
+                    type="button"
+                    class="google-chooser-row"
+                    (click)="useAnotherGoogleAccount.set(true)"
+                  >
+                    <div class="google-chooser-avatar outline-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <circle cx="12" cy="12" r="9"/>
+                        <circle cx="12" cy="10" r="3"/>
+                        <path d="M6.5 18.2c1.4-2 3.3-3 5.5-3s4.1 1 5.5 3"/>
+                      </svg>
+                    </div>
+                    <div class="google-chooser-meta">
+                      <span class="google-chooser-name">Use another account</span>
+                    </div>
+                  </button>
+                </div>
+
+                <p class="google-oauth-disclaimer">
+                  Before using this app, you can review Converge's
+                  <button type="button" class="google-inline-link" (click)="showGoogleModal.set(false); showPrivacyModal.set(true)">Privacy Policy</button>
+                  and
+                  <button type="button" class="google-inline-link" (click)="showGoogleModal.set(false); showPrivacyModal.set(true)">Terms of Service</button>.
+                </p>
+              } @else {
+                <form class="google-another-form" (submit)="submitGoogleAccount(); $event.preventDefault()">
+                  <label class="google-dark-label">Email or phone</label>
+                  <input
+                    type="email"
+                    class="google-dark-input"
+                    [ngModel]="googleEmail()"
+                    (ngModelChange)="googleEmail.set($event)"
+                    name="googleEmail"
+                    placeholder="you@gmail.com"
+                    required
+                    autofocus
+                  />
+                  <p class="google-oauth-disclaimer" style="margin-top: 16px;">
+                    To continue, Google will share your name, email address, language preference, and profile picture with Converge.
+                  </p>
+                  <div class="google-dark-actions">
+                    <button type="button" class="google-dark-btn-text" (click)="useAnotherGoogleAccount.set(false)">
+                      Back
+                    </button>
+                    <button type="submit" class="google-dark-btn-primary" [disabled]="isLoading()">
+                      {{ isLoading() ? 'Signing in...' : 'Next' }}
+                    </button>
+                  </div>
+                </form>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Bar: Language & Links -->
+        <div class="google-oauth-footer">
+          <div class="google-lang-selector">
+            <span>English (United States)</span>
+            <span class="google-lang-caret">▾</span>
+          </div>
+          <div class="google-footer-links">
+            <button type="button" (click)="showGoogleModal.set(false); showHelpModal.set(true)">Help</button>
+            <button type="button" (click)="showGoogleModal.set(false); showPrivacyModal.set(true)">Privacy</button>
+            <button type="button" (click)="showGoogleModal.set(false); showPrivacyModal.set(true)">Terms</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Privacy Policy Modal Dialog -->
+  @if (showPrivacyModal()) {
+    <div class="modal-backdrop" (click)="showPrivacyModal.set(false)">
+      <div class="modal-card google-modal" (click)="$event.stopPropagation()">
+        <div class="google-modal-head">
+          <div class="google-logo-circle">🔒</div>
+          <div>
+            <h3>Privacy & Data Governance</h3>
+            <p>Converge Production Security Standards</p>
+          </div>
+        </div>
+        <div class="info-modal-body">
+          <p><strong>1. Strict Multi-Tenant Role Isolation:</strong> Brand Managers oversee their campaign workspaces and partner agencies, while Agency Managers access only their own creator rosters and deliverables.</p>
+          <p><strong>2. Authorized Meta Graph API v26.0:</strong> Creator reach, plays, likes, and comments are fetched strictly through authorized Instagram Business Graph tokens.</p>
+          <p><strong>3. Encrypted Credentials:</strong> All passwords are encrypted with BCrypt and authenticated via signed JWT session tokens.</p>
+        </div>
+        <div class="google-modal-actions">
+          <button type="button" class="btn-continue-google" (click)="showPrivacyModal.set(false)">Close</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Need Help / Send Feedback & Query Modal (Powered by Resend to chaitanyamandviya7@gmail.com) -->
+  @if (showHelpModal()) {
+    <div class="modal-backdrop" (click)="showHelpModal.set(false)">
+      <div class="modal-card google-modal" (click)="$event.stopPropagation()">
+        <div class="google-modal-head">
+          <div class="google-logo-circle">✉</div>
+          <div>
+            <h3>Feedback & Support Query</h3>
+            <p>Direct email to <strong>chaitanyamandviya7@gmail.com</strong> via Resend</p>
+          </div>
+        </div>
+        <div class="info-modal-body">
+          <div class="form-field">
+            <label class="field-label">Your Email Address</label>
+            <div class="input-wrapper">
+              <input
+                type="email"
+                [ngModel]="supportSenderEmail()"
+                (ngModelChange)="supportSenderEmail.set($event)"
+                placeholder="you@example.com"
+              />
+            </div>
+          </div>
+          <div class="form-field" style="margin-top: 8px;">
+            <label class="field-label">Your Feedback or Query *</label>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                [ngModel]="supportQuestion()"
+                (ngModelChange)="supportQuestion.set($event)"
+                placeholder="Write your question, issue, or feedback..."
+              />
+            </div>
+          </div>
+        </div>
+        <div class="google-modal-actions">
+          <button type="button" class="btn-cancel-google" (click)="showHelpModal.set(false)">Cancel</button>
+          <button type="button" class="btn-continue-google" [disabled]="isSendingSupport()" (click)="submitSupportRequest()">
+            {{ isSendingSupport() ? 'Sending...' : 'Send Email' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
