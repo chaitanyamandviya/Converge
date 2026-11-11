@@ -35,12 +35,13 @@ public class InstagramService {
     public InstagramService(
             InstagramProperties properties,
             ContentItemRepository contentItemRepository,
-            CreatorRepository creatorRepository
+            CreatorRepository creatorRepository,
+            RestTemplate restTemplate
     ) {
         this.properties = properties;
         this.contentItemRepository = contentItemRepository;
         this.creatorRepository = creatorRepository;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
     }
 
     /**

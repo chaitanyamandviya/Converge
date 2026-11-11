@@ -32,13 +32,15 @@ public class EmailService {
 
     private final ResendProperties resendProperties;
     private final RestTemplate restTemplate;
+    private final java.util.concurrent.Executor taskExecutor;
 
     @Value("${app.frontend-url:https://converge-etp.pages.dev}")
     private String frontendUrl;
 
-    public EmailService(ResendProperties resendProperties) {
+    public EmailService(ResendProperties resendProperties, RestTemplate restTemplate, java.util.concurrent.Executor taskExecutor) {
         this.resendProperties = resendProperties;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
+        this.taskExecutor = taskExecutor;
     }
 
     public boolean isConfigured() {
@@ -175,7 +177,7 @@ public class EmailService {
     }
 
     public void sendEmail(String to, String subject, String htmlBody, String actionUrl) {
-        CompletableFuture.runAsync(() -> dispatchEmailInternal(to, subject, htmlBody, actionUrl));
+        taskExecutor.execute(() -> dispatchEmailInternal(to, subject, htmlBody, actionUrl));
     }
 
     private void dispatchEmailInternal(String to, String subject, String htmlBody, String actionUrl) {
