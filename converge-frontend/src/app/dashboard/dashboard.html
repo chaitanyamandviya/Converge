@@ -18,40 +18,32 @@
       </div>
     </header>
 
-    <!-- System Admin Governance Metrics (Zero campaign views/likes) -->
-    <section class="metrics-grid">
-      <div class="metric-card">
-        <span class="metric-label">REGISTERED BRANDS</span>
-        <div class="metric-val-row">
-          <span class="metric-value">{{ brands().length }}</span>
-        </div>
-        <span class="metric-footnote positive">Enterprise brand workspaces</span>
+    <!-- macOS Soft Capsule Status Strip (Zero Big Boxy Cards) -->
+    <div class="macos-stat-strip">
+      <div class="stat-pill-item">
+        <span class="pill-dot blue"></span>
+        <span class="pill-label">Registered Brands</span>
+        <span class="pill-count">{{ brands().length }}</span>
       </div>
-
-      <div class="metric-card">
-        <span class="metric-label">CONNECTED AGENCIES</span>
-        <div class="metric-val-row">
-          <span class="metric-value">{{ agencies().length }}</span>
-        </div>
-        <span class="metric-footnote positive">Partner agency accounts</span>
+      <span class="strip-sep">/</span>
+      <div class="stat-pill-item">
+        <span class="pill-dot green"></span>
+        <span class="pill-label">Connected Agencies</span>
+        <span class="pill-count">{{ agencies().length }}</span>
       </div>
-
-      <div class="metric-card">
-        <span class="metric-label">ROSTERED CREATORS</span>
-        <div class="metric-val-row">
-          <span class="metric-value">{{ overview().totalCreators }}</span>
-        </div>
-        <span class="metric-footnote positive">Talent across all agencies</span>
+      <span class="strip-sep">/</span>
+      <div class="stat-pill-item">
+        <span class="pill-dot sky"></span>
+        <span class="pill-label">Rostered Creators</span>
+        <span class="pill-count">{{ overview().totalCreators }}</span>
       </div>
-
-      <div class="metric-card">
-        <span class="metric-label">TOTAL PLATFORM SPEND</span>
-        <div class="metric-val-row">
-          <span class="metric-value">₹{{ formatInr(overview().spend) }}</span>
-        </div>
-        <span class="metric-footnote positive">{{ overview().spend > 0 ? 'Committed platform budget' : 'No budget deployed yet' }}</span>
+      <span class="strip-sep">/</span>
+      <div class="stat-pill-item">
+        <span class="pill-dot orange"></span>
+        <span class="pill-label">Platform Spend</span>
+        <span class="pill-count">₹{{ formatInr(overview().spend) }}</span>
       </div>
-    </section>
+    </div>
 
     <!-- Admin View: Brand Workspaces & Connected Agency Hierarchy (Full User Directory) -->
     <div class="admin-hierarchy-container">
@@ -63,8 +55,21 @@
       </div>
 
       @if (brands().length === 0) {
-        <div class="empty-state-box">
-          <p>No brands onboarded yet. Click <strong>+ Add brand</strong> above to register your first Brand Workspace and trigger a Set-Password invitation email.</p>
+        <div class="macos-empty-state">
+          <div class="macos-empty-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21h18"/>
+              <path d="M5 21V7l8-4v18"/>
+              <path d="M19 21V11l-6-4"/>
+              <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/>
+            </svg>
+          </div>
+          <h3 class="macos-empty-title">No Brands Onboarded Yet</h3>
+          <p class="macos-empty-text">Register your first Brand Workspace to configure client governance and issue invitation emails.</p>
+          <button type="button" class="macos-empty-cta" (click)="openBrandModal = true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Add Brand</span>
+          </button>
         </div>
       } @else {
         <div class="brand-hierarchy-list">
@@ -646,8 +651,20 @@
           </div>
 
           @if (agencies().length === 0) {
-            <div class="empty-state-box">
-              <p>No partner agencies onboarded yet. Go to <a routerLink="/agencies">Agencies</a> to invite an agency.</p>
+            <div class="macos-empty-state">
+              <div class="macos-empty-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <h3 class="macos-empty-title">No Partner Agencies Yet</h3>
+              <p class="macos-empty-text">Invite creative agencies to manage talent rosters and deliverable submissions.</p>
+              <a routerLink="/agencies" class="macos-empty-cta">
+                <span>Invite Agency</span>
+              </a>
             </div>
           } @else {
             <div class="agency-pills-list">

@@ -101,40 +101,32 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
         </div>
       </section>
 
-      <!-- Key Performance Indicators -->
-      <section class="metrics-grid">
-        <div class="stat-card">
-          <span class="stat-label">TOTAL VIEWS</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ totalViews() | number }}</span>
-          </div>
-          <span class="stat-sub positive">{{ totalViews() > 0 ? 'Synced Instagram reach' : 'Awaiting live posts' }}</span>
+      <!-- macOS Soft Capsule Status Strip (Zero Big Boxy Cards) -->
+      <div class="macos-stat-strip">
+        <div class="stat-pill-item">
+          <span class="pill-dot blue"></span>
+          <span class="pill-label">Total Views</span>
+          <span class="pill-count">{{ totalViews() | number }}</span>
         </div>
-
-        <div class="stat-card">
-          <span class="stat-label">ENGAGEMENTS (LIKES)</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ totalLikes() | number }}</span>
-          </div>
-          <span class="stat-sub positive">{{ totalLikes() > 0 ? 'Verified likes' : 'No likes recorded yet' }}</span>
+        <span class="strip-sep">/</span>
+        <div class="stat-pill-item">
+          <span class="pill-dot green"></span>
+          <span class="pill-label">Engagements (Likes)</span>
+          <span class="pill-count">{{ totalLikes() | number }}</span>
         </div>
-
-        <div class="stat-card">
-          <span class="stat-label">COMMENTS</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ totalComments() | number }}</span>
-          </div>
-          <span class="stat-sub">{{ totalComments() > 0 ? 'Audience discussions' : 'No comments yet' }}</span>
+        <span class="strip-sep">/</span>
+        <div class="stat-pill-item">
+          <span class="pill-dot sky"></span>
+          <span class="pill-label">Comments</span>
+          <span class="pill-count">{{ totalComments() | number }}</span>
         </div>
-
-        <div class="stat-card">
-          <span class="stat-label">SUBMITTED DELIVERABLES</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ creatorContent().length }}</span>
-          </div>
-          <span class="stat-sub positive">Unlimited content slots</span>
+        <span class="strip-sep">/</span>
+        <div class="stat-pill-item">
+          <span class="pill-dot orange"></span>
+          <span class="pill-label">Deliverables</span>
+          <span class="pill-count">{{ creatorContent().length }}</span>
         </div>
-      </section>
+      </div>
 
       <!-- Influencer ROI & Performance Analytics Panel -->
       <section class="influencer-roi-panel">
@@ -1128,51 +1120,57 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       color: #FFFFFF;
     }
 
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      width: 100%;
-    }
-
-    .stat-card {
+    .macos-stat-strip {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
       background: #FFFFFF;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      border-radius: 12px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 980px;
+      padding: 8px 18px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      width: fit-content;
+      max-width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 24px;
     }
 
-    .stat-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: rgba(0, 0, 0, 0.55);
+    .stat-pill-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      line-height: 1;
     }
 
-    .stat-value-group {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
 
-    .stat-number {
-      font-size: 26px;
-      font-weight: 800;
+    .pill-dot.blue { background-color: #0071E3; }
+    .pill-dot.green { background-color: #34C759; }
+    .pill-dot.sky { background-color: #5AC8FA; }
+    .pill-dot.orange { background-color: #FF9500; }
+
+    .pill-label {
+      color: rgba(0, 0, 0, 0.65);
+      font-weight: 500;
+    }
+
+    .pill-count {
       color: #1D1D1F;
-      letter-spacing: -0.02em;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
 
-    .stat-sub {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.6);
-      font-weight: 600;
-    }
-
-    .stat-sub.positive {
-      color: #527E5A;
+    .strip-sep {
+      color: rgba(0, 0, 0, 0.15);
+      font-size: 13px;
+      user-select: none;
     }
 
     .content-feed {

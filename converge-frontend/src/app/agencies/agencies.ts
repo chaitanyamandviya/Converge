@@ -30,40 +30,32 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
         }
       </header>
 
-      <!-- Metric Cards Strip (100% Real Database Metrics — Zero Dummy Data) -->
-      <section class="metrics-grid">
-        <div class="stat-card">
-          <span class="stat-label">AGENCIES ONBOARDED</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ agencies().length }}</span>
-          </div>
-          <span class="stat-sub">{{ activeCount() }} active</span>
+      <!-- macOS Soft Capsule Status Strip (Zero Big Boxy Cards) -->
+      <div class="macos-stat-strip">
+        <div class="stat-pill-item">
+          <span class="pill-dot blue"></span>
+          <span class="pill-label">Agencies</span>
+          <span class="pill-count">{{ agencies().length }} ({{ activeCount() }} active)</span>
         </div>
-
-        <div class="stat-card">
-          <span class="stat-label">COMMITTED CREATORS</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ totalCreatorsCount() }}</span>
-          </div>
-          <span class="stat-sub">Across {{ agencies().length }} agencies</span>
+        <span class="strip-sep">/</span>
+        <div class="stat-pill-item">
+          <span class="pill-dot green"></span>
+          <span class="pill-label">Creators</span>
+          <span class="pill-count">{{ totalCreatorsCount() }}</span>
         </div>
-
-        <div class="stat-card">
-          <span class="stat-label">CONTENT SLOTS</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ overview().totalContentSlots }}</span>
-          </div>
-          <span class="stat-sub">{{ overview().contentSlotsFilled }} with live insights</span>
+        <span class="strip-sep">/</span>
+        <div class="stat-pill-item">
+          <span class="pill-dot sky"></span>
+          <span class="pill-label">Content Slots</span>
+          <span class="pill-count">{{ overview().contentSlotsFilled }} / {{ overview().totalContentSlots }}</span>
         </div>
-
-        <div class="stat-card">
-          <span class="stat-label">TOTAL SPEND</span>
-          <div class="stat-value-group">
-            <span class="stat-number">₹{{ formatInr(totalSpend()) }}</span>
-          </div>
-          <span class="stat-sub">Allocated agency budget</span>
+        <span class="strip-sep">/</span>
+        <div class="stat-pill-item">
+          <span class="pill-dot orange"></span>
+          <span class="pill-label">Allocated Spend</span>
+          <span class="pill-count">₹{{ formatInr(totalSpend()) }}</span>
         </div>
-      </section>
+      </div>
 
       <!-- Agencies Table Container -->
       <section class="table-container">
@@ -73,8 +65,21 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
         </div>
 
         @if (agencies().length === 0) {
-          <div class="empty-state">
-            <p>No agencies onboarded yet. Click <strong>+ Invite agency</strong> above to onboard your first agency and send a Set-Password invitation email.</p>
+          <div class="macos-empty-state">
+            <div class="macos-empty-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <h3 class="macos-empty-title">No Partner Agencies</h3>
+            <p class="macos-empty-text">Onboard partner agencies to delegate creator roster management and campaign deliverables.</p>
+            <button type="button" class="macos-empty-cta" (click)="openModal = true">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Invite Agency</span>
+            </button>
           </div>
         } @else {
           <div class="table-scroll-wrap">
@@ -420,47 +425,57 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       filter: brightness(0) invert(1);
     }
 
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    .macos-stat-strip {
+      display: inline-flex;
+      align-items: center;
       gap: 16px;
-      width: 100%;
+      padding: 8px 20px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 980px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      width: fit-content;
+      max-width: 100%;
+      overflow-x: auto;
     }
 
-    .stat-card {
-      background: #FFFFFF;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      border-radius: 12px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+    .stat-pill-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      white-space: nowrap;
     }
 
-    .stat-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: rgba(0, 0, 0, 0.55);
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
 
-    .stat-value-group {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
+    .pill-dot.blue { background: #0071E3; }
+    .pill-dot.green { background: #34C759; }
+    .pill-dot.sky { background: #5AC8FA; }
+    .pill-dot.orange { background: #FF9500; }
+
+    .pill-label {
+      color: #86868B;
+      font-weight: 500;
     }
 
-    .stat-number {
-      font-size: 26px;
-      font-weight: 800;
+    .pill-count {
       color: #1D1D1F;
-      letter-spacing: -0.02em;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
 
-    .stat-sub {
-      font-size: 12px;
-      color: #527E5A;
-      font-weight: 600;
+    .strip-sep {
+      color: rgba(0, 0, 0, 0.15);
+      font-size: 13px;
+      user-select: none;
     }
 
     .table-container {
@@ -498,11 +513,68 @@ import { CustomSelectComponent } from '../shared/custom-select/custom-select.com
       font-weight: 700;
     }
 
-    .empty-state {
-      padding: 36px 24px;
+    .macos-empty-state {
+      padding: 48px 24px;
       text-align: center;
-      color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .macos-empty-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.03);
+      color: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    .macos-empty-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1D1D1F;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+
+    .macos-empty-text {
       font-size: 13px;
+      color: #86868B;
+      margin: 0;
+      max-width: 380px;
+      line-height: 1.45;
+    }
+
+    .macos-empty-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      background: #0071E3;
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 980px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .macos-empty-cta:hover {
+      background: #0077ED;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35);
+    }
+
+    .macos-empty-cta:active {
+      transform: scale(0.96);
     }
 
     .table-scroll-wrap {

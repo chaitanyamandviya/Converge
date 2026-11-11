@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -17,14 +17,20 @@ interface FaqItem {
   templateUrl: './landing.html',
   styleUrl: './landing.css'
 })
-export class LandingComponent {
+export class LandingComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
 
-  readonly activeAnalyticsTab = signal<'performance' | 'agency' | 'creator'>('performance');
-  readonly openFaqIndex = signal<number | null>(0);
+  // Fluid App Booting / Loading Screen
+  readonly isAppBooting = signal(true);
 
-  // Feedback / Query Modal state
+  // Interactive Architecture Workflow Switcher (Zero Demo Data)
+  readonly activeWorkflowTab = signal<'roster' | 'audit' | 'meta' | 'ledger'>('roster');
+
+  // FAQs: None open by default
+  readonly openFaqIndex = signal<number | null>(null);
+
+  // Direct Inquiries Sheet Modal state
   readonly showFeedbackModal = signal(false);
   readonly feedbackEmail = signal('');
   readonly feedbackMessage = signal('');
@@ -33,28 +39,35 @@ export class LandingComponent {
   readonly faqs: FaqItem[] = [
     {
       question: 'What can I track with Converge?',
-      answer: 'Keep campaign details, agency and creator partnerships, deliverables, agreed spend, and available content insights in one workspace.'
+      answer: 'Keep campaign briefs, partner agency rosters, creator assignments, agreed INR budgets, and verified deliverable links in one unified workspace.'
     },
     {
-      question: 'Where do the analytics come from?',
-      answer: 'Converge connects directly to authorized platform APIs for Instagram, TikTok, and YouTube, pulling verified impressions, engagements, and audience demographics directly into your dashboard.'
+      question: 'How does live insight synchronization work?',
+      answer: 'Converge connects directly to authorized platform APIs for Instagram and Meta Graph API v26.0, pulling verified organic reach and interactions without manual screenshot submission.'
     },
     {
-      question: 'What happens when insights are missing?',
-      answer: 'Missing data is flagged clearly as awaiting authorization or upload, rather than showing false zeros that distort your campaign rollups.'
+      question: 'What happens when insights or deliverables are missing?',
+      answer: 'Missing deliverables and pending authorizations are flagged prominently in your audit stream rather than showing distorted zeros that corrupt campaign pacing.'
     },
     {
-      question: 'Can I work with multiple agencies and creators?',
-      answer: 'Yes. Converge supports multi-agency workspaces, allowing brand teams to oversee all agency partners and creator rosters in one cohesive workspace.'
+      question: 'Can I manage multiple partner agencies and brand workspaces?',
+      answer: 'Yes. Converge is architected for multi-agency collaboration. Brand managers oversee all connected partner agencies while agency teams maintain private roster control.'
     },
     {
-      question: 'Does Converge process creator payments?',
-      answer: 'Converge tracks agreed spend, milestones, and invoice approvals. Payment fulfillment can be synced with your preferred invoicing or ERP system.'
+      question: 'Does Converge support agreed INR budget tracking?',
+      answer: 'Yes. Converge tracks agreed spend per deliverable or fixed campaign fees in INR, allowing instant 5-sheet audit workbooks to be exported at any time.'
     }
   ];
 
-  setAnalyticsTab(tab: 'performance' | 'agency' | 'creator'): void {
-    this.activeAnalyticsTab.set(tab);
+  ngOnInit(): void {
+    // Apple Fluid Boot sequence: smoothly unveil view after initialization
+    setTimeout(() => {
+      this.isAppBooting.set(false);
+    }, 450);
+  }
+
+  setWorkflowTab(tab: 'roster' | 'audit' | 'meta' | 'ledger'): void {
+    this.activeWorkflowTab.set(tab);
   }
 
   toggleFaq(index: number): void {
@@ -87,7 +100,7 @@ export class LandingComponent {
         this.isSendingFeedback.set(false);
         this.showFeedbackModal.set(false);
         this.feedbackMessage.set('');
-        this.toast.success('Feedback Logged', 'Your inquiry has been queued for chaitanyamandviya7@gmail.com.');
+        this.toast.success('Feedback Logged', 'Your inquiry has been queued for our team.');
       }
     });
   }

@@ -110,6 +110,60 @@
   transform: scale(0.97);
 }
 
+/* macOS Soft Capsule Status Strip (Replaces Big Boxy Metric Cards) */
+.macos-stat-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 980px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.stat-pill-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pill-dot.blue { background: #0071E3; }
+.pill-dot.green { background: #34C759; }
+.pill-dot.sky { background: #5AC8FA; }
+.pill-dot.orange { background: #FF9500; }
+
+.pill-label {
+  color: #86868B;
+  font-weight: 500;
+}
+
+.pill-count {
+  color: #1D1D1F;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.strip-sep {
+  color: rgba(0, 0, 0, 0.15);
+  font-size: 13px;
+  user-select: none;
+}
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -346,6 +400,75 @@
 
 .empty-state-box p {
   margin: 0;
+}
+
+.macos-empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
+}
+
+.macos-empty-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.03);
+  color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.macos-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1D1D1F;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.macos-empty-text {
+  font-size: 13px;
+  color: #86868B;
+  margin: 0;
+  max-width: 400px;
+  line-height: 1.45;
+}
+
+.macos-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  background: #0071E3;
+  color: #FFFFFF;
+  border: none;
+  text-decoration: none;
+  padding: 8px 18px;
+  border-radius: 980px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.macos-empty-cta:hover {
+  background: #0077ED;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35);
+  color: #FFFFFF;
+}
+
+.macos-empty-cta:active {
+  transform: scale(0.96);
 }
 
 .modal-helper-note {

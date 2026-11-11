@@ -919,34 +919,94 @@
 }
 
 .apple-window-body {
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.preview-metrics-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.pipeline-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.preview-metric-card {
+.pipeline-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.pipeline-step:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.pipeline-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pipeline-icon-circle.blue {
+  background: rgba(0, 113, 227, 0.18);
+  color: #2997FF;
+}
+
+.pipeline-icon-circle.green {
+  background: rgba(52, 199, 89, 0.18);
+  color: #34C759;
+}
+
+.pipeline-icon-circle.sky {
+  background: rgba(90, 200, 250, 0.18);
+  color: #5AC8FA;
+}
+
+.pipeline-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
-.p-label {
-  font-size: 10px;
-  font-weight: 500;
+.pipeline-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.pipeline-sub {
+  font-size: 11px;
   color: #86868B;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  line-height: 1.35;
+}
+
+.pipeline-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 980px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #A1A1A6;
+  white-space: nowrap;
+}
+
+.pipeline-connector {
+  width: 2px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  margin-left: 29px;
 }
 
 .p-val {

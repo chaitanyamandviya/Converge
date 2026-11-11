@@ -49,11 +49,28 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       <!-- Creators Table Container -->
       <section class="table-container">
         @if (filteredCreators().length === 0) {
-          <div class="empty-state">
-            @if (isAdmin()) {
-              <p>No creators rostered yet across partner agencies.</p>
-            } @else {
-              <p>No creators onboarded yet. Click <strong>+ Onboard creator</strong> above to fetch an Instagram handle, attach deliverable URLs, and submit final pricing.</p>
+          <div class="macos-empty-state">
+            <div class="macos-empty-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <h3 class="macos-empty-title">No Creators Rostered</h3>
+            <p class="macos-empty-text">
+              @if (isAdmin()) {
+                No creators have been rostered yet across partner agencies.
+              } @else {
+                Fetch Instagram handles, attach deliverable URLs, and submit pricing models.
+              }
+            </p>
+            @if (!isAdmin()) {
+              <button type="button" class="macos-empty-cta" (click)="openNewCreatorModal()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Onboard Creator</span>
+              </button>
             }
           </div>
         } @else {
@@ -467,11 +484,68 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       box-sizing: border-box;
     }
 
-    .empty-state {
-      padding: 40px 24px;
+    .macos-empty-state {
+      padding: 48px 24px;
       text-align: center;
-      color: rgba(0, 0, 0, 0.7);
-      font-size: 13.5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .macos-empty-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.03);
+      color: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    .macos-empty-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1D1D1F;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+
+    .macos-empty-text {
+      font-size: 13px;
+      color: #86868B;
+      margin: 0;
+      max-width: 380px;
+      line-height: 1.45;
+    }
+
+    .macos-empty-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      background: #0071E3;
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 980px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .macos-empty-cta:hover {
+      background: #0077ED;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35);
+    }
+
+    .macos-empty-cta:active {
+      transform: scale(0.96);
     }
 
     .table-scroll-wrap {

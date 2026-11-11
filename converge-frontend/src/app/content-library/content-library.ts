@@ -27,84 +27,67 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
         }
       </header>
 
-      <!-- Status Metric Cards Strip (100% Real Database Counts) -->
-      <section class="metrics-grid">
-        <div class="stat-card" [class.selected]="selectedStatus() === 'ALL'" (click)="filterByStatus('ALL')">
-          <span class="stat-label">TOTAL DELIVERABLES</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ totalCount() }}</span>
-          </div>
-          <span class="stat-sub">All recorded posts</span>
-        </div>
+      <!-- macOS Liquid Segmented Control Toolbar (Soft, Rounded, Zero Boxy Cards) -->
+      <div class="macos-segmented-bar">
+        <button 
+          type="button" 
+          class="macos-segment" 
+          [class.active]="selectedStatus() === 'ALL'" 
+          (click)="filterByStatus('ALL')"
+        >
+          <span class="seg-title">All Deliverables</span>
+          <span class="seg-badge">{{ totalCount() }}</span>
+        </button>
 
-        <div class="stat-card with-insights" [class.selected]="selectedStatus() === 'WITH_INSIGHTS'" (click)="filterByStatus('WITH_INSIGHTS')">
-          <span class="stat-label">WITH LIVE INSIGHTS</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ withInsightsCount() }}</span>
-          </div>
-          <span class="stat-sub positive">Delivering live data</span>
-        </div>
+        <button 
+          type="button" 
+          class="macos-segment" 
+          [class.active]="selectedStatus() === 'WITH_INSIGHTS'" 
+          (click)="filterByStatus('WITH_INSIGHTS')"
+        >
+          <span class="seg-title">With Live Insights</span>
+          <span class="seg-badge positive">{{ withInsightsCount() }}</span>
+        </button>
 
-        <div class="stat-card missing-url" [class.selected]="selectedStatus() === 'MISSING_URL'" (click)="filterByStatus('MISSING_URL')">
-          <span class="stat-label">MISSING URLS</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ missingUrlCount() }}</span>
-          </div>
-          <span class="stat-sub warning">Needs agency input</span>
-        </div>
+        <button 
+          type="button" 
+          class="macos-segment" 
+          [class.active]="selectedStatus() === 'MISSING_URL'" 
+          (click)="filterByStatus('MISSING_URL')"
+        >
+          <span class="seg-title">Missing URLs</span>
+          <span class="seg-badge warning">{{ missingUrlCount() }}</span>
+        </button>
 
-        <div class="stat-card awaiting" [class.selected]="selectedStatus() === 'AWAITING_INSIGHTS'" (click)="filterByStatus('AWAITING_INSIGHTS')">
-          <span class="stat-label">AWAITING INSIGHTS</span>
-          <div class="stat-value-group">
-            <span class="stat-number">{{ awaitingCount() }}</span>
-          </div>
-          <span class="stat-sub info">Published &lt; 24h</span>
-        </div>
-      </section>
+        <button 
+          type="button" 
+          class="macos-segment" 
+          [class.active]="selectedStatus() === 'AWAITING_INSIGHTS'" 
+          (click)="filterByStatus('AWAITING_INSIGHTS')"
+        >
+          <span class="seg-title">Awaiting Sync</span>
+          <span class="seg-badge info">{{ awaitingCount() }}</span>
+        </button>
+      </div>
 
       <!-- Content Items Table -->
       <section class="table-container">
-        <div class="table-header-strip">
-          <div class="filter-group">
-            <span class="filter-label">Filter:</span>
-            <button 
-              type="button" 
-              class="pill-btn" 
-              [class.active]="selectedStatus() === 'ALL'" 
-              (click)="filterByStatus('ALL')"
-            >
-              All ({{ totalCount() }})
-            </button>
-            <button 
-              type="button" 
-              class="pill-btn" 
-              [class.active]="selectedStatus() === 'WITH_INSIGHTS'" 
-              (click)="filterByStatus('WITH_INSIGHTS')"
-            >
-              With insights ({{ withInsightsCount() }})
-            </button>
-            <button 
-              type="button" 
-              class="pill-btn" 
-              [class.active]="selectedStatus() === 'MISSING_URL'" 
-              (click)="filterByStatus('MISSING_URL')"
-            >
-              Missing URLs ({{ missingUrlCount() }})
-            </button>
-            <button 
-              type="button" 
-              class="pill-btn" 
-              [class.active]="selectedStatus() === 'AWAITING_INSIGHTS'" 
-              (click)="filterByStatus('AWAITING_INSIGHTS')"
-            >
-              Awaiting ({{ awaitingCount() }})
-            </button>
-          </div>
-        </div>
 
         @if (filteredItems().length === 0) {
-          <div style="padding: 36px 24px; text-align: center; color: rgba(0, 0, 0, 0.7); font-size: 13px;">
-            No content items recorded yet. Click <strong>+ Add content URL</strong> above to add a post and sync Instagram Graph API v26.0 insights.
+          <div class="macos-empty-state">
+            <div class="macos-empty-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+            </div>
+            <h3 class="macos-empty-title">No Deliverables Recorded</h3>
+            <p class="macos-empty-text">Add published post or reel URLs to verify insights via Meta Graph API v26.0.</p>
+            <button type="button" class="macos-empty-cta" (click)="openModal = true">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Add Content URL</span>
+            </button>
           </div>
         } @else {
           <div class="table-scroll">
@@ -421,76 +404,157 @@ import { CustomSelectComponent, SelectOption } from '../shared/custom-select/cus
       filter: brightness(0) invert(1);
     }
 
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      width: 100%;
+    .macos-segmented-bar {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.05);
+      padding: 4px;
+      border-radius: 980px;
+      gap: 3px;
+      width: fit-content;
+      max-width: 100%;
+      overflow-x: auto;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      box-sizing: border-box;
     }
 
-    .stat-card {
-      background: #FFFFFF;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      border-radius: 12px;
-      padding: 18px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+    .macos-segment {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 980px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #636366;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+      user-select: none;
+      font-family: inherit;
     }
 
-    .stat-card:hover {
-      border-color: #0071E3;
-      transform: translateY(-2px);
-    }
-
-    .stat-card.selected {
-      border: 2px solid #0071E3;
-      background: rgba(0, 0, 0, 0.02);
-    }
-
-    .stat-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: rgba(0, 0, 0, 0.55);
-    }
-
-    .stat-number {
-      font-size: 26px;
-      font-weight: 800;
+    .macos-segment:hover:not(.active) {
       color: #1D1D1F;
-      letter-spacing: -0.02em;
+      background: rgba(0, 0, 0, 0.03);
     }
 
-    .stat-sub {
-      font-size: 12px;
+    .macos-segment:active {
+      transform: scale(0.96);
+    }
+
+    .macos-segment.active {
+      background: #FFFFFF;
+      color: #1D1D1F;
       font-weight: 600;
-      color: rgba(0, 0, 0, 0.6);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
     }
 
-    .stat-sub.positive {
-      color: #527E5A;
+    .seg-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 980px;
+      background: rgba(0, 0, 0, 0.06);
+      color: #636366;
+      font-variant-numeric: tabular-nums;
     }
 
-    .stat-sub.warning {
-      color: #E4664B;
+    .macos-segment.active .seg-badge {
+      background: rgba(0, 113, 227, 0.1);
+      color: #0071E3;
     }
 
-    .stat-sub.info {
-      color: #3D5EAB;
+    .seg-badge.positive {
+      background: rgba(52, 199, 89, 0.12);
+      color: #34C759;
+    }
+
+    .seg-badge.warning {
+      background: rgba(255, 149, 0, 0.12);
+      color: #FF9500;
+    }
+
+    .seg-badge.info {
+      background: rgba(90, 200, 250, 0.12);
+      color: #0071E3;
     }
 
     .table-container {
       background: #FFFFFF;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      border-radius: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
+    }
+
+    .macos-empty-state {
+      padding: 48px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .macos-empty-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.03);
+      color: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    .macos-empty-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1D1D1F;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+
+    .macos-empty-text {
+      font-size: 13px;
+      color: #86868B;
+      margin: 0;
+      max-width: 380px;
+      line-height: 1.45;
+    }
+
+    .macos-empty-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      background: #0071E3;
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 980px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .macos-empty-cta:hover {
+      background: #0077ED;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35);
+    }
+
+    .macos-empty-cta:active {
+      transform: scale(0.96);
     }
 
     .table-scroll {
