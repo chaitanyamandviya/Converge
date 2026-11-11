@@ -21,6 +21,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final EmailService emailService;
+    private final CacheEvictionService cacheEvictionService;
 
     public AuthService(
             UserRepository userRepository,
@@ -28,7 +29,8 @@ public class AuthService {
             AgencyRepository agencyRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            EmailService emailService
+            EmailService emailService,
+            CacheEvictionService cacheEvictionService
     ) {
         this.userRepository = userRepository;
         this.brandRepository = brandRepository;
@@ -36,6 +38,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.emailService = emailService;
+        this.cacheEvictionService = cacheEvictionService;
     }
 
     public AuthResponse login(AuthRequest request) {
@@ -322,6 +325,10 @@ public class AuthService {
         }
 
         userRepository.save(user);
+
+        cacheEvictionService.evictAgencies();
+        cacheEvictionService.evictBrands();
+        cacheEvictionService.evictOverview();
 
         emailService.sendOnboardingApplicationEmails(
                 email,

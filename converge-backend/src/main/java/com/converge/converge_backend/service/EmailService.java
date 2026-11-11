@@ -10,6 +10,7 @@ import com.resend.services.templates.model.VariableType;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -31,6 +32,9 @@ public class EmailService {
 
     private final ResendProperties resendProperties;
     private final RestTemplate restTemplate;
+
+    @Value("${app.frontend-url:https://converge-etp.pages.dev}")
+    private String frontendUrl;
 
     public EmailService(ResendProperties resendProperties) {
         this.resendProperties = resendProperties;
@@ -81,7 +85,7 @@ public class EmailService {
                         .addVariable(new Variable("ROLE_LABEL", VariableType.STRING, "Agency Manager"))
                         .addVariable(new Variable("ORG_NAME", VariableType.STRING, "Partner Agency"))
                         .addVariable(new Variable("RECIPIENT_EMAIL", VariableType.STRING, "user@example.com"))
-                        .addVariable(new Variable("SET_PASSWORD_URL", VariableType.STRING, "http://localhost:4200/login?mode=forgot"))
+                        .addVariable(new Variable("SET_PASSWORD_URL", VariableType.STRING, frontendUrl + "/login?mode=forgot"))
                         .build(),
 
                 CreateTemplateOptions.builder()
@@ -118,7 +122,7 @@ public class EmailService {
                         .addVariable(new Variable("APPLICANT_NAME", VariableType.STRING, "Manager"))
                         .addVariable(new Variable("APPLICANT_EMAIL", VariableType.STRING, "user@example.com"))
                         .addVariable(new Variable("PARTNER_BRAND", VariableType.STRING, "Brand Workspace"))
-                        .addVariable(new Variable("DASHBOARD_URL", VariableType.STRING, "http://localhost:4200/dashboard"))
+                        .addVariable(new Variable("DASHBOARD_URL", VariableType.STRING, frontendUrl + "/dashboard"))
                         .build(),
 
                 CreateTemplateOptions.builder()
@@ -137,8 +141,8 @@ public class EmailService {
                         .addVariable(new Variable("ROLE_LABEL", VariableType.STRING, "Agency Workspace"))
                         .addVariable(new Variable("ORG_NAME", VariableType.STRING, "Organization"))
                         .addVariable(new Variable("RECIPIENT_EMAIL", VariableType.STRING, "user@example.com"))
-                        .addVariable(new Variable("LOGIN_URL", VariableType.STRING, "http://localhost:4200/login"))
-                        .addVariable(new Variable("SET_PASSWORD_URL", VariableType.STRING, "http://localhost:4200/login?mode=forgot"))
+                        .addVariable(new Variable("LOGIN_URL", VariableType.STRING, frontendUrl + "/login"))
+                        .addVariable(new Variable("SET_PASSWORD_URL", VariableType.STRING, frontendUrl + "/login?mode=forgot"))
                         .build(),
 
                 CreateTemplateOptions.builder()
@@ -151,7 +155,7 @@ public class EmailService {
                                 </div>
                                 """)
                         .addVariable(new Variable("RECIPIENT_EMAIL", VariableType.STRING, "user@example.com"))
-                        .addVariable(new Variable("RESET_URL", VariableType.STRING, "http://localhost:4200/login"))
+                        .addVariable(new Variable("RESET_URL", VariableType.STRING, frontendUrl + "/login"))
                         .build()
         );
 
@@ -258,7 +262,7 @@ public class EmailService {
                 </div>
                 """.formatted(orgName, fullName != null ? fullName : applicantEmail, orgName, roleLabel, brandLine, siteLine, approverLabel);
 
-        sendEmail(applicantEmail, "Converge — Application Pending Approval (" + orgName + ")", applicantHtml, "http://localhost:4200/login");
+        sendEmail(applicantEmail, "Converge — Application Pending Approval (" + orgName + ")", applicantHtml, frontendUrl + "/login");
 
         String targetApprover = (approverEmail != null && !approverEmail.isBlank())
                 ? approverEmail.trim()
@@ -273,27 +277,27 @@ public class EmailService {
                   <p><strong>Applicant:</strong> %s (%s)</p>
                   %s
                   %s
-                  <p>Log in to your Converge dashboard at <a href="http://localhost:4200/login">http://localhost:4200/login</a> to review and click <strong>✓ Approve</strong>.</p>
+                  <p>Log in to your Converge dashboard at <a href="%s/login">%s/login</a> to review and click <strong>✓ Approve</strong>.</p>
                 </div>
-                """.formatted(roleLabel, orgName, fullName != null ? fullName : "Manager", applicantEmail, brandLine, siteLine);
-        sendEmail(targetApprover, "Action Required: Approve " + orgName + " (" + roleLabel + ")", adminHtml, "http://localhost:4200/dashboard");
+                """.formatted(roleLabel, orgName, fullName != null ? fullName : "Manager", applicantEmail, brandLine, siteLine, frontendUrl, frontendUrl);
+        sendEmail(targetApprover, "Action Required: Approve " + orgName + " (" + roleLabel + ")", adminHtml, frontendUrl + "/dashboard");
     }
 
     public void sendApprovalConfirmationEmail(String toEmail, String orgName, String role) {
         String roleLabel = "BRAND_MANAGER".equalsIgnoreCase(role) ? "Brand Workspace" : "Agency Workspace";
         String encodedEmail = URLEncoder.encode(toEmail, StandardCharsets.UTF_8);
-        String setPasswordUrl = "http://localhost:4200/login?mode=forgot&email=" + encodedEmail;
+        String setPasswordUrl = frontendUrl + "/login?mode=forgot&email=" + encodedEmail;
         String html = """
                 <div style="font-family: Inter, sans-serif; color: #243F82; max-width: 560px; padding: 24px; background: #F6F4EC; border-radius: 12px;">
                   <h2 style="margin-top:0; color: #527E5A;">✓ Your %s is Approved!</h2>
                   <p>Great news — <strong>%s</strong> has been approved and activated on Converge.</p>
                   <p>You can now sign in with your registered email (<strong>%s</strong>) or set a new password below:</p>
                   <p style="margin: 20px 0;">
-                    <a href="http://localhost:4200/login" style="display:inline-block; padding:10px 18px; background:#243F82; color:#FFFFFF; text-decoration:none; border-radius:999px; font-weight:600; margin-right: 10px;">Log in to Converge ↗</a>
+                    <a href="%s/login" style="display:inline-block; padding:10px 18px; background:#243F82; color:#FFFFFF; text-decoration:none; border-radius:999px; font-weight:600; margin-right: 10px;">Log in to Converge ↗</a>
                     <a href="%s" style="display:inline-block; padding:10px 18px; background:#FFFFFF; color:#243F82; border:1px solid #243F82; text-decoration:none; border-radius:999px; font-weight:600;">Set / Reset Password ↗</a>
                   </p>
                 </div>
-                """.formatted(roleLabel, orgName, toEmail, setPasswordUrl);
+                """.formatted(roleLabel, orgName, toEmail, frontendUrl, setPasswordUrl);
 
         sendEmail(toEmail, "Approved: Welcome to Converge (" + orgName + ")", html, setPasswordUrl);
     }
@@ -301,7 +305,7 @@ public class EmailService {
     public void sendInvitationEmail(String toEmail, String orgName, String role) {
         String roleLabel = "BRAND_MANAGER".equalsIgnoreCase(role) ? "Brand Manager" : "Agency Manager";
         String encodedEmail = URLEncoder.encode(toEmail, StandardCharsets.UTF_8);
-        String setPasswordUrl = "http://localhost:4200/login?mode=forgot&email=" + encodedEmail;
+        String setPasswordUrl = frontendUrl + "/login?mode=forgot&email=" + encodedEmail;
 
         String html = """
                 <div style="font-family: Inter, sans-serif; color: #243F82; max-width: 560px; padding: 24px; background: #F6F4EC; border-radius: 12px;">
@@ -323,14 +327,14 @@ public class EmailService {
 
     public void sendPasswordResetEmail(String toEmail) {
         String encodedEmail = URLEncoder.encode(toEmail, StandardCharsets.UTF_8);
-        String resetUrl = "http://localhost:4200/login?mode=forgot&email=" + encodedEmail;
+        String resetUrl = frontendUrl + "/login?mode=forgot&email=" + encodedEmail;
         String html = """
                 <div style="font-family: Inter, sans-serif; color: #243F82; max-width: 560px; padding: 24px; background: #F6F4EC; border-radius: 12px;">
                   <h2 style="margin-top:0;">Converge Password Updated</h2>
                   <p>The password for your Converge account (<strong>%s</strong>) has been updated.</p>
-                  <p><a href="http://localhost:4200/login" style="display:inline-block; padding:10px 18px; background:#243F82; color:#FFFFFF; text-decoration:none; border-radius:999px; font-weight:600;">Log in to Converge ↗</a></p>
+                  <p><a href="%s/login" style="display:inline-block; padding:10px 18px; background:#243F82; color:#FFFFFF; text-decoration:none; border-radius:999px; font-weight:600;">Log in to Converge ↗</a></p>
                 </div>
-                """.formatted(toEmail);
+                """.formatted(toEmail, frontendUrl);
 
         sendEmail(toEmail, "Converge — Password Reset Confirmation", html, resetUrl);
     }
@@ -350,7 +354,6 @@ public class EmailService {
                   <p style="font-size:12px; color:#666;">Sent via Converge Help & Feedback Portal</p>
                 </div>
                 """.formatted(senderEmail != null && !senderEmail.isBlank() ? senderEmail : "Anonymous User", message);
-
-        sendEmail(targetAdmin, "Converge Feedback & Query from " + (senderEmail != null && !senderEmail.isBlank() ? senderEmail : "User"), html, "http://localhost:4200/dashboard");
+        sendEmail(targetAdmin, "Converge Feedback & Query from " + (senderEmail != null && !senderEmail.isBlank() ? senderEmail : "User"), html, frontendUrl + "/dashboard");
     }
 }
