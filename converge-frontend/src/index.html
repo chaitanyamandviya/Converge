@@ -2,19 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Converge - Marketing, In Perspective</title>
+  <title>Converge - Real influence. Verified results.</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/svg+xml" href="/assets/converge-icon.svg?v=2">
+  <link rel="icon" type="image/png" href="/assets/converge-logo.png">
   <link rel="alternate icon" type="image/x-icon" href="/favicon.ico?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&family=Inter:ital,opsz,wght@0,14..32,400..700;1,14..32,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary-fixed-dim": "#c8c6c5",
+            "on-primary": "#ffffff",
+            "on-tertiary": "#ffffff",
+            "tertiary": "#000000",
+            "primary-container": "#1c1b1b",
+            "on-primary-container": "#858383",
+            "surface-bright": "#fcf9f5",
+            "surface": "#fcf9f5",
+            "inverse-on-surface": "#f3f0ec",
+            "surface-container-lowest": "#ffffff",
+            "inverse-primary": "#c8c6c5",
+            "outline": "#747878",
+            "tertiary-fixed": "#ffddb0",
+            "surface-container": "#f0edea",
+            "secondary-fixed-dim": "#c9c6c1",
+            "on-error": "#ffffff",
+            "tertiary-container": "#281800",
+            "surface-container-highest": "#e5e2de",
+            "surface-dim": "#dcdad6",
+            "outline-variant": "#c4c7c7",
+            "surface-container-low": "#f6f3ef",
+            "on-tertiary-container": "#b17901",
+            "on-tertiary-fixed-variant": "#614000",
+            "on-secondary-container": "#64635e",
+            "surface-variant": "#e5e2de",
+            "primary-fixed": "#e5e2e1",
+            "secondary-container": "#e2dfda",
+            "on-surface": "#1b1c1a",
+            "on-error-container": "#93000a",
+            "inverse-surface": "#30302e",
+            "secondary": "#5f5e5a",
+            "surface-tint": "#5f5e5e",
+            "secondary-fixed": "#e5e2dd",
+            "on-secondary-fixed": "#1c1c19",
+            "error": "#ba1a1a",
+            "primary": "#000000",
+            "on-tertiary-fixed": "#281800",
+            "surface-container-high": "#eae8e4",
+            "on-background": "#1b1c1a",
+            "on-primary-fixed": "#1c1b1b",
+            "on-secondary": "#ffffff",
+            "on-secondary-fixed-variant": "#474743",
+            "tertiary-fixed-dim": "#feba4c",
+            "on-surface-variant": "#444748",
+            "background": "#fcf9f5",
+            "error-container": "#ffdad6",
+            "on-primary-fixed-variant": "#474746"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          },
+          fontFamily: {
+            "body-md": ["Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "code-inline": ["JetBrains Mono", "monospace"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-display": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
   <script src="config.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
+<body class="bg-[#FCF9F5] text-[#1B1C1A]">
   <app-root></app-root>
 </body>
 </html>

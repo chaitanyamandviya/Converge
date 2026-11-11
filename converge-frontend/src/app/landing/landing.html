@@ -1,421 +1,649 @@
-<div class="landing-page bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-secondary-container selection:text-on-surface">
+<div class="landing-page font-body-md text-body-md text-[#111827] bg-[#FCF9F5] antialiased selection:bg-[#E0E7FF] selection:text-[#1E40AF]">
 
   <!-- ========================================================
-       Top Navigation Bar (Stitch Specification)
+       Top Navigation Bar
        ======================================================== -->
-  <header class="header-nav fixed top-0 left-0 right-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
-    <div class="h-16 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
-      <div class="flex items-center gap-10">
-        <a routerLink="/" class="flex items-center gap-2 group cursor-pointer" title="Converge">
-          <img src="/assets/stitch-logo.png" alt="Converge" class="w-8 h-8 object-contain rounded-md">
-          <span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface">Converge</span>
-        </a>
+  <header class="fixed top-0 left-0 right-0 z-50 bg-[#FCF9F5]/90 backdrop-blur-md border-b border-[#E5E7EB]/60">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <a routerLink="/" class="flex items-center gap-2.5 group focus:outline-none" title="Converge">
+        <img src="/assets/converge-icon.svg" alt="Converge Logo" class="w-7 h-7 object-contain flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
+        <span class="font-headline-sm text-headline-sm font-bold tracking-tight text-[#111827] text-[20px] lowercase">converge</span>
+      </a>
 
-        <nav class="hidden md:flex items-center gap-8">
-          <a routerLink="/" class="transition-colors text-on-surface font-label-md text-label-md font-medium">Overview</a>
-          <button type="button" (click)="scrollToSection('vignettes')" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer bg-transparent border-0">Product</button>
-          <button type="button" (click)="scrollToSection('vignettes')" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer bg-transparent border-0">Stories</button>
-        </nav>
+      <!-- Center Navigation Links -->
+      <nav class="hidden md:flex items-center gap-8 text-[14px] font-medium text-[#4B5563]">
+        <button type="button" (click)="scrollToSection('product')" class="hover:text-[#111827] transition-colors cursor-pointer bg-transparent border-0 font-medium">Product</button>
+        <button type="button" (click)="scrollToSection('how-it-works')" class="hover:text-[#111827] transition-colors cursor-pointer bg-transparent border-0 font-medium">How it works</button>
+        <button type="button" (click)="scrollToSection('for-brands')" class="hover:text-[#111827] transition-colors cursor-pointer bg-transparent border-0 font-medium">For Brands</button>
+        <button type="button" (click)="scrollToSection('for-agencies')" class="hover:text-[#111827] transition-colors cursor-pointer bg-transparent border-0 font-medium">For Agencies</button>
+      </nav>
+
+      <!-- Right CTAs -->
+      <div class="flex items-center gap-5">
+        <a routerLink="/login" class="text-[14px] font-medium text-[#111827] hover:text-[#0066FF] transition-colors no-underline">
+          Sign in
+        </a>
+        <button type="button" (click)="openDemo()" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#0066FF] hover:bg-[#0052CC] text-white font-medium text-[14px] shadow-sm transition-all active:scale-[0.98] cursor-pointer border-0">
+          Book a demo
+        </button>
       </div>
 
-      <div class="flex items-center gap-4">
-        <a routerLink="/login" [queryParams]="{ mode: 'signup' }" class="inline-flex items-center justify-center h-9 px-5 rounded-full bg-primary text-on-primary font-label-md text-label-md hover:bg-neutral-800 transition-all active:scale-[0.98] text-white no-underline font-medium">
-          Get Started
-        </a>
-        <a routerLink="/login" class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white no-underline hover:opacity-90 transition-opacity" title="Sign In">
-          <span class="material-symbols-outlined text-[18px]">person</span>
-        </a>
-      </div>
     </div>
   </header>
 
   <!-- ========================================================
-       Main Content (Stitch Specification)
+       Hero Section
        ======================================================== -->
-  <main class="w-full pt-16 bg-surface min-h-[calc(100vh-6rem)]">
-    <div class="flex flex-col w-full">
-
-      <!-- ========================================================
-           Hero Section: Brands. Agencies. Creators. Connected.
-           ======================================================== -->
-      <section class="relative w-full overflow-hidden px-6 lg:px-12 pt-12 pb-16 flex flex-col items-center text-center">
-
-        <!-- Floating Background Doodle Accents -->
-        <svg class="absolute top-12 left-10 w-12 h-12 text-[#FBBC05] opacity-80 animate-pulse pointer-events-none sparkle-float" fill="none" viewBox="0 0 48 48">
-          <path d="M24 4L26.5 18.5L40 14L29 24L41 33.5L26.5 30L24 44L21.5 30L7 33.5L19 24L8 14L21.5 18.5L24 4Z" fill="currentColor"></path>
-        </svg>
-
-        <svg class="absolute top-28 right-16 w-14 h-14 text-[#4285F4] opacity-75 pointer-events-none transition-transform duration-500 hover:rotate-45" fill="none" viewBox="0 0 56 56">
-          <circle cx="28" cy="28" r="18" stroke="currentColor" stroke-dasharray="4 4" stroke-linecap="round" stroke-width="3"></circle>
-          <path d="M28 14V42M14 28H42" stroke="currentColor" stroke-linecap="round" stroke-width="3"></path>
-        </svg>
-
-        <svg class="absolute bottom-6 left-1/4 w-10 h-10 text-[#34A853] opacity-70 pointer-events-none" fill="none" viewBox="0 0 40 40">
-          <path d="M8 32C14 20 26 12 34 8M10 10C18 16 26 26 30 34" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"></path>
-        </svg>
-
-        <svg class="absolute top-1/2 right-12 w-8 h-8 text-[#EA4335] opacity-85 pointer-events-none" fill="none" viewBox="0 0 32 32">
-          <circle cx="16" cy="16" fill="currentColor" r="6"></circle>
-          <path d="M16 2V7M16 25V30M2 16H7M25 16H30" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"></path>
-        </svg>
-
-        <!-- Super Minimal Header / Tagline -->
-        <div class="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
-          <span class="w-2 h-2 rounded-full bg-[#34A853]"></span>
-          <span>Creativity is better together</span>
-        </div>
-
-        <h1 class="font-headline-display text-headline-display text-on-surface max-w-4xl tracking-tight leading-[1.08] mb-5 font-bold">
-          Brands. Agencies. Creators.<br>
-          <span class="relative inline-block text-on-surface">
-            Connected.
-            <svg class="absolute -bottom-2.5 left-0 w-full h-3 text-[#4285F4]" fill="none" preserveAspectRatio="none" viewBox="0 0 240 16">
-              <path d="M3 11C60 4 175 4 237 12C180 8 70 8 3 13" stroke="currentColor" stroke-linecap="round" stroke-width="3.5"></path>
-            </svg>
-          </span>
-        </h1>
-
-        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg mb-8 leading-relaxed">
-          Where brilliant partnerships ignite without the friction.
-        </p>
-
-        <!-- Pill Actions -->
-        <div class="flex flex-col sm:flex-row items-center gap-4 mb-12">
-          <a routerLink="/login" [queryParams]="{ mode: 'signup' }" class="inline-flex items-center justify-center h-12 px-8 rounded-full bg-[#1b1c1a] text-white font-label-md text-label-md hover:bg-neutral-800 transition-all hover:scale-105 active:scale-95 shadow-sm no-underline font-medium">
-            Start creating
-            <span class="material-symbols-outlined ml-2 text-[18px]">arrow_forward</span>
-          </a>
-          <button type="button" (click)="scrollToSection('vignettes')" class="inline-flex items-center justify-center h-12 px-6 rounded-full text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all cursor-pointer bg-transparent border-0 font-medium">
-            <span class="material-symbols-outlined mr-2 text-[20px] text-[#4285F4]">play_circle</span>
-            See the spark
-          </button>
-        </div>
-
-        <!-- Centerpiece Google-Coded Bespoke SVG Illustration -->
-        <div class="relative w-full max-w-4xl mx-auto py-4 select-none illustration-stage">
-          <svg class="w-full h-auto drop-shadow-sm transition-transform duration-700 hover:scale-[1.01]" fill="none" viewBox="0 0 920 460" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="blueGlow" x1="0%" x2="100%" y1="0%" y2="100%">
-                <stop offset="0%" stop-color="#4285F4"></stop>
-                <stop offset="50%" stop-color="#FBBC05"></stop>
-                <stop offset="100%" stop-color="#34A853"></stop>
-              </linearGradient>
-              <filter height="140%" id="softGlow" width="140%" x="-20%" y="-20%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="3"></feGaussianBlur>
-                <feMerge>
-                  <feMergeNode></feMergeNode>
-                  <feMergeNode in="SourceGraphic"></feMergeNode>
-                </feMerge>
-              </filter>
-
-              <!-- Motion Path Definitions for Travelling Pulse Dots -->
-              <path d="M160 250 C 230 140, 310 120, 460 220 C 610 320, 680 180, 770 200" fill="none" id="pathBlueMain"></path>
-              <path d="M220 180 C 340 70, 570 90, 710 160" fill="none" id="pathCoralTop"></path>
-              <path d="M180 300 C 300 370, 520 370, 750 240" fill="none" id="pathGoldBottom"></path>
-            </defs>
-
-            <!-- Dynamic Interconnected Ribbon Pathway (Glowing underlay) -->
-            <path class="under-ribbon transition-all duration-300" d="M160 250 C 230 140, 310 120, 460 220 C 610 320, 680 180, 770 200" stroke="#E5E2DE" stroke-linecap="round" stroke-width="12"></path>
-            <path class="flow-line-main transition-colors duration-300" d="M160 250 C 230 140, 310 120, 460 220 C 610 320, 680 180, 770 200" stroke="#4285F4" stroke-linecap="round" stroke-width="4"></path>
-
-            <!-- Flowing Secondary Energy Threads with dash flow animation -->
-            <path class="flow-line-gold transition-colors duration-300" d="M180 300 C 300 370, 520 370, 750 240" stroke="#FBBC05" stroke-linecap="round" stroke-width="3"></path>
-            <path class="flow-line-coral transition-colors duration-300" d="M220 180 C 340 70, 570 90, 710 160" stroke="#EA4335" stroke-linecap="round" stroke-width="3"></path>
-
-            <!-- Travelling Pulsing Energy Dots connecting Brands -> Agencies -> Creators -->
-            <circle fill="#4285F4" filter="url(#softGlow)" r="5">
-              <animateMotion dur="4.2s" repeatCount="indefinite">
-                <mpath href="#pathBlueMain"></mpath>
-              </animateMotion>
-            </circle>
-            <circle fill="#34A853" filter="url(#softGlow)" r="4">
-              <animateMotion begin="2.1s" dur="4.2s" repeatCount="indefinite">
-                <mpath href="#pathBlueMain"></mpath>
-              </animateMotion>
-            </circle>
-            <circle fill="#EA4335" r="4">
-              <animateMotion dur="5s" repeatCount="indefinite">
-                <mpath href="#pathCoralTop"></mpath>
-              </animateMotion>
-            </circle>
-            <circle fill="#FBBC05" r="4.5">
-              <animateMotion dur="4.6s" repeatCount="indefinite">
-                <mpath href="#pathGoldBottom"></mpath>
-              </animateMotion>
-            </circle>
-
-            <!-- Brand Pillar: Left (The Brand Flag & Joyful Character) -->
-            <g class="character-group cursor-pointer">
-              <!-- Shadow ground spot -->
-              <ellipse class="character-shadow transition-all duration-300 origin-center" cx="180" cy="380" fill="#E5E2DE" rx="42" ry="7"></ellipse>
-              <!-- Body / Doodled Figure -->
-              <path d="M180 370 C 180 310, 150 280, 150 240 C 150 215, 170 195, 195 195 C 220 195, 240 215, 240 240 C 240 280, 210 310, 210 370 Z" fill="#4285F4"></path>
-              <!-- Head -->
-              <circle cx="195" cy="155" fill="#FFE0B2" r="32"></circle>
-              <!-- Smiling Eyes & Joyful Mouth -->
-              <path d="M184 150 C 187 146, 191 146, 194 150" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
-              <path d="M200 150 C 203 146, 207 146, 210 150" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
-              <path d="M188 165 C 194 172, 202 172, 208 165" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
-              <!-- Cheeks -->
-              <circle cx="182" cy="160" fill="#FF8A80" r="3"></circle>
-              <circle cx="214" cy="160" fill="#FF8A80" r="3"></circle>
-              <!-- Hand / Gesturing Flag -->
-              <path d="M230 230 Q 280 190 285 140" fill="none" stroke="#1b1c1a" stroke-linecap="round" stroke-width="3.5"></path>
-              <!-- Floating Brand Gem / Diamond Flag -->
-              <polygon class="sparkle-float origin-center" fill="#EA4335" points="285,120 315,140 285,160 255,140"></polygon>
-              <circle cx="285" cy="140" fill="#FFFFFF" r="6"></circle>
-              <text class="character-label transition-colors duration-200" fill="#1b1c1a" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700" text-anchor="middle" x="195" y="415">Brands</text>
-            </g>
-
-            <!-- Agency / Orchestrator: Center (The Creative Spark) -->
-            <g class="character-group cursor-pointer">
-              <!-- Shadow ground spot -->
-              <ellipse class="character-shadow transition-all duration-300 origin-center" cx="460" cy="390" fill="#E5E2DE" rx="48" ry="8"></ellipse>
-              <!-- Friendly Floating Orb Shape / Body -->
-              <path d="M430 380 L430 270 Q460 255 490 270 L490 380 Z" fill="#FBBC05"></path>
-              <!-- Central Character Head with playful beret/tilt -->
-              <circle cx="460" cy="210" fill="#FFCCBC" r="38"></circle>
-              <path d="M435 185 C 445 160, 485 160, 495 185 Z" fill="#1b1c1a"></path>
-              <!-- Eyes with glasses doodle -->
-              <circle cx="448" cy="210" fill="none" r="8" stroke="#1b1c1a" stroke-width="2.5"></circle>
-              <circle cx="472" cy="210" fill="none" r="8" stroke="#1b1c1a" stroke-width="2.5"></circle>
-              <path d="M456 210 L464 210" stroke="#1b1c1a" stroke-width="2"></path>
-              <path d="M453 226 C 458 231, 463 231, 468 226" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
-              <!-- Floating Giant Spark Star overhead -->
-              <g class="sparkle-float" transform="translate(460, 110)">
-                <path d="M0 -30 L7 -8 L30 0 L7 8 L0 30 L-7 8 L-30 0 L-7 -8 Z" fill="#34A853"></path>
-                <circle cx="0" cy="0" fill="#FFFFFF" r="4"></circle>
-              </g>
-              <!-- Radiating spark doodles -->
-              <path class="sparkle-float" d="M495 100 L515 90 M425 100 L405 90 M460 65 L460 50" stroke="#34A853" stroke-linecap="round" stroke-width="2.5"></path>
-              <text class="character-label transition-colors duration-200" fill="#1b1c1a" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700" text-anchor="middle" x="460" y="420">Agencies</text>
-            </g>
-
-            <!-- Creator: Right (The Camera & Magic Wand Figure) -->
-            <g class="character-group cursor-pointer">
-              <!-- Shadow ground spot -->
-              <ellipse class="character-shadow transition-all duration-300 origin-center" cx="740" cy="375" fill="#E5E2DE" rx="42" ry="7"></ellipse>
-              <!-- Creator dynamic curved body -->
-              <path d="M720 365 C 715 310, 700 270, 725 240 C 740 220, 770 230, 775 260 C 785 300, 760 330, 755 365 Z" fill="#34A853"></path>
-              <!-- Head -->
-              <circle cx="735" cy="170" fill="#F8BBD0" r="30"></circle>
-              <!-- Wink eye + cheerful eye -->
-              <path d="M722 166 L730 166" stroke="#1b1c1a" stroke-linecap="round" stroke-width="3"></path>
-              <path d="M738 163 C 741 160, 745 160, 748 163" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
-              <path d="M728 178 C 734 185, 742 185, 746 178" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2.5"></path>
-              <!-- Left Arm holding Magic Wand -->
-              <path d="M710 240 Q 670 210 650 170" fill="none" stroke="#1b1c1a" stroke-linecap="round" stroke-width="3.5"></path>
-              <!-- Floating Camera Doodle -->
-              <g class="sparkle-float" transform="translate(620, 140)">
-                <rect fill="#4285F4" height="24" rx="5" width="36" x="0" y="8"></rect>
-                <path d="M10 8 L14 3 L22 3 L26 8 Z" fill="#4285F4"></path>
-                <circle cx="18" cy="20" fill="#FFFFFF" r="6"></circle>
-                <circle cx="28" cy="14" fill="#FBBC05" r="2"></circle>
-              </g>
-              <!-- Wand Flash Stars -->
-              <path class="sparkle-float" d="M640 120 L646 130 L658 132 L648 140 L650 152 L640 144 L630 152 L632 140 L622 132 L634 130 Z" fill="#FBBC05"></path>
-              <text class="character-label transition-colors duration-200" fill="#1b1c1a" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700" text-anchor="middle" x="740" y="415">Creators</text>
-            </g>
-
-            <!-- Whimsical Handwritten-Style Doodles & Accents -->
-            <g fill="none" stroke="#1b1c1a" stroke-linecap="round" stroke-width="2">
-              <path class="sparkle-float origin-center" d="M260 90 C255 80, 240 85, 248 98 C255 106, 260 110, 260 110 C260 110, 265 106, 272 98 C280 85, 265 80, 260 90 Z" fill="#EA4335" stroke="none"></path>
-              <path d="M570 240 C575 235, 580 238, 580 243 C579 249, 570 250, 567 245 C564 238, 574 230, 582 233"></path>
-              <path d="M340 170 C355 165, 370 170, 380 180"></path>
-              <path d="M345 180 C358 176, 368 180, 375 188"></path>
-              <path class="sparkle-float" d="M805 130 L815 130 M810 125 L810 135"></path>
-              <path class="sparkle-float" d="M120 220 L130 220 M125 215 L125 225"></path>
-            </g>
-
-            <!-- Playful Annotation Arrows -->
-            <g>
-              <path class="flow-line-main" d="M330 330 C360 360, 400 360, 420 345" fill="none" stroke="#4285F4" stroke-linecap="round" stroke-width="2"></path>
-              <polygon fill="#4285F4" points="423,342 418,348 424,352"></polygon>
-              <text fill="#4285F4" font-family="'JetBrains Mono', monospace" font-size="11" x="360" y="380">direct sync</text>
-            </g>
-          </svg>
-        </div>
-      </section>
-
-      <!-- ========================================================
-           3-Point Showcase: Vignette Doodles (NO BOXES, NO BORDERS)
-           ======================================================== -->
-      <section class="w-full max-w-5xl mx-auto px-6 py-20" id="vignettes">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-16 text-center">
-
-          <!-- Vignette 1: Pure Handshake Spark -->
-          <div class="group flex flex-col items-center cursor-default">
-            <div class="w-28 h-28 flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-              <svg class="w-24 h-24" fill="none" viewBox="0 0 96 96">
-                <!-- Sparkles above -->
-                <path d="M48 6 L51 16 L61 19 L51 22 L48 32 L45 22 L35 19 L45 16 Z" fill="#FBBC05"></path>
-                <!-- Friendly Handshake line art -->
-                <path d="M18 52 L34 40 C38 37, 44 38, 48 42 L52 46 C55 49, 60 49, 64 45 L78 34" stroke="#1b1c1a" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
-                <path d="M30 62 L42 50 C46 46, 52 46, 56 50 L60 54" stroke="#4285F4" stroke-linecap="round" stroke-width="4"></path>
-                <path d="M38 72 L48 62 C51 59, 56 59, 59 62 L63 66" stroke="#34A853" stroke-linecap="round" stroke-width="4"></path>
-                <!-- Cute hearts -->
-                <circle cx="28" cy="30" fill="#EA4335" r="3"></circle>
-                <circle cx="68" cy="24" fill="#4285F4" r="4"></circle>
-              </svg>
-            </div>
-            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold">Instant mutual sync</h2>
-            <p class="font-body-md text-body-md text-on-surface-variant">Zero back-and-forth noise.</p>
-          </div>
-
-          <!-- Vignette 2: Creator Wand Magic -->
-          <div class="group flex flex-col items-center cursor-default">
-            <div class="w-28 h-28 flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
-              <svg class="w-24 h-24" fill="none" viewBox="0 0 96 96">
-                <!-- Floating viewfinder / magic aperture -->
-                <circle cx="48" cy="48" r="32" stroke="#E5E2DE" stroke-dasharray="6 6" stroke-width="3"></circle>
-                <!-- Wand -->
-                <path d="M26 70 L62 34" stroke="#1b1c1a" stroke-linecap="round" stroke-width="4.5"></path>
-                <path d="M54 42 L62 34" stroke="#EA4335" stroke-linecap="round" stroke-width="6"></path>
-                <!-- Magic Burst Star -->
-                <path d="M68 28 L72 16 L84 20 L76 30 L84 40 L72 36 L68 48 L64 36 L52 40 L60 30 L52 20 L64 16 Z" fill="#4285F4"></path>
-                <!-- Little color sprinkles -->
-                <circle cx="22" cy="40" fill="#34A853" r="3.5"></circle>
-                <circle cx="34" cy="24" fill="#FBBC05" r="4"></circle>
-                <circle cx="76" cy="66" fill="#EA4335" r="3"></circle>
-              </svg>
-            </div>
-            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold">Authentic creative flow</h2>
-            <p class="font-body-md text-body-md text-on-surface-variant">Pure creative freedom.</p>
-          </div>
-
-          <!-- Vignette 3: Instant Insight Flash -->
-          <div class="group flex flex-col items-center cursor-default">
-            <div class="w-28 h-28 flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-              <svg class="w-24 h-24" fill="none" viewBox="0 0 96 96">
-                <!-- Lightbulb outline handdrawn -->
-                <path d="M36 40 C36 28, 42 20, 50 20 C58 20, 64 28, 64 40 C64 47, 58 52, 58 58 L42 58 C42 52, 36 47, 36 40 Z" fill="none" stroke="#1b1c1a" stroke-linejoin="round" stroke-width="4"></path>
-                <path d="M44 64 H56 M46 70 H54" stroke="#1b1c1a" stroke-linecap="round" stroke-width="3.5"></path>
-                <!-- Filament smiling heart -->
-                <path d="M46 38 C46 34, 50 34, 50 38 C50 34, 54 34, 54 38 C54 43, 50 46, 50 46 C50 46, 46 43, 46 38 Z" fill="#FBBC05"></path>
-                <!-- Lightning bursts around -->
-                <path d="M50 8 V14 M26 24 L32 28 M74 24 L68 28 M20 44 H26 M74 44 H80" stroke="#34A853" stroke-linecap="round" stroke-width="3"></path>
-              </svg>
-            </div>
-            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold">Clear live alignment</h2>
-            <p class="font-body-md text-body-md text-on-surface-variant">Everyone on target.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ========================================================
-           Clean Airy Google-Style Sign Up (Search Pill Input)
-           ======================================================== -->
-      <section class="w-full max-w-2xl mx-auto px-6 pt-10 pb-28 text-center flex flex-col items-center relative">
-        <!-- Star Doodle Accent -->
-        <div class="mb-4 inline-flex items-center justify-center">
-          <svg class="w-10 h-10 text-[#FBBC05] animate-bounce" fill="none" viewBox="0 0 40 40">
-            <path d="M20 3L23.5 14.5L35 18L23.5 21.5L20 33L16.5 21.5L5 18L16.5 14.5L20 3Z" fill="currentColor"></path>
-          </svg>
-        </div>
-
-        <h2 class="font-headline-md text-headline-md text-on-surface mb-2 font-bold">
-          Ready to meet your match?
-        </h2>
-        <p class="font-body-md text-body-md text-on-surface-variant mb-8">
-          Join the quiet revolution in creative collaboration.
-        </p>
-
-        <!-- Search-Style Elevated Pill Input Form -->
-        <form (ngSubmit)="submitWaitlist()" class="w-full max-w-md flex items-center bg-surface-container-lowest rounded-full px-3 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.1)] transition-all focus-within:ring-2 focus-within:ring-[#4285F4]/30 border border-[#E5E2DE]/60">
-          <span class="material-symbols-outlined text-[#4285F4] ml-2 text-[22px]">auto_awesome</span>
-          <input
-            [(ngModel)]="workEmail"
-            name="workEmail"
-            class="w-full bg-transparent border-0 px-3 py-2 text-on-surface placeholder:text-on-surface-variant/60 font-body-md text-body-md focus:outline-none focus:ring-0"
-            placeholder="Enter your work email"
-            required
-            type="email"
-          />
-          <button class="h-10 px-6 rounded-full bg-[#1b1c1a] text-white font-label-md text-label-md hover:bg-neutral-800 transition-transform active:scale-95 flex-shrink-0 border-0 cursor-pointer font-medium" type="submit" [disabled]="isJoining()">
-            {{ isJoining() ? 'Joining...' : 'Join' }}
-          </button>
-        </form>
-
-        @if (joinedSuccess()) {
-          <div class="mt-4 text-[#34A853] font-label-md text-label-md flex items-center gap-1.5 animate-fadeIn">
-            <span class="material-symbols-outlined text-[18px]">check_circle</span>
-            <span>You're on the invite list! We'll be in touch soon.</span>
-          </div>
-        }
-
-        <p class="font-label-sm text-label-sm text-on-surface-variant/60 mt-4">
-          No setup required · Free for early teams · Instant access
-        </p>
-      </section>
-
+  <section class="pt-32 pb-16 px-6 lg:px-12 text-center max-w-5xl mx-auto flex flex-col items-center">
+    
+    <!-- Top Eyebrow Badge -->
+    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EBF3FF] text-[#0066FF] text-[11px] font-semibold tracking-wider uppercase mb-6">
+      <span>BUILT FOR MODERN INFLUENCER MARKETING</span>
     </div>
-  </main>
 
-  <!-- ========================================================
-       Footer (Stitch Specification)
-       ======================================================== -->
-  <footer class="w-full bg-surface py-12 border-t border-[#E5E2DE]/60">
-    <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6">
-      <div class="flex items-center gap-6">
-        <span class="font-body-sm text-body-sm text-on-surface-variant">© 2026 Converge Systems, Inc.</span>
-        <span class="hidden sm:inline text-outline-variant">·</span>
-        <span class="font-body-sm text-body-sm text-on-surface-variant">All rights reserved.</span>
+    <!-- Main Headline -->
+    <h1 class="font-headline-display text-[44px] sm:text-[56px] lg:text-[64px] font-bold text-[#111827] tracking-tight leading-[1.08] mb-6">
+      Real influence.<br>
+      Verified results.
+    </h1>
+
+    <!-- Subtitle -->
+    <p class="text-[17px] sm:text-[19px] text-[#4B5563] max-w-2xl leading-relaxed mb-8">
+      One shared workspace for brands and agencies to track campaigns, audit influencers, verify deliverability, and automate reconciliations without the spreadsheet chaos.
+    </p>
+
+    <!-- Hero Action Buttons -->
+    <div class="flex flex-col sm:flex-row items-center gap-4 mb-4">
+      <a routerLink="/login" [queryParams]="{ mode: 'signup' }" class="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-[#0066FF] hover:bg-[#0052CC] text-white text-[15px] font-semibold shadow-md shadow-[#0066FF]/20 transition-all hover:scale-[1.02] active:scale-[0.98] no-underline">
+        Get started free
+      </a>
+      <button type="button" (click)="scrollToSection('how-it-works')" class="inline-flex items-center justify-center px-5 py-3 rounded-lg text-[#0066FF] hover:text-[#0052CC] text-[15px] font-semibold transition-colors bg-transparent border-0 cursor-pointer">
+        See how it works <span class="ml-1.5">→</span>
+      </button>
+    </div>
+
+    <!-- Micro Social Proof -->
+    <p class="text-[12px] text-[#9CA3AF] tracking-tight">
+      Powering campaigns for high-growth DTC & consumer brands
+    </p>
+
+    <!-- ========================================================
+         Hero Console Card (Live Campaign Preview)
+         ======================================================== -->
+    <div class="w-full mt-14 bg-white rounded-2xl border border-[#E5E7EB] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.08)] overflow-hidden text-left" id="product">
+      
+      <!-- Top Chrome Bar -->
+      <div class="px-6 py-4 border-b border-[#F3F4F6] flex flex-wrap items-center justify-between gap-4 bg-[#FAFAFA]">
+        <div class="flex items-center gap-3">
+          <img src="/assets/converge-icon.svg" alt="Converge" class="w-5 h-5 object-contain">
+          <span class="text-[13px] text-[#9CA3AF]">/</span>
+          <span class="text-[13px] font-semibold text-[#111827]">Summer essentials</span>
+          <span class="text-[12px] text-[#6B7280] hidden sm:inline">• Active campaign • 12 influencers • Starts Oct 2024</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Live Sync
+          </span>
+          <button type="button" (click)="openDemo()" class="text-[12px] font-medium text-[#0066FF] hover:text-[#0052CC] px-2 py-1 rounded bg-[#EBF3FF] border-0 cursor-pointer">
+            Export Report
+          </button>
+        </div>
       </div>
 
-      <nav class="flex items-center gap-6">
-        <a routerLink="/" class="font-body-sm transition-colors text-on-surface no-underline">Overview</a>
-        <button type="button" (click)="showPrivacyModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer">Privacy</button>
-        <button type="button" (click)="showTermsModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer">Terms</button>
-      </nav>
+      <!-- 4 Key Metric Tiles -->
+      <div class="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-[#F3F4F6] border-b border-[#F3F4F6]">
+        <div class="p-5">
+          <div class="text-[12px] text-[#6B7280] font-medium uppercase tracking-wider mb-1">Total Budget</div>
+          <div class="text-[24px] font-bold text-[#111827] tracking-tight">₹5,00,000</div>
+          <div class="text-[11px] text-[#9CA3AF] mt-0.5">INR Milestone Escrow</div>
+        </div>
+        <div class="p-5">
+          <div class="text-[12px] text-[#6B7280] font-medium uppercase tracking-wider mb-1">Verified Reach</div>
+          <div class="text-[24px] font-bold text-[#0066FF] tracking-tight">12,48,600</div>
+          <div class="text-[11px] text-emerald-600 font-medium mt-0.5">+18.4% vs benchmark</div>
+        </div>
+        <div class="p-5">
+          <div class="text-[12px] text-[#6B7280] font-medium uppercase tracking-wider mb-1">Deliverables</div>
+          <div class="text-[24px] font-bold text-[#111827] tracking-tight">18 / 24</div>
+          <div class="text-[11px] text-[#9CA3AF] mt-0.5">75% completed</div>
+        </div>
+        <div class="p-5">
+          <div class="text-[12px] text-[#6B7280] font-medium uppercase tracking-wider mb-1">Payout Status</div>
+          <div class="text-[24px] font-bold text-[#111827] tracking-tight">₹3,60,000</div>
+          <div class="text-[11px] text-[#9CA3AF] mt-0.5">Auto-reconciled</div>
+        </div>
+      </div>
+
+      <!-- Deliverables Table Controls -->
+      <div class="px-6 pt-5 pb-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-[14px] font-semibold text-[#111827]">Deliverables</span>
+          <span class="text-[12px] px-2 py-0.5 rounded-full bg-[#F3F4F6] text-[#4B5563] font-medium">4 active</span>
+        </div>
+        <div class="flex items-center gap-1 bg-[#F3F4F6] p-0.5 rounded-lg text-[12px]">
+          <button type="button" (click)="activeTab.set('all')" [class.bg-white]="activeTab() === 'all'" [class.shadow-sm]="activeTab() === 'all'" [class.text-[#111827]]="activeTab() === 'all'" class="px-3 py-1 rounded-md text-[#6B7280] font-medium transition-all cursor-pointer border-0">All</button>
+          <button type="button" (click)="activeTab.set('verified')" [class.bg-white]="activeTab() === 'verified'" [class.shadow-sm]="activeTab() === 'verified'" [class.text-[#111827]]="activeTab() === 'verified'" class="px-3 py-1 rounded-md text-[#6B7280] font-medium transition-all cursor-pointer border-0">Verified</button>
+          <button type="button" (click)="activeTab.set('paid')" [class.bg-white]="activeTab() === 'paid'" [class.shadow-sm]="activeTab() === 'paid'" [class.text-[#111827]]="activeTab() === 'paid'" class="px-3 py-1 rounded-md text-[#6B7280] font-medium transition-all cursor-pointer border-0">Paid</button>
+          <button type="button" (click)="activeTab.set('pending')" [class.bg-white]="activeTab() === 'pending'" [class.shadow-sm]="activeTab() === 'pending'" [class.text-[#111827]]="activeTab() === 'pending'" class="px-3 py-1 rounded-md text-[#6B7280] font-medium transition-all cursor-pointer border-0">Pending</button>
+        </div>
+      </div>
+
+      <!-- Deliverables Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-[13px]">
+          <thead>
+            <tr class="text-[#6B7280] font-medium border-y border-[#F3F4F6] bg-[#FAFAFA]">
+              <th class="py-3 px-6">Creator</th>
+              <th class="py-3 px-6">Content URL</th>
+              <th class="py-3 px-6">Impressions</th>
+              <th class="py-3 px-6">Reach</th>
+              <th class="py-3 px-6">Engagement</th>
+              <th class="py-3 px-6 text-right">Payout</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#F3F4F6]">
+            @for (item of getFilteredDeliverables(); track item.handle) {
+              <tr class="hover:bg-[#F9FAFB] transition-colors">
+                <td class="py-3.5 px-6 font-medium text-[#111827]">
+                  {{ item.creator }}
+                  <span class="block text-[11px] text-[#9CA3AF] font-normal">{{ item.handle }}</span>
+                </td>
+                <td class="py-3.5 px-6">
+                  <a [href]="item.url" target="_blank" class="text-[#0066FF] hover:underline font-mono text-[12px] no-underline">
+                    {{ item.shortUrl }}
+                  </a>
+                </td>
+                <td class="py-3.5 px-6 text-[#4B5563]">{{ item.impressions }}</td>
+                <td class="py-3.5 px-6 font-semibold text-[#111827]">{{ item.reach }}</td>
+                <td class="py-3.5 px-6 text-[#10B981] font-semibold">{{ item.engagement }}</td>
+                <td class="py-3.5 px-6 text-right font-medium text-[#111827] flex items-center justify-end gap-2">
+                  <span>{{ item.payout }}</span>
+                  <span [ngClass]="{
+                    'bg-emerald-50 text-emerald-700 border-emerald-200': item.status === 'Verified',
+                    'bg-blue-50 text-blue-700 border-blue-200': item.status === 'Paid',
+                    'bg-amber-50 text-amber-700 border-amber-200': item.status === 'Pending'
+                  }" class="text-[10px] px-2 py-0.5 rounded-full border font-semibold">
+                    {{ item.status }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="px-6 py-3 bg-[#FAFAFA] border-t border-[#F3F4F6] text-right">
+        <span class="text-[11px] text-[#9CA3AF]">All live data fetched and verified via official platform handshake</span>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ========================================================
+       Section: 3-Step Process
+       ======================================================== -->
+  <section class="py-24 px-6 lg:px-12 max-w-6xl mx-auto" id="how-it-works">
+    
+    <div class="text-center mb-16">
+      <div class="text-[#0066FF] text-[11px] font-semibold tracking-wider uppercase mb-2">
+        FAST, AUTOMATED, ZERO FRICTION
+      </div>
+      <h2 class="font-headline-lg text-[32px] sm:text-[40px] font-bold text-[#111827] tracking-tight leading-tight mb-4">
+        From brief to payout.<br>Three simple steps.
+      </h2>
+      <p class="text-[16px] text-[#6B7280] max-w-xl mx-auto">
+        Eliminate manual follow-ups, fake metrics, and messy payment sheets.
+      </p>
+    </div>
+
+    <!-- 3 Cards in a Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      
+      <!-- Card 01 -->
+      <div class="bg-white rounded-2xl p-7 border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <span class="w-8 h-8 rounded-full bg-[#EBF3FF] text-[#0066FF] font-bold text-[13px] flex items-center justify-center">01</span>
+            <span class="text-[12px] font-medium text-[#6B7280]">For Brands & Agencies</span>
+          </div>
+          <h3 class="text-[20px] font-bold text-[#111827] mb-2">Set the campaign</h3>
+          <p class="text-[14px] text-[#6B7280] leading-relaxed mb-6">
+            Define deliverables, assign creators, and set automated payout terms.
+          </p>
+        </div>
+        
+        <!-- Inner Visual Box -->
+        <div class="bg-[#F9FAFB] rounded-xl p-4 border border-[#F3F4F6]">
+          <div class="text-[11px] text-[#9CA3AF] uppercase font-medium">Starting budget</div>
+          <div class="text-[18px] font-bold text-[#111827] mt-0.5">₹5,00,000</div>
+          <div class="flex items-center gap-1.5 mt-2 text-[11px] text-emerald-600 font-medium">
+            <span class="material-symbols-outlined text-[14px]">lock</span>
+            Milestone escrow locked
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 02 -->
+      <div class="bg-white rounded-2xl p-7 border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <span class="w-8 h-8 rounded-full bg-[#EBF3FF] text-[#0066FF] font-bold text-[13px] flex items-center justify-center">02</span>
+            <span class="text-[12px] font-medium text-[#6B7280]">Real-time Tracking</span>
+          </div>
+          <h3 class="text-[20px] font-bold text-[#111827] mb-2">Drop the post link</h3>
+          <p class="text-[14px] text-[#6B7280] leading-relaxed mb-6">
+            System extracts verified stats directly from live Instagram / YouTube links.
+          </p>
+        </div>
+        
+        <!-- Inner Visual Box -->
+        <div class="bg-[#F9FAFB] rounded-xl p-4 border border-[#F3F4F6]">
+          <div class="text-[11px] text-[#9CA3AF] uppercase font-medium">Instagram post detected...</div>
+          <div class="text-[13px] font-mono text-[#0066FF] truncate mt-0.5">instagram.com/reel/C89...</div>
+          <div class="flex items-center gap-1.5 mt-2 text-[11px] text-[#0066FF] font-medium">
+            <span class="material-symbols-outlined text-[14px]">verified</span>
+            Verified in 1.4s
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 03 -->
+      <div class="bg-white rounded-2xl p-7 border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <span class="w-8 h-8 rounded-full bg-[#EBF3FF] text-[#0066FF] font-bold text-[13px] flex items-center justify-center">03</span>
+            <span class="text-[12px] font-medium text-[#6B7280]">Zero Payment Disputes</span>
+          </div>
+          <h3 class="text-[20px] font-bold text-[#111827] mb-2">Verify. Reconcile. Done.</h3>
+          <p class="text-[14px] text-[#6B7280] leading-relaxed mb-6">
+            Performance meets benchmarks, milestone auto-unlocks, and payment is processed.
+          </p>
+        </div>
+        
+        <!-- Inner Visual Box -->
+        <div class="bg-[#F9FAFB] rounded-xl p-4 border border-[#F3F4F6]">
+          <div class="text-[11px] text-[#9CA3AF] uppercase font-medium">Status update</div>
+          <div class="text-[16px] font-bold text-emerald-700 mt-0.5">Approved for payout</div>
+          <div class="flex items-center gap-1.5 mt-2 text-[11px] text-[#6B7280] font-medium">
+            <span class="material-symbols-outlined text-[14px]">payments</span>
+            ₹60,000 auto-credited
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ========================================================
+       Section: True Audit & Verification
+       ======================================================== -->
+  <section class="py-20 px-6 lg:px-12 max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      
+      <!-- Left Copy Column -->
+      <div>
+        <div class="text-[#0066FF] text-[11px] font-semibold tracking-wider uppercase mb-3">
+          TRUE AUDIT & VERIFICATION
+        </div>
+        <h2 class="font-headline-lg text-[32px] sm:text-[40px] font-bold text-[#111827] tracking-tight leading-tight mb-5">
+          Real numbers.<br>Not another screenshot.
+        </h2>
+        <p class="text-[16px] text-[#4B5563] leading-relaxed mb-6">
+          Third-party screenshot-based reporting is easily manipulated. Converge fetches raw engagement rates, real impressions, and active reach straight from platform APIs.
+        </p>
+        <button type="button" (click)="openDemo()" class="inline-flex items-center text-[#0066FF] hover:text-[#0052CC] font-semibold text-[15px] bg-transparent border-0 cursor-pointer">
+          Explore our verification engine <span class="ml-1.5">→</span>
+        </button>
+      </div>
+
+      <!-- Right Stat Card -->
+      <div class="bg-white rounded-2xl p-8 border border-[#E5E7EB] shadow-lg shadow-black/5">
+        <div class="text-[12px] text-[#6B7280] font-medium uppercase tracking-wider mb-2">Total campaign impressions</div>
+        <div class="text-[48px] sm:text-[54px] font-extrabold text-[#0066FF] tracking-tight leading-none mb-2">
+          12,48,600
+        </div>
+        <p class="text-[13px] text-[#6B7280] mb-8">
+          Live stats retrieved directly from platform handshake
+        </p>
+
+        <div class="grid grid-cols-2 gap-6 pt-6 border-t border-[#F3F4F6] mb-6">
+          <div>
+            <div class="text-[28px] font-bold text-[#111827]">18</div>
+            <div class="text-[12px] text-[#6B7280] font-medium">Deliverables audited</div>
+          </div>
+          <div>
+            <div class="text-[28px] font-bold text-[#111827]">6.4%</div>
+            <div class="text-[12px] text-[#6B7280] font-medium">Avg engagement rate</div>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#F3F4F6] flex items-center justify-between text-[12px]">
+          <div class="flex items-center gap-2 text-emerald-700 font-semibold">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Verified via API
+          </div>
+          <span class="text-[#9CA3AF]">14 mins ago • Direct platform handshake</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================
+       Section: Two Teams, One Shared Truth
+       ======================================================== -->
+  <section class="py-20 px-6 lg:px-12 max-w-6xl mx-auto">
+    
+    <div class="text-center mb-16">
+      <h2 class="font-headline-lg text-[32px] sm:text-[40px] font-bold text-[#111827] tracking-tight leading-tight mb-3">
+        Two teams. One shared truth.
+      </h2>
+      <p class="text-[16px] text-[#6B7280]">
+        Keep everyone aligned without the follow-ups.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      
+      <!-- Brand Card -->
+      <div class="bg-white rounded-2xl p-8 border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between" id="for-brands">
+        <div>
+          <div class="text-[#0066FF] text-[11px] font-semibold tracking-wider uppercase mb-3">
+            FOR BRANDS
+          </div>
+          <h3 class="text-[24px] font-bold text-[#111827] mb-3">
+            Stay in control. Not in the weeds.
+          </h3>
+          <p class="text-[15px] text-[#4B5563] leading-relaxed mb-8">
+            Real-time dashboards, milestone approvals, and automated deliverable tracking without bugging your agency.
+          </p>
+        </div>
+        <div class="pt-6 border-t border-[#F3F4F6] text-[13px] font-medium text-[#6B7280]">
+          Direct oversight • Budget security • Transparent ROI
+        </div>
+      </div>
+
+      <!-- Agency Card -->
+      <div class="bg-white rounded-2xl p-8 border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between" id="for-agencies">
+        <div>
+          <div class="text-[#0066FF] text-[11px] font-semibold tracking-wider uppercase mb-3">
+            FOR AGENCIES
+          </div>
+          <h3 class="text-[24px] font-bold text-[#111827] mb-3">
+            Less chasing. More creating.
+          </h3>
+          <p class="text-[15px] text-[#4B5563] leading-relaxed mb-8">
+            Submit post links once, automate client reporting, and eliminate payment disputes with audit-backed proof.
+          </p>
+        </div>
+        <div class="pt-6 border-t border-[#F3F4F6] text-[13px] font-medium text-[#6B7280]">
+          Automated reports • One-click approvals • Fast payouts
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ========================================================
+       Section: Close the campaign. Not 12 spreadsheets.
+       ======================================================== -->
+  <section class="py-20 px-6 lg:px-12 max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      
+      <!-- Left Table Card -->
+      <div class="bg-white rounded-2xl p-6 sm:p-7 border border-[#E5E7EB] shadow-lg shadow-black/5 order-2 lg:order-1">
+        <div class="mb-4">
+          <div class="text-[14px] font-semibold text-[#111827]">Summer essentials — Reconciliation</div>
+          <div class="text-[12px] text-[#6B7280]">Auto-generated settlement sheet</div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-[13px]">
+            <thead>
+              <tr class="text-[#6B7280] font-medium border-b border-[#F3F4F6]">
+                <th class="py-2.5">Influencer</th>
+                <th class="py-2.5">Deliverable</th>
+                <th class="py-2.5">Budget</th>
+                <th class="py-2.5 text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#F3F4F6]">
+              <tr>
+                <td class="py-3 font-medium text-[#111827]">Priya Sharma</td>
+                <td class="py-3 text-[#6B7280]">Reel Post</td>
+                <td class="py-3 font-semibold text-[#111827]">₹60,000</td>
+                <td class="py-3 text-right">
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Settled</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="py-3 font-medium text-[#111827]">Rohan Mehta</td>
+                <td class="py-3 text-[#6B7280]">Reel Post</td>
+                <td class="py-3 font-semibold text-[#111827]">₹45,000</td>
+                <td class="py-3 text-right">
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Settled</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="py-3 font-medium text-[#111827]">Ananya Roy</td>
+                <td class="py-3 text-[#6B7280]">Reel Post</td>
+                <td class="py-3 font-semibold text-[#111827]">₹95,000</td>
+                <td class="py-3 text-right">
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Settled</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-[#F3F4F6] flex flex-wrap items-center justify-between gap-2">
+          <button type="button" (click)="openDemo()" class="text-[12px] font-semibold text-[#0066FF] hover:underline bg-transparent border-0 cursor-pointer">
+            Download verified CSV report →
+          </button>
+          <span class="text-[11px] text-[#9CA3AF]">All invoices and tax records attached</span>
+        </div>
+      </div>
+
+      <!-- Right Copy Column -->
+      <div class="order-1 lg:order-2">
+        <div class="text-[#0066FF] text-[11px] font-semibold tracking-wider uppercase mb-3">
+          FAST SETTLEMENTS & ESCROW
+        </div>
+        <h2 class="font-headline-lg text-[32px] sm:text-[40px] font-bold text-[#111827] tracking-tight leading-tight mb-5">
+          Close the campaign.<br>Not 12 spreadsheets.
+        </h2>
+        <p class="text-[16px] text-[#4B5563] leading-relaxed mb-6">
+          Automated milestone-based escrow ensures brands only pay for verified results while creators and agencies get guaranteed on-time payouts.
+        </p>
+        <button type="button" (click)="openDemo()" class="inline-flex items-center text-[#0066FF] hover:text-[#0052CC] font-semibold text-[15px] bg-transparent border-0 cursor-pointer">
+          Learn about our secure escrow & reconciliation engine <span class="ml-1.5">→</span>
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================
+       Section: Frequently Asked Questions (Accordion)
+       ======================================================== -->
+  <section class="py-24 px-6 lg:px-12 max-w-5xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      
+      <!-- FAQ Left Header -->
+      <div class="lg:col-span-1">
+        <h2 class="font-headline-lg text-[30px] sm:text-[36px] font-bold text-[#111827] tracking-tight leading-tight mb-3">
+          A little more clarity.
+        </h2>
+        <p class="text-[15px] text-[#6B7280]">
+          Frequently asked questions about Converge.
+        </p>
+      </div>
+
+      <!-- FAQ Accordion List -->
+      <div class="lg:col-span-2 divide-y divide-[#E5E7EB]">
+        @for (faq of faqs; track faq.question; let i = $index) {
+          <div class="py-5">
+            <button type="button" (click)="toggleFaq(i)" class="w-full text-left flex items-center justify-between gap-4 font-semibold text-[16px] text-[#111827] hover:text-[#0066FF] transition-colors bg-transparent border-0 cursor-pointer py-1">
+              <span>{{ faq.question }}</span>
+              <span class="material-symbols-outlined text-[20px] text-[#9CA3AF] transition-transform duration-200" [class.rotate-180]="openFaqIndex() === i">
+                expand_more
+              </span>
+            </button>
+            @if (openFaqIndex() === i) {
+              <div class="mt-3 text-[14px] text-[#4B5563] leading-relaxed pr-6 animate-fadeIn">
+                {{ faq.answer }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================
+       Section: Final Call to Action
+       ======================================================== -->
+  <section class="py-20 px-6 lg:px-12 text-center max-w-4xl mx-auto">
+    <h2 class="font-headline-display text-[36px] sm:text-[46px] font-bold text-[#111827] tracking-tight leading-tight mb-3">
+      Your next campaign.<br>Minus the chaos.
+    </h2>
+    <p class="text-[17px] text-[#6B7280] mb-8">
+      Bring your brands, agencies, and creators together.
+    </p>
+    <button type="button" (click)="openDemo()" class="inline-flex items-center justify-center px-8 py-3.5 rounded-lg bg-[#0066FF] hover:bg-[#0052CC] text-white font-semibold text-[16px] shadow-lg shadow-[#0066FF]/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer border-0">
+      Book a demo
+    </button>
+  </section>
+
+  <!-- ========================================================
+       Footer
+       ======================================================== -->
+  <footer class="border-t border-[#E5E7EB] py-12 px-6 lg:px-12 bg-white">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      
+      <!-- Brand & Tagline -->
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <img src="/assets/converge-icon.svg" alt="Converge" class="w-6 h-6 object-contain">
+          <span class="font-bold text-[18px] text-[#111827] lowercase">converge</span>
+        </div>
+        <p class="text-[13px] text-[#6B7280]">Real influence. Verified results.</p>
+      </div>
+
+      <!-- Links & Copyright -->
+      <div class="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 text-[13px] text-[#6B7280]">
+        <div class="flex items-center gap-6">
+          <button type="button" (click)="showPrivacyModal.set(true)" class="hover:text-[#111827] transition-colors bg-transparent border-0 cursor-pointer p-0">Privacy</button>
+          <button type="button" (click)="showTermsModal.set(true)" class="hover:text-[#111827] transition-colors bg-transparent border-0 cursor-pointer p-0">Terms of Service</button>
+          <a routerLink="/login" class="hover:text-[#111827] transition-colors no-underline">Docs</a>
+        </div>
+        <span class="text-[#9CA3AF]">© 2025 Converge Inc.</span>
+      </div>
+
     </div>
   </footer>
 
   <!-- ========================================================
-       Privacy Policy Modal Dialog
+       Book a Demo Modal
        ======================================================== -->
-  @if (showPrivacyModal()) {
-    <div class="modal-backdrop" (click)="showPrivacyModal.set(false)">
-      <div class="modal-card" (click)="$event.stopPropagation()">
-        <div class="modal-head">
-          <div class="modal-badge-icon">🔒</div>
-          <div>
-            <h3>Privacy & Data Governance</h3>
-            <p>Converge Architecture Standards</p>
+  @if (showDemoModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+        <button type="button" (click)="closeDemo()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+
+        <div class="mb-5">
+          <div class="w-10 h-10 rounded-xl bg-[#EBF3FF] flex items-center justify-center text-[#0066FF] mb-3">
+            <span class="material-symbols-outlined text-[22px]">calendar_month</span>
           </div>
+          <h3 class="text-[20px] font-bold text-[#111827]">Book a live platform demo</h3>
+          <p class="text-[13px] text-[#6B7280] mt-1">See how Converge automates influencer deliverable audits and escrow settlement.</p>
         </div>
-        <div class="modal-body-content">
-          <p><strong>1. Zero Untrusted Access:</strong> Workspace briefs and brand campaigns remain isolated to authorized team rosters.</p>
-          <p><strong>2. Authorized Platform Sync:</strong> Creator reach, plays, likes, and interactions are retrieved strictly through authorized official platform APIs.</p>
-          <p><strong>3. Encrypted Credentials:</strong> All credentials are encrypted with BCrypt and authenticated via signed JWT session tokens.</p>
-        </div>
-        <div class="modal-foot">
-          <button type="button" class="btn-modal-close" (click)="showPrivacyModal.set(false)">Close</button>
-        </div>
+
+        <form (ngSubmit)="submitDemoBooking()" class="space-y-4">
+          <div>
+            <label class="block text-[12px] font-medium text-[#374151] mb-1">Your Full Name</label>
+            <input type="text" [(ngModel)]="demoName" name="demoName" required placeholder="e.g. Maya Patel" class="w-full h-10 px-3.5 rounded-lg border border-[#D1D5DB] text-[14px] text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/30">
+          </div>
+
+          <div>
+            <label class="block text-[12px] font-medium text-[#374151] mb-1">Work Email</label>
+            <input type="email" [(ngModel)]="demoEmail" name="demoEmail" required placeholder="maya@company.com" class="w-full h-10 px-3.5 rounded-lg border border-[#D1D5DB] text-[14px] text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/30">
+          </div>
+
+          <div>
+            <label class="block text-[12px] font-medium text-[#374151] mb-1">Company / Brand Name</label>
+            <input type="text" [(ngModel)]="demoCompany" name="demoCompany" placeholder="e.g. Blitz Brand or Horizon Agency" class="w-full h-10 px-3.5 rounded-lg border border-[#D1D5DB] text-[14px] text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/30">
+          </div>
+
+          <div>
+            <label class="block text-[12px] font-medium text-[#374151] mb-1">I represent a:</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" (click)="demoRole.set('BRAND')" [class.border-[#0066FF]]="demoRole() === 'BRAND'" [class.bg-[#EBF3FF]]="demoRole() === 'BRAND'" [class.text-[#0066FF]]="demoRole() === 'BRAND'" class="py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-medium cursor-pointer transition-all">
+                Brand
+              </button>
+              <button type="button" (click)="demoRole.set('AGENCY')" [class.border-[#0066FF]]="demoRole() === 'AGENCY'" [class.bg-[#EBF3FF]]="demoRole() === 'AGENCY'" [class.text-[#0066FF]]="demoRole() === 'AGENCY'" class="py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-medium cursor-pointer transition-all">
+                Agency
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button type="submit" [disabled]="isSubmittingDemo()" class="w-full h-11 rounded-lg bg-[#0066FF] hover:bg-[#0052CC] text-white font-semibold text-[14px] shadow-sm transition-all disabled:opacity-50 cursor-pointer border-0">
+              @if (isSubmittingDemo()) {
+                Scheduling demo...
+              } @else {
+                Confirm Demo Request
+              }
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   }
 
-  <!-- ========================================================
-       Terms Modal Dialog
-       ======================================================== -->
-  @if (showTermsModal()) {
-    <div class="modal-backdrop" (click)="showTermsModal.set(false)">
-      <div class="modal-card" (click)="$event.stopPropagation()">
-        <div class="modal-head">
-          <div class="modal-badge-icon">📄</div>
-          <div>
-            <h3>Terms of Service</h3>
-            <p>Platform Agreement & Deliverable Verification</p>
-          </div>
-        </div>
-        <div class="modal-body-content">
-          <p><strong>1. Deliverables Auditing:</strong> Submitting URLs validates real-time platform metrics to maintain audit-grade pacing.</p>
-          <p><strong>2. Financial Ledgers:</strong> INR budgets and payouts are reconciled based on milestone agreements verified by participating brands.</p>
-        </div>
-        <div class="modal-foot">
-          <button type="button" class="btn-modal-close" (click)="showTermsModal.set(false)">Close</button>
-        </div>
+  <!-- Privacy Policy Modal -->
+  @if (showPrivacyModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+        <button type="button" (click)="showPrivacyModal.set(false)" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+        <h3 class="text-[20px] font-bold text-[#111827] mb-3">Converge Privacy Policy</h3>
+        <p class="text-[13px] text-[#4B5563] leading-relaxed mb-4">
+          At Converge, we respect the privacy of brand managers, agency partners, and creators. We gather data solely for platform authentication, campaign metric auditing via official platform APIs, and secure reconciliation of financial ledgers.
+        </p>
+        <h4 class="text-[14px] font-semibold text-[#111827] mb-1">Data Handshake</h4>
+        <p class="text-[13px] text-[#4B5563] leading-relaxed mb-4">
+          All post metrics are fetched directly through public endpoints or authorized platform tokens. We never sell your organization or campaign performance data to third parties.
+        </p>
+        <button type="button" (click)="showPrivacyModal.set(false)" class="w-full py-2.5 rounded-lg bg-[#111827] text-white text-[13px] font-medium cursor-pointer border-0">Close</button>
       </div>
     </div>
   }
+
+  <!-- Terms Modal -->
+  @if (showTermsModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+        <button type="button" (click)="showTermsModal.set(false)" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+        <h3 class="text-[20px] font-bold text-[#111827] mb-3">Terms of Service</h3>
+        <p class="text-[13px] text-[#4B5563] leading-relaxed mb-4">
+          By utilizing the Converge platform, brands and agencies agree to mutual campaign milestones, honest deliverable representations, and agreed financial settlement terms.
+        </p>
+        <button type="button" (click)="showTermsModal.set(false)" class="w-full py-2.5 rounded-lg bg-[#111827] text-white text-[13px] font-medium cursor-pointer border-0">Close</button>
+      </div>
+    </div>
+  }
+
 </div>

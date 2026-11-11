@@ -13,6 +13,14 @@ export interface SystemGoogleAccount {
   avatarColor?: string;
 }
 
+export interface BrandPartnerOption {
+  id: number;
+  name: string;
+  badge: string;
+  color: string;
+  category?: string;
+}
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -39,59 +47,79 @@ export class LoginComponent implements OnInit {
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
+  readonly agreeTerms = signal(false);
 
-  // Custom Dropdown open states
-  readonly roleDropdownOpen = signal(false);
-  readonly categoryDropdownOpen = signal(false);
+  // Brand dropdown & search
   readonly brandDropdownOpen = signal(false);
+  readonly brandSearch = signal('');
+  readonly selectedBrandId = signal<number | undefined>(1);
+  readonly selectedBrandName = signal<string>('Blitz Inc.');
+  readonly selectedBrandBadge = signal<string>('BL');
+  readonly selectedBrandColor = signal<string>('#FBBC05');
 
-  // Available Brands for Agency Self-Onboarding
-  readonly availableBrands = signal<Array<{ id: number; name: string; category?: string }>>([]);
-  readonly selectedBrandId = signal<number | undefined>(undefined);
-  readonly selectedBrandName = signal<string>('');
+  // Default and live brands
+  readonly brandPartners = signal<BrandPartnerOption[]>([
+    { id: 1, name: 'Blitz Inc.', badge: 'BL', color: '#FBBC05', category: 'Creator Commerce' },
+    { id: 2, name: 'Waveform Media', badge: 'WM', color: '#4285F4', category: 'Digital Media' },
+    { id: 3, name: 'Nike', badge: 'NK', color: '#000000', category: 'Sportswear' },
+    { id: 4, name: 'Spotify', badge: 'SP', color: '#1DB954', category: 'Audio & Music' },
+    { id: 5, name: 'Aura Wellness', badge: 'AW', color: '#EA4335', category: 'Health & Beauty' }
+  ]);
+
+  readonly filteredBrands = computed(() => {
+    const q = this.brandSearch().trim().toLowerCase();
+    const list = this.brandPartners();
+    if (!q) return list;
+    return list.filter(b => b.name.toLowerCase().includes(q) || (b.category && b.category.toLowerCase().includes(q)));
+  });
 
   // Google Sign-In state
   readonly showGoogleModal = signal(false);
   readonly useAnotherGoogleAccount = signal(false);
   readonly googleEmail = signal('');
-
   readonly systemGoogleAccounts = signal<SystemGoogleAccount[]>(this.loadSystemGoogleAccounts());
 
-  // Privacy & Help/Feedback Modals state
+  // Privacy & Help Modals
   readonly showPrivacyModal = signal(false);
+  readonly showTermsModal = signal(false);
   readonly showHelpModal = signal(false);
   readonly supportSenderEmail = signal('');
   readonly supportQuestion = signal('');
   readonly isSendingSupport = signal(false);
 
-  // Self-Onboarding (Signup) extra fields
+  // Onboarding fields
   readonly fullName = signal('');
   readonly organizationName = signal('');
-  readonly websiteUrl = signal('');
-  readonly category = signal('Lifestyle & Wellness');
   readonly role = signal<'BRAND_MANAGER' | 'AGENCY_MANAGER'>('BRAND_MANAGER');
 
-  readonly categoryOptions = [
-    'Lifestyle & Wellness',
-    'Fashion & Beauty',
-    'Skincare & Apparel',
-    'Tech & Modern Work',
-    'Creative & Culture'
-  ];
+  readonly isBrandRole = computed(() => this.role() === 'BRAND_MANAGER');
+  readonly isAgencyRole = computed(() => this.role() === 'AGENCY_MANAGER');
 
-  // Password Strength Computed ('none' | 'low' | 'medium' | 'high')
-  readonly passwordStrength = computed<'none' | 'low' | 'medium' | 'high'>(() => {
+  // Password Strength Computations
+  readonly passwordHasMinLength = computed(() => this.password().length >= 8);
+  readonly passwordHasNumOrSpecial = computed(() =>
+    /[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>?~`]/.test(this.password())
+  );
+
+  readonly passwordScore = computed(() => {
     const val = this.password();
-    if (!val) return 'none';
+    if (!val) return 0;
     let score = 0;
+    if (val.length >= 4) score++;
     if (val.length >= 8) score++;
-    if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
-    if (/\d/.test(val)) score++;
-    if (/[^A-Za-z0-9]/.test(val)) score++;
+    if (/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>?~`]/.test(val)) score++;
+    if (val.length >= 10 && /[A-Z]/.test(val)) score++;
+    return score;
+  });
 
-    if (val.length < 6 || score <= 1) return 'low';
-    if (score === 2 || score === 3) return 'medium';
-    return 'high';
+  readonly passwordStrengthLabel = computed<'Strength' | 'Weak' | 'Fair' | 'Good' | 'Strong'>(() => {
+    const s = this.passwordScore();
+    const val = this.password();
+    if (!val) return 'Strength';
+    if (s <= 1) return 'Weak';
+    if (s === 2) return 'Fair';
+    if (s === 3) return 'Good';
+    return 'Strong';
   });
 
   readonly passwordsMatch = computed(() => {
@@ -99,10 +127,6 @@ export class LoginComponent implements OnInit {
     const c = this.confirmPassword();
     return p.length > 0 && c.length > 0 && p === c;
   });
-
-  // Field validation flags
-  readonly emailTouched = signal(false);
-  readonly passwordTouched = signal(false);
 
   ngOnInit(): void {
     this.route.queryParams?.subscribe(params => {
@@ -122,33 +146,40 @@ export class LoginComponent implements OnInit {
     if (typeof this.authService.getAvailableBrands === 'function') {
       this.authService.getAvailableBrands().subscribe({
         next: (brands) => {
-          const list = (brands || []).map(b => ({ id: b.id, name: b.name, category: b.category }));
-          this.availableBrands.set(list);
-          if (list.length > 0 && !this.selectedBrandId()) {
-            this.selectedBrandId.set(list[0].id);
-            this.selectedBrandName.set(list[0].name);
+          if (brands && brands.length > 0) {
+            const mapped: BrandPartnerOption[] = brands.map(b => ({
+              id: b.id,
+              name: b.name,
+              badge: b.name.substring(0, 2).toUpperCase(),
+              color: '#4285F4',
+              category: b.category
+            }));
+            // Merge with defaults avoiding duplicate names
+            const existingNames = new Set(this.brandPartners().map(b => b.name.toLowerCase()));
+            const toAdd = mapped.filter(m => !existingNames.has(m.name.toLowerCase()));
+            this.brandPartners.update(curr => [...curr, ...toAdd]);
           }
         },
         error: () => {
-          // ignore if backend not started yet
+          // keep defaults
         }
       });
     }
   }
 
-  toggleBrandDropdown(): void {
-    const nextOpen = !this.brandDropdownOpen();
-    this.brandDropdownOpen.set(nextOpen);
-    this.roleDropdownOpen.set(false);
-    this.categoryDropdownOpen.set(false);
-    if (nextOpen) {
-      this.loadBrandsForOnboarding();
+  toggleBrandDropdown(force?: boolean): void {
+    if (typeof force === 'boolean') {
+      this.brandDropdownOpen.set(force);
+    } else {
+      this.brandDropdownOpen.update(v => !v);
     }
   }
 
-  selectPartnerBrand(brand: { id: number; name: string }): void {
+  selectBrand(brand: BrandPartnerOption): void {
     this.selectedBrandId.set(brand.id);
     this.selectedBrandName.set(brand.name);
+    this.selectedBrandBadge.set(brand.badge);
+    this.selectedBrandColor.set(brand.color);
     this.brandDropdownOpen.set(false);
   }
 
@@ -157,8 +188,6 @@ export class LoginComponent implements OnInit {
     this.showGoogleModal.set(false);
     this.showPrivacyModal.set(false);
     this.showHelpModal.set(false);
-    this.roleDropdownOpen.set(false);
-    this.categoryDropdownOpen.set(false);
     this.brandDropdownOpen.set(false);
   }
 
@@ -195,12 +224,7 @@ export class LoginComponent implements OnInit {
     this.mode.set(newMode);
     this.clearMessages();
     this.confirmPassword.set('');
-    this.roleDropdownOpen.set(false);
-    this.categoryDropdownOpen.set(false);
     this.brandDropdownOpen.set(false);
-    if (newMode === 'signup') {
-      this.loadBrandsForOnboarding();
-    }
   }
 
   private autoDismissTimer: any = null;
@@ -241,27 +265,8 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  onEmailChange(val: string): void {
-    this.email.set(val);
-    if (this.errorMessage()) this.errorMessage.set('');
-  }
-
-  onPasswordChange(val: string): void {
-    this.password.set(val);
-    if (this.errorMessage()) this.errorMessage.set('');
-  }
-
   selectRole(newRole: 'BRAND_MANAGER' | 'AGENCY_MANAGER'): void {
     this.role.set(newRole);
-    this.roleDropdownOpen.set(false);
-    if (newRole === 'AGENCY_MANAGER') {
-      this.loadBrandsForOnboarding();
-    }
-  }
-
-  selectCategory(cat: string): void {
-    this.category.set(cat);
-    this.categoryDropdownOpen.set(false);
   }
 
   togglePasswordVisibility(): void {
@@ -270,10 +275,6 @@ export class LoginComponent implements OnInit {
 
   toggleConfirmPasswordVisibility(): void {
     this.showConfirmPassword.update(show => !show);
-  }
-
-  toggleRememberMe(): void {
-    this.rememberMe.update(rem => !rem);
   }
 
   onGoogleSignIn(): void {
@@ -399,122 +400,33 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.showError(err.message || 'Could not reset password.');
+        this.showError(err.message || 'Could not process password recovery.');
       }
     });
   }
 
-  async onSignUp(event: Event): Promise<void> {
-    event.preventDefault();
+  onSubmit(event?: Event): void {
+    if (event) event.preventDefault();
+    if (this.mode() === 'login') {
+      this.onLogin();
+    } else if (this.mode() === 'signup') {
+      this.onRegister();
+    } else {
+      this.onForgotPassword();
+    }
+  }
+
+  onLogin(): void {
     const emailVal = this.email().trim();
     const passVal = this.password();
-    const confVal = this.confirmPassword();
-    const orgVal = this.organizationName().trim();
-    const nameVal = this.fullName().trim();
-    const urlVal = this.websiteUrl().trim();
 
-    if (!orgVal) {
-      this.showError(
-        this.role() === 'BRAND_MANAGER'
-          ? 'Brand Name is mandatory.'
-          : 'Agency Name is mandatory.'
-      );
+    if (!emailVal || !passVal) {
+      this.showError('Please enter both email and password.');
       return;
     }
-
-    if (!nameVal || !emailVal || !passVal) {
-      this.showError('Please complete all mandatory fields (*).');
-      return;
-    }
-
-    if (emailVal.toLowerCase() === 'chaitanyamandviya7@gmail.com') {
-      this.showError('Security Policy: System Administrator email cannot be used for Brand or Agency onboarding.');
-      return;
-    }
-
-    if (passVal !== confVal) {
-      this.showError('Password and Confirm Password do not match.');
-      return;
-    }
-
-    const selectedRole = this.role();
-    const bId = selectedRole === 'AGENCY_MANAGER' ? this.selectedBrandId() : undefined;
-    const bName = selectedRole === 'AGENCY_MANAGER' ? this.selectedBrandName() : undefined;
-    const roleLabel = selectedRole === 'BRAND_MANAGER' ? 'Brand Workspace' : 'Agency Workspace';
-
-    const confirmed = await this.confirmService.confirm({
-      title: `Submit ${roleLabel} Application?`,
-      message: `Submit onboarding application for "${orgVal}" (${emailVal})?`,
-      detail: selectedRole === 'AGENCY_MANAGER' && bName
-        ? `Partner Brand: ${bName} · Applicant: ${nameVal}`
-        : `Vertical: ${this.category()} · Applicant: ${nameVal}`,
-      confirmText: 'Submit Application',
-      variant: 'primary'
-    });
-    if (!confirmed) return;
 
     this.isLoading.set(true);
-
-    this.authService.register(
-      emailVal,
-      passVal,
-      selectedRole,
-      nameVal,
-      orgVal,
-      this.category(),
-      urlVal,
-      bId,
-      bName
-    ).subscribe({
-      next: () => {
-        this.isLoading.set(false);
-        const approver = selectedRole === 'BRAND_MANAGER'
-          ? 'System Administrator'
-          : (bName ? `Brand Manager (${bName})` : 'Brand Manager');
-        this.mode.set('login');
-        this.password.set('');
-        this.confirmPassword.set('');
-        this.showSuccess(
-          `${orgVal} registered! Your account is pending approval by the ${approver}. Once approved, you can sign in.`
-        );
-        this.toast.success(
-          'Submitted for Approval',
-          `${orgVal} has been queued for ${approver} approval.`
-        );
-      },
-      error: (err) => {
-        this.isLoading.set(false);
-        this.showError(err.message || 'Could not submit onboarding application.');
-      }
-    });
-  }
-
-  onLogin(event: Event): void {
-    event.preventDefault();
-    this.emailTouched.set(true);
-    this.passwordTouched.set(true);
     this.clearMessages();
-
-    const emailVal = this.email().trim();
-    const passVal = this.password();
-
-    if (!emailVal) {
-      this.showError('Please enter your email address.');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailVal)) {
-      this.showError('Please enter a valid email address.');
-      return;
-    }
-
-    if (!passVal) {
-      this.showError('Please enter your password.');
-      return;
-    }
-
-    this.isLoading.set(true);
 
     this.authService.login({
       email: emailVal,
@@ -528,7 +440,65 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.showError(err.message || 'Authentication failed. Please check your credentials.');
+        this.showError(err.message || 'Invalid email or password.');
+      }
+    });
+  }
+
+  onRegister(): void {
+    const emailVal = this.email().trim();
+    const passVal = this.password();
+    const confVal = this.confirmPassword();
+    const nameVal = this.fullName().trim();
+    const orgVal = this.organizationName().trim();
+
+    if (!nameVal) {
+      this.showError('Please provide your full name.');
+      return;
+    }
+    if (!emailVal) {
+      this.showError('Please provide your work email.');
+      return;
+    }
+    if (!passVal) {
+      this.showError('Please set a secure password.');
+      return;
+    }
+    if (passVal !== confVal) {
+      this.showError('Passwords do not match.');
+      return;
+    }
+    if (this.role() === 'BRAND_MANAGER' && !orgVal) {
+      this.showError('Please provide your brand or organization name.');
+      return;
+    }
+    if (this.role() === 'AGENCY_MANAGER' && !orgVal) {
+      this.showError('Please provide your agency workspace name.');
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.clearMessages();
+
+    this.authService.register(
+      emailVal,
+      passVal,
+      this.role(),
+      nameVal,
+      orgVal,
+      'Lifestyle & Wellness',
+      '',
+      this.role() === 'AGENCY_MANAGER' ? this.selectedBrandId() : undefined,
+      this.role() === 'AGENCY_MANAGER' ? this.selectedBrandName() : undefined
+    ).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.toast.success('Account Created', `Welcome to Converge, ${nameVal}!`);
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.showError(err.message || 'Registration failed. Please check your details.');
       }
     });
   }
