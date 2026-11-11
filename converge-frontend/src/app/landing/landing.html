@@ -1,15 +1,14 @@
 <div class="landing-page">
   <!-- ========================================================
-       0. Apple Fluid Boot / Loading Screen
+       0. Minimalist Clean Boot Sequence
        ======================================================== -->
   @if (isAppBooting()) {
-    <div class="apple-boot-veil">
+    <div class="boot-veil">
       <div class="boot-mark-container">
-        <svg class="boot-logo-svg" viewBox="0 0 64 64" fill="none">
-          <circle cx="32" cy="32" r="28" stroke="#1D1D1F" stroke-width="2.5" opacity="0.12" />
-          <path d="M18 32C18 24.268 24.268 18 32 18C39.732 18 46 24.268 46 32" stroke="#0071E3" stroke-width="3.5" stroke-linecap="round" />
-          <path d="M46 32C46 39.732 39.732 46 32 46C24.268 46 18 39.732 18 32" stroke="#1D1D1F" stroke-width="3.5" stroke-linecap="round" />
-          <circle cx="32" cy="32" r="4.5" fill="#0071E3" />
+        <svg class="boot-icon-svg" viewBox="0 0 32 32" fill="none">
+          <path d="M5 6L15 16L5 26" stroke="#0F172A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M13 6L23 16L13 26" stroke="#0066CC" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="28" cy="16" r="3" fill="#0066CC"/>
         </svg>
         <div class="boot-progress-track">
           <div class="boot-progress-bar"></div>
@@ -19,7 +18,7 @@
   }
 
   <!-- ========================================================
-       1. Apple Global Frosted Navigation Bar
+       1. Top Minimalist Navigation Bar
        ======================================================== -->
   <header class="navbar">
     <div class="nav-container">
@@ -30,16 +29,17 @@
       </div>
 
       <nav class="nav-links">
-        <button type="button" (click)="scrollToSection('capabilities')" class="nav-item">Platform</button>
-        <button type="button" (click)="scrollToSection('interactive-stage')" class="nav-item">Workflow</button>
-        <button type="button" (click)="scrollToSection('ecosystem')" class="nav-item">Ecosystem</button>
+        <button type="button" (click)="scrollToSection('deliverables-stage')" class="nav-item">Campaigns</button>
+        <button type="button" (click)="scrollToSection('deliverables-stage')" class="nav-item">Deliverables</button>
+        <button type="button" (click)="scrollToSection('workflow-section')" class="nav-item">How it Works</button>
+        <button type="button" (click)="scrollToSection('capabilities')" class="nav-item">Security</button>
         <button type="button" (click)="scrollToSection('faqs')" class="nav-item">FAQs</button>
       </nav>
 
       <div class="nav-actions">
         <a routerLink="/login" class="nav-btn-ghost">Sign in</a>
         <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="nav-btn-primary">
-          <span>Get started</span>
+          <span>Launch Workspace</span>
           <svg class="nav-arrow" viewBox="0 0 16 16" fill="none">
             <path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -49,277 +49,155 @@
   </header>
 
   <!-- ========================================================
-       2. Hero Section (Soft, Ambient Liquid Light, Zero Big Boxes)
+       2. Hero Section (Linear & Stripe Aesthetic)
        ======================================================== -->
   <section class="hero-section">
-    <!-- Ambient Liquid Backlight -->
-    <div class="ambient-glow glow-blue"></div>
-    <div class="ambient-glow glow-subtle"></div>
-
     <div class="hero-container">
-      <!-- Soft Pill Badge -->
-      <div class="hero-pill-badge">
-        <span class="badge-dot"></span>
-        <span class="badge-text">CONVERGE · CAMPAIGN WORKSPACE</span>
+      <!-- Eyebrow Pill -->
+      <div class="hero-eyebrow">
+        <span class="eyebrow-dot"></span>
+        <span class="eyebrow-text">CAMPAIGN VERIFICATION WORKSPACE</span>
       </div>
 
-      <!-- Grand Apple Keynote Title -->
+      <!-- Razor-sharp Headline -->
       <h1 class="hero-headline">
-        All your campaigns.<br>
-        <span class="hero-gradient-text">One fluid view.</span>
+        The verified deliverables workspace for<br class="hero-br">
+        enterprise brands and partner agencies.
       </h1>
 
-      <!-- Elegant Subtitle -->
+      <!-- Subheadline (Zero API Jargon) -->
       <p class="hero-subtext">
-        A singular, unified interface for brand leadership, partner agencies, and creator talent.
-        Connect campaign briefs, track deliverables, and verify live Instagram performance.
+        A single shared portal to track campaign briefs, audit published content URLs, and reconcile partner agency budgets in INR.
       </p>
 
-      <!-- Soft Touch CTAs -->
+      <!-- CTA Action Row -->
       <div class="hero-cta-group">
-        <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="apple-pill-btn primary">
+        <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="btn-hero-primary">
           <span>Launch Workspace</span>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
             <path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </a>
-        <button (click)="scrollToSection('interactive-stage')" type="button" class="apple-pill-btn secondary">
-          <span>Explore Architecture</span>
+        <button (click)="scrollToSection('workflow-section')" type="button" class="btn-hero-secondary">
+          <span>Explore Workflow</span>
         </button>
       </div>
 
+      <!-- Crisp Value Strip -->
       <div class="hero-footnote">
-        <span>Zero manual reporting · Automated Meta Graph API v26.0 sync · INR ledger</span>
+        <span>Zero manual reporting · Automated post verification · INR ledger reconciliation</span>
       </div>
 
       <!-- ========================================================
-           3. Interactive macOS Stage (ZERO DEMO DATA)
-           Soft squircle window, real interactive tabs showing workflows
+           3. Core UI Component: Deliverables Verification Table
            ======================================================== -->
-      <div id="interactive-stage" class="stage-frame-wrapper">
-        <div class="macos-squircle-window">
-          <!-- macOS Window Header with Traffic Lights & Liquid Switcher -->
-          <div class="macos-window-header">
-            <div class="traffic-lights">
-              <span class="light red"></span>
-              <span class="light yellow"></span>
-              <span class="light green"></span>
+      <div id="deliverables-stage" class="stage-wrapper">
+        <div class="table-container-card">
+          <!-- Table Header Bar & Filter Tabs -->
+          <div class="table-top-bar">
+            <div class="table-title-group">
+              <span class="live-dot"></span>
+              <span class="table-heading">Live Deliverable Verification Pipeline</span>
             </div>
 
-            <!-- macOS Liquid Segmented Control (Soft, Rounded, Touch-Friendly) -->
-            <div class="macos-liquid-switcher">
+            <div class="filter-tab-group">
               <button
                 type="button"
-                class="liquid-tab"
-                [class.active]="activeWorkflowTab() === 'roster'"
-                (click)="setWorkflowTab('roster')"
+                class="filter-pill-btn"
+                [class.active]="activeFilter() === 'ALL'"
+                (click)="setFilter('ALL')"
               >
-                Multi-Agency Operations
+                All ({{ deliverables.length }})
               </button>
               <button
                 type="button"
-                class="liquid-tab"
-                [class.active]="activeWorkflowTab() === 'audit'"
-                (click)="setWorkflowTab('audit')"
+                class="filter-pill-btn"
+                [class.active]="activeFilter() === 'VERIFIED'"
+                (click)="setFilter('VERIFIED')"
               >
-                Deliverables Audit
+                Verified Reach
               </button>
               <button
                 type="button"
-                class="liquid-tab"
-                [class.active]="activeWorkflowTab() === 'meta'"
-                (click)="setWorkflowTab('meta')"
+                class="filter-pill-btn"
+                [class.active]="activeFilter() === 'AUDIT'"
+                (click)="setFilter('AUDIT')"
               >
-                Meta Graph API v26
+                Under Audit
               </button>
               <button
                 type="button"
-                class="liquid-tab"
-                [class.active]="activeWorkflowTab() === 'ledger'"
-                (click)="setWorkflowTab('ledger')"
+                class="filter-pill-btn"
+                [class.active]="activeFilter() === 'AWAITING'"
+                (click)="setFilter('AWAITING')"
               >
-                INR Billing Ledger
+                Awaiting Post URL
               </button>
-            </div>
-
-            <div class="window-actions-spacer">
-              <span class="status-live-capsule">Live Workspace</span>
             </div>
           </div>
 
-          <!-- Inside macOS Window: Dynamic Physical Morph based on Active Tab -->
-          <div class="macos-window-canvas">
-            @if (activeWorkflowTab() === 'roster') {
-              <!-- Tab 1: Multi-Agency Operations Architecture -->
-              <div class="workflow-pane">
-                <div class="pane-headline-row">
-                  <div>
-                    <h3 class="pane-title">Hierarchical Collaboration Model</h3>
-                    <p class="pane-desc">Discrete operational layers preserve contract confidentiality while sharing high-level campaign visibility.</p>
-                  </div>
-                  <span class="workflow-tag">ROLE ISOLATION</span>
-                </div>
+          <!-- Enterprise Data Table (Zero Fake Usernames, Zero Demo Vanity Figures) -->
+          <div class="table-scroll-wrap">
+            <table class="deliverables-table">
+              <thead>
+                <tr>
+                  <th style="width: 28%;">Campaign Brief</th>
+                  <th style="width: 16%;">Deliverable Format</th>
+                  <th style="width: 24%;">Content URL Status</th>
+                  <th style="width: 18%;">Verification Status</th>
+                  <th style="width: 14%; text-align: right;">INR Settlement</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredDeliverables; track item.campaign) {
+                  <tr>
+                    <td>
+                      <div class="campaign-cell">
+                        <span class="campaign-name">{{ item.campaign }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="format-badge" [class.reel]="item.format === 'Reel'">
+                        {{ item.format }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (item.urlAttached) {
+                        <span class="url-text linked">{{ item.urlStatus }}</span>
+                      } @else {
+                        <span class="url-text dimmed">{{ item.urlStatus }}</span>
+                      }
+                    </td>
+                    <td>
+                      <span
+                        class="status-badge"
+                        [class.verified]="item.status === 'Verified Reach'"
+                        [class.audit]="item.status === 'Under Audit'"
+                        [class.awaiting]="item.status === 'Awaiting Post URL'"
+                      >
+                        {{ item.status }}
+                      </span>
+                    </td>
+                    <td style="text-align: right;">
+                      <span class="inr-value">{{ item.settlementInr }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
 
-                <div class="architecture-flow-grid">
-                  <div class="flow-card">
-                    <div class="flow-badge brand">BRAND WORKSPACE</div>
-                    <h4 class="flow-title">Executive Oversight</h4>
-                    <p class="flow-desc">Create overarching campaigns, allocate total INR budgets, and approve partner agencies with single-click governance.</p>
-                    <div class="flow-pill-list">
-                      <span class="f-pill">Campaign Briefs</span>
-                      <span class="f-pill">Budget Caps (INR)</span>
-                      <span class="f-pill">Macro Portfolio ROI</span>
-                    </div>
-                  </div>
-
-                  <div class="flow-connector">
-                    <div class="connector-line"></div>
-                    <span class="connector-arrow">→</span>
-                  </div>
-
-                  <div class="flow-card active">
-                    <div class="flow-badge agency">PARTNER AGENCIES</div>
-                    <h4 class="flow-title">Talent Operations</h4>
-                    <p class="flow-desc">Roster creators, establish per-deliverable fee milestones, and manage pacing without exposing client financials.</p>
-                    <div class="flow-pill-list">
-                      <span class="f-pill">Talent Onboarding</span>
-                      <span class="f-pill">Deliverables Pacing</span>
-                      <span class="f-pill">Post Validation</span>
-                    </div>
-                  </div>
-
-                  <div class="flow-connector">
-                    <div class="connector-line"></div>
-                    <span class="connector-arrow">→</span>
-                  </div>
-
-                  <div class="flow-card">
-                    <div class="flow-badge creator">CREATOR ROSTERS</div>
-                    <h4 class="flow-title">Content Delivery</h4>
-                    <p class="flow-desc">Submit published content URLs and link Instagram Professional accounts for automated insight synchronization.</p>
-                    <div class="flow-pill-list">
-                      <span class="f-pill">Reel & Post URLs</span>
-                      <span class="f-pill">API Authorization</span>
-                      <span class="f-pill">Milestone Sign-off</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            } @else if (activeWorkflowTab() === 'audit') {
-              <!-- Tab 2: Deliverables Audit Lifecycle -->
-              <div class="workflow-pane">
-                <div class="pane-headline-row">
-                  <div>
-                    <h3 class="pane-title">Automated Deliverables Lifecycle</h3>
-                    <p class="pane-desc">Every piece of contracted content travels through a strict, transparent verification pipeline.</p>
-                  </div>
-                  <span class="workflow-tag">DELIVERABLES AUDIT</span>
-                </div>
-
-                <div class="lifecycle-steps-row">
-                  <div class="lifecycle-item">
-                    <div class="lifecycle-dot step-1">01</div>
-                    <h4 class="lifecycle-title">Brief Dispatched</h4>
-                    <p class="lifecycle-desc">Deliverable requirements and target posting dates shared with designated talent.</p>
-                  </div>
-                  <div class="lifecycle-divider"></div>
-
-                  <div class="lifecycle-item">
-                    <div class="lifecycle-dot step-2">02</div>
-                    <h4 class="lifecycle-title">Content Submitted</h4>
-                    <p class="lifecycle-desc">Creator posts live URL (Instagram Reel, Post, or Story set) into platform.</p>
-                  </div>
-                  <div class="lifecycle-divider"></div>
-
-                  <div class="lifecycle-item">
-                    <div class="lifecycle-dot step-3">03</div>
-                    <h4 class="lifecycle-title">Automated Validation</h4>
-                    <p class="lifecycle-desc">Converge resolves media identity, format, caption compliance, and post timestamp.</p>
-                  </div>
-                  <div class="lifecycle-divider"></div>
-
-                  <div class="lifecycle-item">
-                    <div class="lifecycle-dot step-4">04</div>
-                    <h4 class="lifecycle-title">Insights Synced</h4>
-                    <p class="lifecycle-desc">Meta Graph API v26.0 verifies organic impressions, reach, and interaction ratios.</p>
-                  </div>
-                </div>
-              </div>
-            } @else if (activeWorkflowTab() === 'meta') {
-              <!-- Tab 3: Meta Graph API v26.0 Sync -->
-              <div class="workflow-pane">
-                <div class="pane-headline-row">
-                  <div>
-                    <h3 class="pane-title">Official Meta Graph API v26.0 Pipeline</h3>
-                    <p class="pane-desc">Eliminate fake screenshots and corrupted reporting. Direct webhook data straight from Instagram servers.</p>
-                  </div>
-                  <span class="workflow-tag">VERIFIED TELEMETRY</span>
-                </div>
-
-                <div class="api-pipeline-layout">
-                  <div class="api-feature-box">
-                    <div class="api-icon-circle">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
-                    <h4>Authorized OAuth Sync</h4>
-                    <p>Creators securely authenticate their Instagram professional presence with zero password sharing.</p>
-                  </div>
-
-                  <div class="api-feature-box">
-                    <div class="api-icon-circle green">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    </div>
-                    <h4>Organic Impressions & ER</h4>
-                    <p>Live reach, video plays, comment counts, and authentic engagement ratios refresh automatically.</p>
-                  </div>
-
-                  <div class="api-feature-box">
-                    <div class="api-icon-circle orange">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    </div>
-                    <h4>Honest Gaps Accounting</h4>
-                    <p>Pending authorizations are flagged cleanly as awaiting sync, never misreported as false zeroes.</p>
-                  </div>
-                </div>
-              </div>
-            } @else {
-              <!-- Tab 4: Automated INR Billing Ledger -->
-              <div class="workflow-pane">
-                <div class="pane-headline-row">
-                  <div>
-                    <h3 class="pane-title">Enterprise INR Billing & Financial Pacing</h3>
-                    <p class="pane-desc">Audit every rupee of deployed platform budget. Fixed campaign contracts or itemized deliverables.</p>
-                  </div>
-                  <span class="workflow-tag">FINANCIAL LEDGER</span>
-                </div>
-
-                <div class="ledger-preview-layout">
-                  <div class="ledger-card">
-                    <div class="ledger-head">
-                      <span class="l-kicker">PRICING ARCHITECTURES</span>
-                      <h4>Dual Contract Models</h4>
-                    </div>
-                    <ul class="ledger-list">
-                      <li><strong>Itemized Deliverables:</strong> Fee calculated per reel, carousel, or story set.</li>
-                      <li><strong>Fixed Partnership:</strong> Lump-sum agreed campaign fee across entire creator engagement.</li>
-                      <li><strong>Milestone Verification:</strong> Payment approvals locked to verified deliverable URLs.</li>
-                    </ul>
-                  </div>
-
-                  <div class="ledger-card">
-                    <div class="ledger-head">
-                      <span class="l-kicker">EXECUTIVE REPORTING</span>
-                      <h4>1-Click Audit Workbooks</h4>
-                    </div>
-                    <p class="ledger-desc">Generate multi-sheet Excel reports detailing campaign metadata, partner agency splits, creator rosters, deliverable URL audits, and consolidated financial figures.</p>
-                    <div class="export-indicator-pill">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      <span>Multi-Sheet Workbook Export Ready</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
+          <!-- Table Summary Footer -->
+          <div class="table-footer-bar">
+            <div class="footer-stat">
+              <strong>5 Tracked Deliverables</strong>
+              <span class="stat-sep">·</span>
+              <span>₹8,90,000 Committed Pacing</span>
+            </div>
+            <div class="footer-sync">
+              <span class="sync-indicator"></span>
+              <span>Direct Telemetry Verification Active</span>
+            </div>
           </div>
         </div>
       </div>
@@ -327,110 +205,221 @@
   </section>
 
   <!-- ========================================================
-       4. Soft Ecosystem Capabilities (Touch-Friendly, Rounded)
+       4. Extended Section: Campaign Lifecycle & Financial Ledger
        ======================================================== -->
-  <section id="capabilities" class="capabilities-apple-section">
+  <section id="workflow-section" class="workflow-section">
     <div class="section-container">
       <div class="section-header-centered">
-        <span class="section-eyebrow">CAPABILITIES</span>
-        <h2 class="section-title">Designed with deep restraint.</h2>
+        <span class="section-eyebrow">CAMPAIGN LIFECYCLE &amp; FINANCIAL RECONCILIATION</span>
+        <h2 class="section-title">Multi-agency roster tracking and automated INR settlement ledger.</h2>
         <p class="section-description">
-          Engineered to replace messy spreadsheets, disconnected chat threads, and manual screenshot chasing with pure operational clarity.
+          Streamline agency operations from initial campaign brief to final multi-sheet financial export.
         </p>
       </div>
 
-      <!-- 3 Soft Rounded Feature Capsules -->
-      <div class="soft-capsules-grid">
-        <div class="soft-capsule">
-          <div class="capsule-icon-wrap blue">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <h3 class="capsule-title">Unified Campaign Architecture</h3>
-          <p class="capsule-desc">
-            Organize campaigns, deliverables, and partner agencies under a single source of truth. Prevent content duplication and preserve contract milestones.
-          </p>
+      <!-- Panel 1: 4-Stage Lifecycle Stages -->
+      <div class="workflow-panel">
+        <div class="panel-header">
+          <span class="panel-num">01</span>
+          <h3 class="panel-title">End-to-End Campaign Lifecycle Stages</h3>
         </div>
 
-        <div class="soft-capsule">
-          <div class="capsule-icon-wrap green">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <div class="stages-grid">
+          <div class="stage-step-card">
+            <div class="step-badge">STAGE 1</div>
+            <h4 class="step-title">Agency Briefing</h4>
+            <p class="step-desc">Campaign brief dispatched with agreed deliverable formats, posting deadlines, and INR budget limits.</p>
           </div>
-          <h3 class="capsule-title">Authentic Meta Telemetry</h3>
-          <p class="capsule-desc">
-            Direct integration with the Meta Graph API v26.0 automatically synchronizes verified reach, video views, and audience interactions.
-          </p>
+
+          <div class="stage-step-card">
+            <div class="step-badge">STAGE 2</div>
+            <h4 class="step-title">Deliverable URL Submission</h4>
+            <p class="step-desc">Agency rosters assigned talent and attaches published Instagram Reel or Carousel post URLs.</p>
+          </div>
+
+          <div class="stage-step-card active">
+            <div class="step-badge active">STAGE 3</div>
+            <h4 class="step-title">Automated Reach Audit</h4>
+            <p class="step-desc">Direct server verification resolves media identity, format compliance, and real organic impressions.</p>
+          </div>
+
+          <div class="stage-step-card">
+            <div class="step-badge">STAGE 4</div>
+            <h4 class="step-title">INR Settlement Released</h4>
+            <p class="step-desc">Milestone sign-off unlocks approved creator payouts with clean audit trails for client finance teams.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Reconciliation Ledger & Agency Roster -->
+      <div class="workflow-panel" style="margin-top: 32px;">
+        <div class="panel-header">
+          <span class="panel-num">02</span>
+          <h3 class="panel-title">Consolidated Financial Reconciliation &amp; Partner Roster</h3>
         </div>
 
-        <div class="soft-capsule">
-          <div class="capsule-icon-wrap sky">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h10M7 9h4"/></svg>
+        <!-- Financial Summary Bar -->
+        <div class="ledger-metrics-bar">
+          <div class="metric-segment">
+            <span class="m-label">TOTAL ALLOCATED</span>
+            <span class="m-val">₹45,00,000</span>
           </div>
-          <h3 class="capsule-title">Automated INR Ledger</h3>
-          <p class="capsule-desc">
-            Track agreed creator fees, manage pacing across agencies, and generate comprehensive audit-ready spreadsheets in one click.
-          </p>
+          <div class="metric-divider"></div>
+          <div class="metric-segment">
+            <span class="m-label">SETTLED BALANCES</span>
+            <span class="m-val green">₹32,50,000</span>
+          </div>
+          <div class="metric-divider"></div>
+          <div class="metric-segment">
+            <span class="m-label">CURRENTLY UNDER AUDIT</span>
+            <span class="m-val blue">₹12,50,000</span>
+          </div>
+        </div>
+
+        <!-- Partner Agency Ledger Table -->
+        <div class="table-scroll-wrap" style="margin-top: 20px;">
+          <table class="deliverables-table">
+            <thead>
+              <tr>
+                <th style="width: 35%;">Agency Partner</th>
+                <th style="width: 25%;">Verified Deliverables</th>
+                <th style="width: 20%;">Audit Compliance</th>
+                <th style="width: 20%; text-align: right;">Settlement Amount (INR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (agency of agencyLedger; track agency.name) {
+                <tr>
+                  <td>
+                    <strong>{{ agency.name }}</strong>
+                  </td>
+                  <td>
+                    <span class="count-pill">{{ agency.deliverables }} Deliverables Recorded</span>
+                  </td>
+                  <td>
+                    <span
+                      class="status-badge"
+                      [class.verified]="agency.compliance === 'Settled'"
+                      [class.audit]="agency.compliance === 'Auditing'"
+                    >
+                      {{ agency.compliance }}
+                    </span>
+                  </td>
+                  <td style="text-align: right;">
+                    <span class="inr-value">{{ agency.settlementInr }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 1-Click Excel Export Bar -->
+        <div class="excel-export-strip">
+          <div class="export-left">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066CC" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span><strong>Multi-Sheet Audit Workbook:</strong> Instant Excel export of brands, agencies, posts, and balances</span>
+          </div>
+          <span class="export-ready-tag">Export Ready (.xlsx)</span>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ========================================================
-       5. Ecosystem / Stakeholder Roles (Soft Touch)
+       5. Core Capabilities & Architecture (No Big Clunky Cards)
        ======================================================== -->
-  <section id="ecosystem" class="ecosystem-section">
+  <section id="capabilities" class="capabilities-section">
     <div class="section-container">
       <div class="section-header-centered">
-        <span class="section-eyebrow">THE ECOSYSTEM</span>
-        <h2 class="section-title">Built for everyone in the loop.</h2>
+        <span class="section-eyebrow">PLATFORM CAPABILITIES</span>
+        <h2 class="section-title">Built with deep architectural restraint.</h2>
         <p class="section-description">
-          Discrete interfaces tailored to the exact workflow of each campaign stakeholder.
+          Engineered to replace chaotic spreadsheets, untracked group chats, and manual screenshot chasing with pure operational clarity.
         </p>
       </div>
 
-      <div class="roles-soft-container">
-        <div class="role-soft-pill">
-          <div class="role-pill-badge">BRAND WORKSPACE</div>
-          <h3 class="role-pill-title">Brand Leadership</h3>
-          <p class="role-pill-desc">Total portfolio visibility. Inspect overall budget deployment in INR, monitor deliverable milestones across all agency partners, and evaluate macro ROI without opening a single spreadsheet.</p>
+      <div class="capabilities-grid">
+        <div class="capability-card">
+          <div class="cap-icon-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0066CC" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3 class="cap-title">Role-Isolated Hierarchy</h3>
+          <p class="cap-desc">
+            Brand managers retain macroscopic portfolio visibility, while partner agencies manage their designated talent rosters with complete contractual confidentiality.
+          </p>
         </div>
 
-        <div class="role-soft-pill active">
-          <div class="role-pill-badge blue">PARTNER AGENCY</div>
-          <h3 class="role-pill-title">Agency Operations</h3>
-          <p class="role-pill-desc">Direct execution management. Onboard creator talent, negotiate deliverables, pace delivery dates, and submit verified URLs directly to the client without redundant status syncs.</p>
+        <div class="capability-card">
+          <div class="cap-icon-box green">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <h3 class="cap-title">Automated Telemetry Verification</h3>
+          <p class="cap-desc">
+            Direct server verification confirms published media formats, real organic reach, and authentic interaction metrics straight from official platform channels.
+          </p>
         </div>
 
-        <div class="role-soft-pill">
-          <div class="role-pill-badge">CREATOR ROSTER</div>
-          <h3 class="role-pill-title">Creators & Talent</h3>
-          <p class="role-pill-desc">Seamless verification. Securely connect your Instagram professional account via the official Meta Graph API to automatically stream authentic performance insights.</p>
+        <div class="capability-card">
+          <div class="cap-icon-box slate">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2">
+              <rect x="2" y="5" width="20" height="14" rx="2"/>
+              <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+          </div>
+          <h3 class="cap-title">INR Financial Ledger</h3>
+          <p class="cap-desc">
+            Track per-deliverable fees, milestone releases, and aggregate agency payout caps in Indian Rupees (INR) with complete cross-reconciliation workbooks.
+          </p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ========================================================
-       6. Soft Apple FAQs (Zero questions open by default)
+       6. Frequently Asked Questions (None Open By Default)
        ======================================================== -->
-  <section id="faqs" class="faqs-apple-section">
-    <div class="section-container faq-container">
+  <section id="faqs" class="faq-section">
+    <div class="section-container">
       <div class="section-header-centered">
-        <span class="section-eyebrow">CLARITY</span>
-        <h2 class="section-title">Questions & Answers</h2>
+        <span class="section-eyebrow">COMMON QUESTIONS</span>
+        <h2 class="section-title">Everything you need to know.</h2>
+        <p class="section-description">Clear answers to common questions about platform onboarding and audit workflows.</p>
       </div>
 
-      <div class="faq-accordion-list">
-        @for (faq of faqs; track $index) {
-          <div class="faq-item-card" [class.open]="openFaqIndex() === $index">
-            <button type="button" class="faq-trigger-btn" (click)="toggleFaq($index)">
-              <span class="faq-title-text">{{ faq.question }}</span>
-              <span class="faq-toggle-circle">
-                {{ openFaqIndex() === $index ? '−' : '+' }}
+      <div class="faq-accordion-wrap">
+        @for (faq of faqs; track faq.question; let i = $index) {
+          <div class="faq-row-item" [class.open]="openFaqIndex() === i">
+            <button
+              type="button"
+              class="faq-trigger-btn"
+              (click)="toggleFaq(i)"
+              [attr.aria-expanded]="openFaqIndex() === i"
+            >
+              <span class="faq-q-text">{{ faq.question }}</span>
+              <span class="faq-toggle-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  @if (openFaqIndex() === i) {
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  } @else {
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  }
+                </svg>
               </span>
             </button>
-            @if (openFaqIndex() === $index) {
-              <div class="faq-answer-pane">
-                <p class="faq-answer-text">{{ faq.answer }}</p>
+
+            @if (openFaqIndex() === i) {
+              <div class="faq-answer-panel">
+                <p>{{ faq.answer }}</p>
               </div>
             }
           </div>
@@ -440,100 +429,93 @@
   </section>
 
   <!-- ========================================================
-       7. Closing Keynote Invitation (Space Black Canvas)
+       7. Direct Inquiries Modal Trigger & Footer
        ======================================================== -->
-  <section class="closing-keynote-section">
-    <div class="closing-content">
-      <span class="closing-eyebrow">GET STARTED TODAY</span>
-      <h2 class="closing-headline">
-        Big ideas deserve<br>the whole picture.
-      </h2>
-      <p class="closing-desc">
-        Join forward-thinking brand leaders and top partner agencies orchestrating modern campaigns with pure perspective.
-      </p>
-      <div class="closing-cta-row">
-        <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="apple-pill-btn primary large">
-          <span>Onboard your workspace</span>
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-            <path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================================
-       8. Minimalist Apple Footer
-       ======================================================== -->
-  <footer class="apple-minimal-footer">
+  <footer class="footer">
     <div class="footer-container">
-      <div class="footer-grid">
-        <div class="footer-brand-box">
-          <img src="/assets/converge-logo.svg" alt="Converge" class="footer-logo" />
-          <p class="footer-tagline">
-            The fluid campaign operating system for brand leaders, partner agencies, and creator talent.
-          </p>
+      <div class="footer-main">
+        <div class="footer-brand">
+          <img src="/assets/converge-logo.svg" alt="Converge" class="footer-logo-img" />
+          <p class="footer-tagline">The verified deliverables workspace for enterprise brands and agency partners.</p>
         </div>
 
         <div class="footer-links-col">
-          <span class="f-col-title">Platform</span>
-          <button type="button" (click)="scrollToSection('capabilities')" class="f-nav-link">Capabilities</button>
-          <button type="button" (click)="scrollToSection('interactive-stage')" class="f-nav-link">Workflow</button>
-          <button type="button" (click)="scrollToSection('ecosystem')" class="f-nav-link">Ecosystem</button>
+          <span class="f-col-title">WORKSPACE</span>
+          <a routerLink="/login">Sign In</a>
+          <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }">Launch Workspace</a>
+          <button type="button" (click)="showFeedbackModal.set(true)" class="link-btn">Direct Support Inquiry</button>
         </div>
 
         <div class="footer-links-col">
-          <span class="f-col-title">Workspace</span>
-          <a routerLink="/login" class="f-nav-link">Sign in</a>
-          <a [routerLink]="['/login']" [queryParams]="{ mode: 'signup' }" class="f-nav-link">Create Account</a>
-          <button type="button" (click)="showFeedbackModal.set(true)" class="f-nav-link">Feedback & Inquiries</button>
+          <span class="f-col-title">AUDIT &amp; GOVERNANCE</span>
+          <button type="button" (click)="scrollToSection('deliverables-stage')" class="link-btn">Deliverable Pipeline</button>
+          <button type="button" (click)="scrollToSection('workflow-section')" class="link-btn">Reconciliation Ledger</button>
+          <button type="button" (click)="scrollToSection('capabilities')" class="link-btn">Role Isolation</button>
         </div>
       </div>
 
       <div class="footer-bottom-bar">
-        <span>© 2026 Converge Inc. All rights reserved.</span>
-        <button type="button" (click)="showFeedbackModal.set(true)" class="legal-link-btn">Support & Inquiries</button>
+        <span class="f-copy">&copy; 2026 Converge Platform. All rights reserved.</span>
+        <div class="f-legal">
+          <span>Enterprise Security</span>
+          <span>·</span>
+          <span>INR Ledger Compliance</span>
+        </div>
       </div>
     </div>
   </footer>
 
   <!-- ========================================================
-       9. Direct Inquiry Sheet Modal (macOS Frosted Sheet)
+       8. Support Feedback Modal
        ======================================================== -->
   @if (showFeedbackModal()) {
-    <div class="modal-backdrop-veil" (click)="showFeedbackModal.set(false)">
-      <div class="macos-sheet-modal" (click)="$event.stopPropagation()">
-        <div class="sheet-header">
-          <h3 class="sheet-title">Support & Inquiries</h3>
-          <button type="button" class="sheet-close-btn" (click)="showFeedbackModal.set(false)">✕</button>
+    <div class="modal-backdrop" (click)="showFeedbackModal.set(false)">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Direct Enterprise Inquiry</h3>
+            <p class="modal-sub">Send a message directly to our platform engineering and support team.</p>
+          </div>
+          <button type="button" class="btn-close-modal" (click)="showFeedbackModal.set(false)">✕</button>
         </div>
-        <p class="sheet-sub">
-          Your message will be sent directly to the Converge executive engineering team.
-        </p>
-        <div class="sheet-field">
-          <label>Your Email Address</label>
-          <input
-            type="email"
-            class="sheet-input"
-            [ngModel]="feedbackEmail()"
-            (ngModelChange)="feedbackEmail.set($event)"
-            placeholder="name@company.com"
-          />
+
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="fb-email" class="form-label">Your Work Email</label>
+            <input
+              id="fb-email"
+              type="email"
+              class="form-input"
+              [(ngModel)]="feedbackEmail"
+              placeholder="manager@company.com"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="fb-msg" class="form-label">Inquiry or Requirements</label>
+            <textarea
+              id="fb-msg"
+              class="form-textarea"
+              rows="4"
+              [(ngModel)]="feedbackMessage"
+              placeholder="Describe your brand workspace or agency partnership requirements..."
+            ></textarea>
+          </div>
         </div>
-        <div class="sheet-field">
-          <label>Message / Perspective *</label>
-          <textarea
-            class="sheet-textarea"
-            rows="4"
-            [ngModel]="feedbackMessage()"
-            (ngModelChange)="feedbackMessage.set($event)"
-            placeholder="Share your inquiry or perspective..."
-          ></textarea>
-        </div>
-        <div class="sheet-actions">
-          <button type="button" class="apple-pill-btn secondary" (click)="showFeedbackModal.set(false)">Cancel</button>
-          <button type="button" class="apple-pill-btn primary" [disabled]="isSendingFeedback()" (click)="submitFeedback()">
-            <span>{{ isSendingFeedback() ? 'Sending...' : 'Send Message' }}</span>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" (click)="showFeedbackModal.set(false)">Cancel</button>
+          <button
+            type="button"
+            class="btn-send"
+            [disabled]="isSendingFeedback()"
+            (click)="submitFeedback()"
+          >
+            @if (isSendingFeedback()) {
+              <span>Delivering...</span>
+            } @else {
+              <span>Send Message</span>
+            }
           </button>
         </div>
       </div>

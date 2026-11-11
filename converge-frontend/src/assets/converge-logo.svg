@@ -1,11 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 32" fill="none" height="32" width="144">
-  <g transform="translate(2, 4)">
-    <!-- Apple-grade Minimalist Converge Icon Mark: Dual converging arcs -->
-    <circle cx="12" cy="12" r="11" stroke="#1D1D1F" stroke-width="2.2" opacity="0.15" />
-    <path d="M6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12" stroke="#0071E3" stroke-width="2.6" stroke-linecap="round" />
-    <path d="M18 12C18 15.3137 15.3137 18 12 18C8.68629 18 6 15.3137 6 12" stroke="#1D1D1F" stroke-width="2.6" stroke-linecap="round" />
-    <circle cx="12" cy="12" r="2.5" fill="#0071E3" />
-  </g>
-  <!-- Apple Display Typographic Wordmark -->
-  <text x="34" y="22" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', 'Inter', sans-serif" font-weight="700" font-size="20" letter-spacing="-0.03em" fill="#1D1D1F">converge</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 152 32" fill="none" height="32" width="152">
+  <!-- Minimalist Geometric Converging Vertex Mark -->
+  <path d="M4 6L14 16L4 26" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 6L22 16L12 26" stroke="#0066CC" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="28" cy="16" r="3.2" fill="#0066CC"/>
+  <!-- Modern Geometric Typography -->
+  <text x="38" y="22.5" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-weight="700" font-size="20" letter-spacing="-0.035em" fill="#0F172A">converge</text>
 </svg>

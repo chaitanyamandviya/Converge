@@ -1,8 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Apple App Icon Squircle (Continuous curve) -->
-  <rect width="64" height="64" rx="16" fill="#1D1D1F"/>
-  <circle cx="32" cy="32" r="18" stroke="#FFFFFF" stroke-width="3" opacity="0.15" />
-  <path d="M22 32C22 26.4772 26.4772 22 32 22C37.5228 22 42 26.4772 42 32" stroke="#2997FF" stroke-width="4" stroke-linecap="round" />
-  <path d="M42 32C42 37.5228 37.5228 42 32 42C26.4772 42 22 37.5228 22 32" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" />
-  <circle cx="32" cy="32" r="4.5" fill="#2997FF" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" height="32" width="32">
+  <!-- Minimalist Geometric Converging Vertex Icon -->
+  <path d="M5 6L15 16L5 26" stroke="#0F172A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 6L23 16L13 26" stroke="#0066CC" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="28" cy="16" r="3" fill="#0066CC"/>
 </svg>
