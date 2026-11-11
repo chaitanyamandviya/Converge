@@ -60,6 +60,14 @@ import { ConfirmService } from '../../services/confirm.service';
               <span>{{ isAdmin() ? 'Brands & Organizations' : 'Overview' }}</span>
             </a>
 
+            <!-- Campaigns nav item visible to Brand Manager -->
+            @if (!isAdmin() && !isAgencyManager()) {
+              <a routerLink="/campaigns" routerLinkActive="active" class="nav-item">
+                <img src="/assets/megaphone.svg" alt="" class="nav-icon" />
+                <span>Campaigns</span>
+              </a>
+            }
+
             <!-- Agencies nav item visible to System Admin and Brand Manager -->
             @if (!isAgencyManager()) {
               <a routerLink="/agencies" routerLinkActive="active" class="nav-item">

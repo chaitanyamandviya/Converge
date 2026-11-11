@@ -1,89 +1,23 @@
 <div class="overview-view">
-  <!-- Top View Header -->
-  <header class="overview-header">
-    <div class="campaign-title-group">
-      <span class="campaign-tag">
-        {{ isAdmin() ? 'SYSTEM ADMIN CONSOLE' : (isAgency() ? 'AGENCY PORTAL' : (selectedCampaignId() === null ? 'MULTI-CAMPAIGN PORTFOLIO' : 'CAMPAIGN INSIGHTS')) }}
-      </span>
-      <h1 class="campaign-title">
-        {{ isAdmin() ? 'Converge Master Console' : (isAgency() ? 'Agency Partner Workspace' : (selectedCampaignId() === null ? 'Consolidated Portfolio' : (selectedCampaign()?.name || overview().activeCampaignName))) }}
-      </h1>
-      <p class="campaign-desc">
-        @if (isAdmin()) {
+  @if (isAdmin()) {
+    <!-- Top View Header for System Admin -->
+    <header class="overview-header">
+      <div class="campaign-title-group">
+        <span class="campaign-tag">SYSTEM ADMIN CONSOLE</span>
+        <h1 class="campaign-title">Converge Master Console</h1>
+        <p class="campaign-desc">
           Platform-level control: oversee brand workspaces, enterprise agency connections, and outbound Resend emails.
-        } @else if (isAgency()) {
-          Manage your contracted creator roster and live Instagram deliverable insights.
-        } @else if (selectedCampaignId() === null) {
-          {{ campaigns().length > 0 ? ('Consolidated multi-campaign analytics across ' + campaigns().length + ' active campaign(s) and partner agencies.') : 'No campaigns active yet — launch your first campaign below.' }}
-        } @else {
-          Timeframe: <strong>{{ selectedCampaign()?.timeframe || 'Active' }}</strong> · Allocated Budget: <strong>₹{{ formatInr(selectedCampaign()?.totalAgreedSpend) }}</strong>
-        }
-      </p>
-    </div>
+        </p>
+      </div>
 
-    <div class="header-actions">
-      @if (isAdmin()) {
+      <div class="header-actions">
         <button type="button" class="btn-action-primary" (click)="openBrandModal = true">
           <img src="/assets/plus.svg" alt="" class="btn-icon" />
           <span>Add brand</span>
         </button>
-      } @else if (isAgency()) {
-        <a routerLink="/content-library" class="btn-action-primary">
-          <img src="/assets/panels-top-left.svg" alt="" class="btn-icon" />
-          <span>Submit deliverables</span>
-        </a>
-      } @else {
-        <button type="button" class="btn-action-outline" (click)="exportReport()" title="Export Executive 5-Sheet Excel Workbook">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          <span>Export report ↗</span>
-        </button>
-        <button type="button" class="btn-action-primary" (click)="openCampaignModal = true">
-          <img src="/assets/plus.svg" alt="" class="btn-icon" />
-          <span>New campaign</span>
-        </button>
-      }
-    </div>
-  </header>
-
-  <!-- Brand Campaign Switcher & Portfolio Toolbar (Brand Workspace only) -->
-  @if (!isAdmin() && !isAgency()) {
-    <div class="campaign-switcher-toolbar">
-      <div class="campaign-tabs-list">
-        <button
-          type="button"
-          class="camp-tab"
-          [class.active]="selectedCampaignId() === null"
-          (click)="selectCampaign(null)"
-        >
-          <span class="tab-icon">🌐</span>
-          <span class="tab-title">Consolidated (All Campaigns)</span>
-          @if (campaigns().length > 0) {
-            <span class="tab-badge">{{ campaigns().length }}</span>
-          }
-        </button>
-
-        @for (camp of campaigns(); track camp.id) {
-          <button
-            type="button"
-            class="camp-tab"
-            [class.active]="selectedCampaignId() === camp.id"
-            (click)="selectCampaign(camp.id!)"
-          >
-            <span class="tab-dot" [class.active]="camp.status === 'ACTIVE'"></span>
-            <span class="tab-title">{{ camp.name }}</span>
-            <span class="tab-budget">₹{{ formatInr(camp.totalAgreedSpend) }}</span>
-          </button>
-        }
       </div>
-    </div>
-  }
+    </header>
 
-  <!-- Metric Highlights Grid -->
-  @if (isAdmin()) {
     <!-- System Admin Governance Metrics (Zero campaign views/likes) -->
     <section class="metrics-grid">
       <div class="metric-card">
@@ -130,70 +64,7 @@
         <span class="metric-footnote positive">{{ overview().spend > 0 ? 'Committed platform budget' : 'No budget deployed yet' }}</span>
       </div>
     </section>
-  } @else {
-    <!-- Brand / Agency Workspace Metrics -->
-    <section class="metrics-grid">
-      @if (isAgency()) {
-        <div class="metric-card">
-          <span class="metric-label">DELIVERABLES COVERAGE</span>
-          <div class="metric-val-row">
-            <span class="metric-value">{{ overview().contentSlotsFilled }} / {{ overview().totalContentSlots }}</span>
-          </div>
-          <div class="metric-progress-bar">
-            <div class="progress-fill" [style.width.%]="overview().coveragePercent"></div>
-          </div>
-          <span class="metric-footnote positive">{{ overview().totalContentSlots > 0 ? (overview().coveragePercent + '% live insights synced') : 'No deliverables submitted yet' }}</span>
-        </div>
-      } @else {
-        <div class="metric-card">
-          <span class="metric-label">TOTAL COMMITTED SPEND</span>
-          <div class="metric-val-row">
-            <span class="metric-value">₹{{ formatInr(overview().spend) }}</span>
-          </div>
-          <div class="metric-progress-bar">
-            <div class="progress-fill" [style.width.%]="overview().spend > 0 ? 100 : 0"></div>
-          </div>
-          <span class="metric-footnote positive">{{ overview().spend > 0 ? 'Committed campaign budget' : 'No budget deployed yet' }}</span>
-        </div>
-      }
 
-      <div class="metric-card">
-        <span class="metric-label">{{ isAgency() ? 'AGENCY VIEWS DELIVERED' : 'TOTAL VIEWS' }}</span>
-        <div class="metric-val-row">
-          <span class="metric-value">{{ overview().views | number }}</span>
-        </div>
-        <div class="metric-trend-row">
-          <img src="/assets/views-trend.svg" alt="" class="trend-spark" />
-        </div>
-        <span class="metric-footnote positive">{{ overview().views > 0 ? 'Live synced reach' : 'Awaiting live posts' }}</span>
-      </div>
-
-      <div class="metric-card">
-        <span class="metric-label">{{ isAgency() ? 'AGENCY ENGAGEMENTS' : 'TOTAL LIKES' }}</span>
-        <div class="metric-val-row">
-          <span class="metric-value">{{ overview().likes | number }}</span>
-        </div>
-        <div class="metric-trend-row">
-          <img src="/assets/engagements-trend.svg" alt="" class="trend-spark" />
-        </div>
-        <span class="metric-footnote positive">{{ overview().likes > 0 ? 'Verified engagements' : 'No engagements recorded yet' }}</span>
-      </div>
-
-      <div class="metric-card">
-        <span class="metric-label">{{ isAgency() ? 'ACTIVE ROSTER TALENT' : 'ONBOARDED CREATORS' }}</span>
-        <div class="metric-val-row">
-          <span class="metric-value">{{ overview().totalCreators }}</span>
-        </div>
-        <div class="metric-trend-row">
-          <img src="/assets/views-trend-1.svg" alt="" class="trend-spark" />
-        </div>
-        <span class="metric-footnote positive">Rostered accounts</span>
-      </div>
-    </section>
-  }
-
-  <!-- Split Row: Admin Brands View vs Brand/Agency View -->
-  @if (isAdmin()) {
     <!-- Admin View: Brand Workspaces & Connected Agency Hierarchy (Full User Directory) -->
     <div class="admin-hierarchy-container">
       <div class="card-head">
@@ -397,283 +268,300 @@
       }
     </div>
   } @else {
-    <!-- Brand / Agency View -->
+    <!-- Brand / Agency Workspace: Delivering EXACTLY the Landing Page Experience (Image 2 & Image 3) -->
+    <div class="landing-preview-scope">
+      <!-- 1. Workspace Bar -->
+      <div class="workspace-bar">
+        <span>{{ brandDisplayName() }} / Overview</span>
+      </div>
 
-    <!-- ========================================================
-         Landing Page Promised Feature Suite:
-         1. Interactive Analytics ("Attention, in perspective." / Tabs)
-         2. Operational Health ("The Campaign Desk" & "A little follow-up")
-         ======================================================== -->
-    <div class="landing-promised-analytics-hub">
-      <!-- Left Column: Deep Navy Interactive Analytics Card -->
-      <div class="analytics-card-dark">
-        <!-- View Controls / Tabs -->
-        <div class="analytics-tabs-bar">
-          <button
-            type="button"
-            class="hub-tab-btn"
-            [class.active]="activeAnalyticsTab() === 'performance'"
-            (click)="setAnalyticsTab('performance')"
-          >
-            Performance
-          </button>
-          <button
-            type="button"
-            class="hub-tab-btn"
-            [class.active]="activeAnalyticsTab() === 'agency'"
-            (click)="setAnalyticsTab('agency')"
-          >
-            By agency
-          </button>
-          <button
-            type="button"
-            class="hub-tab-btn"
-            [class.active]="activeAnalyticsTab() === 'creator'"
-            (click)="setAnalyticsTab('creator')"
-          >
-            By creator
-          </button>
+      <!-- 2. Heading with Mascot and Actions (Image 2) -->
+      <div class="dashboard-heading">
+        <div class="intro-titles">
+          <h1 class="dashboard-title">The whole picture.</h1>
+          <p class="dashboard-sub">{{ activeCampaignSubtitle() }}</p>
         </div>
 
-        <!-- Tab 1: Performance Plot -->
-        @if (activeAnalyticsTab() === 'performance') {
-          <div class="hub-report-card">
-            <div class="hub-report-header">
-              <span class="hub-report-title">Attention, in perspective.</span>
-              <span class="hub-tag-dark">{{ selectedCampaign() ? selectedCampaign()!.name.toUpperCase() : 'CAMPAIGN ROLLUP' }}</span>
-            </div>
-
-            <div class="hub-report-metric-row">
-              <div class="hub-views-col">
-                <span class="hub-views-num">{{ (overview().views || 0) | number }}</span>
-                <span class="hub-views-sub">Content views · {{ overview().contentSlotsFilled || withInsightsCount() }} live deliverable(s)</span>
+        <div class="dashboard-actions-wrap">
+          <!-- Floating Mascot Art Peeking Over Export Button -->
+          <div class="perspective-mascot">
+            <div class="mascot-frame">
+              <div class="mascot-piece piece-eyeball">
+                <img src="/assets/eyeball.svg" alt="" />
               </div>
-
-              <div class="hub-report-legend">
-                <div class="hub-legend-row">
-                  <span class="hub-legend-key key-blue"></span>
-                  <span class="hub-legend-text">Views</span>
-                </div>
-                <div class="hub-legend-row">
-                  <span class="hub-legend-key key-coral"></span>
-                  <span class="hub-legend-text">Engagements</span>
-                </div>
+              <div class="mascot-piece piece-magnifier-handle">
+                <img src="/assets/magnifier-handle.svg" alt="" />
+              </div>
+              <div class="mascot-piece piece-magnifier-ring">
+                <img src="/assets/magnifier-ring.svg" alt="" />
+              </div>
+              <div class="mascot-piece piece-spark">
+                <img src="/assets/yellow-spark.svg" alt="" />
+              </div>
+              <div class="mascot-piece piece-green-accent">
+                <img src="/assets/green-accent.svg" alt="" />
               </div>
             </div>
+          </div>
 
-            <!-- SVG Multi-Line Trend Chart Canvas -->
-            <div class="hub-canvas-area">
-              <svg viewBox="0 0 600 130" class="hub-plot-svg" preserveAspectRatio="none">
-                <line x1="0" y1="20" x2="600" y2="20" stroke="rgba(246, 244, 236, 0.08)" stroke-width="1" />
-                <line x1="0" y1="60" x2="600" y2="60" stroke="rgba(246, 244, 236, 0.08)" stroke-width="1" />
-                <line x1="0" y1="100" x2="600" y2="100" stroke="rgba(246, 244, 236, 0.08)" stroke-width="1" />
+          <div class="btn-group-row">
+            @if (!isAgency()) {
+              <button type="button" class="export-btn" (click)="exportReport()" title="Export Executive 5-Sheet Excel Workbook">
+                <span>Export report ↗</span>
+              </button>
+              <button type="button" class="btn-primary-brand" (click)="openCampaignModal = true">
+                <img src="/assets/plus.svg" alt="" class="btn-icon-white" />
+                <span>New campaign</span>
+              </button>
+            } @else {
+              <a routerLink="/content-library" class="btn-primary-brand">
+                <img src="/assets/panels-top-left.svg" alt="" class="btn-icon-white" />
+                <span>Submit deliverables</span>
+              </a>
+            }
+          </div>
+        </div>
+      </div>
 
+      <!-- Brand Campaign Switcher & Portfolio Toolbar (Brand Workspace only) -->
+      @if (!isAgency()) {
+        <div class="campaign-switcher-toolbar">
+          <div class="campaign-tabs-list">
+            <button
+              type="button"
+              class="camp-tab"
+              [class.active]="selectedCampaignId() === null"
+              (click)="selectCampaign(null)"
+            >
+              <span class="tab-icon">🌐</span>
+              <span class="tab-title">Consolidated (All Campaigns)</span>
+              @if (campaigns().length > 0) {
+                <span class="tab-badge">{{ campaigns().length }}</span>
+              }
+            </button>
+
+            @for (camp of campaigns(); track camp.id) {
+              <button
+                type="button"
+                class="camp-tab"
+                [class.active]="selectedCampaignId() === camp.id"
+                (click)="selectCampaign(camp.id!)"
+              >
+                <span class="tab-dot" [class.active]="camp.status === 'ACTIVE'"></span>
+                <span class="tab-title">{{ camp.name }}</span>
+                <span class="tab-budget">₹{{ formatInr(camp.totalAgreedSpend) }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 3. Summary 4 Metrics (Image 2) -->
+      <div class="summary-metrics">
+        <div class="summary-metric-card">
+          <span class="metric-label">Views</span>
+          <span class="metric-value">{{ formattedViews() }}</span>
+          <span class="metric-detail">{{ totalContentCount() }} content items</span>
+        </div>
+        <div class="summary-metric-card">
+          <span class="metric-label">Engagements</span>
+          <span class="metric-value">{{ formattedEngagements() }}</span>
+          <span class="metric-detail">Likes + comments</span>
+        </div>
+        <div class="summary-metric-card">
+          <span class="metric-label">Creator spend</span>
+          <span class="metric-value">₹{{ formattedSpend() }}</span>
+          <span class="metric-detail">Agreed budget · INR</span>
+        </div>
+        <div class="summary-metric-card">
+          <span class="metric-label">Insights coverage</span>
+          <span class="metric-value">{{ coveragePercent() }}%</span>
+          <span class="metric-detail">{{ withInsightsCount() }} of {{ totalContentCount() || 1 }} items</span>
+        </div>
+      </div>
+
+      <!-- 4. Performance & Follow-up Row (Image 2) -->
+      <div class="performance-followup-row">
+        <div class="performance-chart-box">
+          <div class="chart-header">
+            <div class="chart-title-area">
+              <span class="chart-title">Content performance</span>
+              <div class="chart-pills-bar">
+                <button
+                  type="button"
+                  class="chart-pill"
+                  [class.active]="activeAnalyticsTab() === 'performance'"
+                  (click)="setAnalyticsTab('performance')"
+                >
+                  Trends
+                </button>
+                <button
+                  type="button"
+                  class="chart-pill"
+                  [class.active]="activeAnalyticsTab() === 'agency'"
+                  (click)="setAnalyticsTab('agency')"
+                >
+                  By agency
+                </button>
+                <button
+                  type="button"
+                  class="chart-pill"
+                  [class.active]="activeAnalyticsTab() === 'creator'"
+                  (click)="setAnalyticsTab('creator')"
+                >
+                  By creator
+                </button>
+              </div>
+            </div>
+            <span class="chart-period">{{ chartPeriodText() }}</span>
+          </div>
+
+          @if (activeAnalyticsTab() === 'performance') {
+            <div class="chart-canvas-area">
+              <div class="chart-gridline" style="top: 0;"></div>
+              <div class="chart-gridline" style="top: 35px;"></div>
+              <div class="chart-gridline" style="top: 70px;"></div>
+              <div class="chart-gridline" style="top: 105px;"></div>
+              <svg viewBox="0 0 600 125" class="performance-svg" preserveAspectRatio="none">
                 <defs>
-                  <linearGradient id="hubViewsGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#3D5EAB" stop-opacity="0.45"/>
-                    <stop offset="100%" stop-color="#3D5EAB" stop-opacity="0.0"/>
+                  <linearGradient id="chartViewsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#2C54A6" stop-opacity="0.18"/>
+                    <stop offset="100%" stop-color="#2C54A6" stop-opacity="0.0"/>
                   </linearGradient>
                 </defs>
-
-                <path [attr.d]="viewsAreaPath()" fill="url(#hubViewsGradient)" />
-                <path [attr.d]="viewsLinePath()" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" />
-                <path [attr.d]="engagementsLinePath()" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round" />
+                <path [attr.d]="viewsAreaPath()" fill="url(#chartViewsGradient)" />
+                <path [attr.d]="viewsLinePath()" fill="none" stroke="#2C54A6" stroke-width="2.6" stroke-linecap="round" />
+                <path [attr.d]="engagementsLinePath()" fill="none" stroke="#DC543B" stroke-width="1.8" stroke-linecap="round" />
               </svg>
-
-              <div class="hub-dates-row">
-                @for (d of chartDates(); track d) {
-                  <span>{{ d }}</span>
-                }
+              <div class="chart-axis-labels">
+                <span>{{ chartDates()[0] || 'Oct 1' }}</span>
+                <span>{{ chartDates()[chartDates().length - 1] || 'Oct 28' }}</span>
               </div>
             </div>
-
-            <!-- Coverage Footer -->
-            <div class="hub-report-footer">
-              <span class="hub-coverage-statement">
-                {{ withInsightsCount() }} of {{ contentItems().length }} content items have authorized insights
-              </span>
-              <span class="hub-coverage-pct">{{ coveragePercent() }}% coverage</span>
-            </div>
-          </div>
-        }
-
-        <!-- Tab 2: By Agency Breakdown -->
-        @if (activeAnalyticsTab() === 'agency') {
-          <div class="hub-report-card">
-            <div class="hub-report-header">
-              <span class="hub-report-title">Contribution by partner agency.</span>
-              <span class="hub-tag-dark">{{ agencies().length }} PARTNER AGENCIES</span>
-            </div>
-
-            <div class="hub-report-metric-row">
-              <div class="hub-views-col">
-                <span class="hub-views-num">₹{{ formatInr(overview().spend) }}</span>
-                <span class="hub-views-sub">Total committed budget across {{ contentItems().length }} deliverable slots</span>
-              </div>
-              <div class="hub-report-legend">
-                <div class="hub-legend-row">
-                  <span class="hub-legend-key key-blue"></span>
-                  <span class="hub-legend-text">Views Share</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="hub-breakdown-list">
+          } @else if (activeAnalyticsTab() === 'agency') {
+            <div class="chart-subview-panel">
               @if (agencyBreakdown().length === 0) {
-                <div class="hub-empty-breakdown">
-                  No agencies connected to this workspace yet.
-                </div>
+                <div class="chart-empty-state">No partner agencies active in this workspace yet.</div>
               } @else {
-                @for (ag of agencyBreakdown(); track ag.name) {
-                  <div class="hub-breakdown-row">
-                    <div class="hub-breakdown-meta">
-                      <strong>{{ ag.name }}</strong>
-                      <span>{{ ag.creatorsCount }} creators · ₹{{ formatInr(ag.spend) }} · {{ ag.views | number }} views</span>
+                <div class="chart-breakdown-list">
+                  @for (ag of agencyBreakdown(); track ag.name) {
+                    <div class="chart-breakdown-row">
+                      <div class="breakdown-meta-col">
+                        <strong>{{ ag.name }}</strong>
+                        <span>{{ ag.creatorsCount }} creators · ₹{{ formatInr(ag.spend) }} · {{ ag.views | number }} views</span>
+                      </div>
+                      <div class="breakdown-track">
+                        <div class="breakdown-fill" [style.width.%]="ag.viewsShare" [style.background-color]="ag.color"></div>
+                      </div>
                     </div>
-                    <div class="hub-bar-track">
-                      <div class="hub-bar-fill" [style.width.%]="ag.viewsShare" [style.background-color]="ag.color"></div>
-                    </div>
-                  </div>
-                }
+                  }
+                </div>
               }
             </div>
-
-            <div class="hub-report-footer">
-              <span class="hub-coverage-statement">All {{ agencies().length }} partner agencies connected</span>
-              <span class="hub-coverage-pct">{{ agencies().length > 0 ? '100% active' : '0% connected' }}</span>
-            </div>
-          </div>
-        }
-
-        <!-- Tab 3: By Creator Breakdown -->
-        @if (activeAnalyticsTab() === 'creator') {
-          <div class="hub-report-card">
-            <div class="hub-report-header">
-              <span class="hub-report-title">Top creator contribution.</span>
-              <span class="hub-tag-dark">{{ creators().length }} ROSTERED CREATORS</span>
-            </div>
-
-            <div class="hub-report-metric-row">
-              <div class="hub-views-col">
-                <span class="hub-views-num">{{ (overview().views || 0) | number }}</span>
-                <span class="hub-views-sub">Delivered reach across {{ creators().length }} creator profiles</span>
-              </div>
-              <div class="hub-report-legend">
-                <div class="hub-legend-row">
-                  <span class="hub-legend-key key-blue"></span>
-                  <span class="hub-legend-text">Views Share</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="hub-breakdown-list">
+          } @else {
+            <div class="chart-subview-panel">
               @if (creatorBreakdown().length === 0) {
-                <div class="hub-empty-breakdown">
-                  No creators rostered under active agencies yet.
-                </div>
+                <div class="chart-empty-state">No creator deliverables submitted yet.</div>
               } @else {
-                @for (cr of creatorBreakdown(); track cr.handle) {
-                  <div class="hub-breakdown-row">
-                    <div class="hub-breakdown-meta">
-                      <strong>{{ cr.name }} ({{ cr.handle }})</strong>
-                      <span>{{ cr.agencyName }} · {{ cr.deliverablesCount }} deliverables · {{ cr.views | number }} views</span>
+                <div class="chart-breakdown-list">
+                  @for (cr of creatorBreakdown(); track cr.handle) {
+                    <div class="chart-breakdown-row">
+                      <div class="breakdown-meta-col">
+                        <strong>{{ cr.name }} ({{ cr.handle }})</strong>
+                        <span>{{ cr.agencyName }} · {{ cr.deliverablesCount }} deliverables · {{ cr.views | number }} views</span>
+                      </div>
+                      <div class="breakdown-track">
+                        <div class="breakdown-fill" [style.width.%]="cr.viewsShare" [style.background-color]="cr.color"></div>
+                      </div>
                     </div>
-                    <div class="hub-bar-track">
-                      <div class="hub-bar-fill" [style.width.%]="cr.viewsShare" [style.background-color]="cr.color"></div>
-                    </div>
-                  </div>
-                }
+                  }
+                </div>
               }
             </div>
-
-            <div class="hub-report-footer">
-              <span class="hub-coverage-statement">{{ creators().length }} total contracted talent</span>
-              <span class="hub-coverage-pct">Verified Talent</span>
-            </div>
-          </div>
-        }
-      </div>
-
-      <!-- Right Column: Campaign Desk & A Little Follow-up -->
-      <div class="hub-desk-col">
-        <!-- Card 1: The Campaign Desk -->
-        <div class="hub-campaign-desk">
-          <div class="hub-desk-window-bar">
-            <span class="hub-desk-title">THE CAMPAIGN DESK</span>
-            <span class="hub-desk-subtitle">{{ selectedCampaign() ? 'Active Focus' : 'Consolidated' }}</span>
-          </div>
-
-          <div class="hub-desk-inner-card">
-            <div class="hub-desk-card-header">
-              <div class="hub-camp-title-group">
-                <span class="hub-camp-tag">{{ (user()?.organizationName || 'BRAND').toUpperCase() }}</span>
-                <h4 class="hub-camp-name">{{ selectedCampaign()?.name || overview().activeCampaignName || 'Active Workspace' }}</h4>
-              </div>
-              <div class="hub-status-pill">
-                <span>● In progress</span>
-              </div>
-            </div>
-
-            <div class="hub-camp-meta-row">
-              <div class="hub-meta-item">
-                <span class="hub-meta-label">PARTNERS</span>
-                <span class="hub-meta-val">{{ agencies().length }} agencies · {{ overview().totalCreators }} creators</span>
-              </div>
-              <div class="hub-meta-item">
-                <span class="hub-meta-label">AGREED SPEND</span>
-                <span class="hub-meta-val">₹{{ formatInr(overview().spend) }} INR</span>
-              </div>
-            </div>
-
-            <!-- Segmented Progress Bar -->
-            <div class="hub-progress-segments">
-              <span class="hub-segment seg-blue" [style.width.%]="deskSegments().insightsWidth" title="With Insights"></span>
-              <span class="hub-segment seg-green" [style.width.%]="deskSegments().awaitingWidth" title="Awaiting Insights"></span>
-              <span class="hub-segment seg-yellow" [style.width.%]="deskSegments().missingWidth" title="Missing URLs"></span>
-              <span class="hub-segment seg-gray" [style.width.%]="deskSegments().remainingWidth" title="Open Slots"></span>
-            </div>
-
-            <!-- Deliverables Checklist -->
-            <div class="hub-deliverables-box">
-              <div class="hub-deliverable-row">
-                <span class="hub-marker marker-green"></span>
-                <span class="hub-deliv-name">Creator talent</span>
-                <span class="hub-deliv-status">{{ overview().totalCreators }} active</span>
-              </div>
-              <div class="hub-deliverable-row">
-                <span class="hub-marker marker-blue"></span>
-                <span class="hub-deliv-name">Content URLs</span>
-                <span class="hub-deliv-status">{{ contentItems().length }} added</span>
-              </div>
-              <div class="hub-deliverable-row">
-                <span class="hub-marker marker-coral"></span>
-                <span class="hub-deliv-name">Authorized insights</span>
-                <span class="hub-deliv-status">{{ withInsightsCount() }} of {{ contentItems().length }} available</span>
-              </div>
-            </div>
-          </div>
+          }
         </div>
 
-        <!-- Card 2: A Little Follow-up -->
-        <div class="hub-followup-card">
-          <div class="hub-followup-header">
-            <div class="hub-followup-title">A little follow-up</div>
-            <span class="hub-followup-badge">{{ missingUrlsCount() + awaitingInsightsCount() }} actions</span>
-          </div>
-          <p class="hub-followup-desc">
-            @if (missingUrlsCount() > 0 || awaitingInsightsCount() > 0) {
-              <strong>{{ missingUrlsCount() }} content URLs missing</strong> · {{ awaitingInsightsCount() }} awaiting authorized insights.
-            } @else {
-              All content items are up to date and verified with live insights.
-            }
+        <!-- Follow-up Box (Image 2) -->
+        <div class="followup-box">
+          <div class="followup-title">A little follow-up</div>
+          <p class="followup-desc">
+            {{ followUpDescription() }}
           </p>
-          <a routerLink="/content-library" class="hub-followup-link">Review content slots →</a>
-          <div class="hub-followup-progress-bar">
-            <div class="hub-progress-fill" [style.width.%]="coveragePercent()"></div>
+          <a routerLink="/content-library" class="followup-link">Review content slots →</a>
+          <div class="followup-progress-bar">
+            <div class="progress-fill" [style.width.%]="coveragePercent()"></div>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- 5. The Campaign Desk (Image 3) -->
+      <section id="campaign-desk" class="campaign-desk-container">
+        <div class="desk-window-bar">
+          <span class="desk-title">THE CAMPAIGN DESK</span>
+          <span class="desk-subtitle">{{ selectedCampaign() ? 'Active workspace' : 'Sample workspace' }}</span>
+        </div>
+
+        <!-- White Inner Card -->
+        <div class="desk-inner-card">
+          <div class="desk-card-header">
+            <div class="campaign-title-group">
+              <span class="campaign-tag">{{ (selectedCampaign()?.name ? brandDisplayName() : 'ASTER & CO.').toUpperCase() }} / {{ currentMonthYear() }}</span>
+              <h4 class="campaign-name">{{ selectedCampaign()?.name || overview().activeCampaignName || 'Autumn essentials' }}</h4>
+            </div>
+            <div class="status-pill-green">
+              <span>● In progress</span>
+            </div>
+          </div>
+
+          <div class="campaign-meta-row">
+            <div class="meta-item">
+              <span class="meta-label">PARTNERS</span>
+              <span class="meta-val">{{ agencies().length }} agencies · {{ overview().totalCreators }} creators</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">AGREED SPEND</span>
+              <span class="meta-val">₹{{ formattedSpend() }} INR</span>
+            </div>
+          </div>
+
+          <!-- Segmented Progress Bar -->
+          <div class="desk-progress-segments">
+            <span class="segment segment-blue" [style.flex]="deskSegments().insightsWidth" title="With Insights"></span>
+            <span class="segment segment-green" [style.flex]="deskSegments().awaitingWidth" title="Awaiting Insights"></span>
+            <span class="segment segment-yellow" [style.flex]="deskSegments().missingWidth" title="Missing URLs"></span>
+            <span class="segment segment-gray" [style.flex]="deskSegments().remainingWidth" title="Open Slots"></span>
+          </div>
+        </div>
+
+        <!-- Deliverables Box -->
+        <div class="deliverables-box">
+          <div class="deliverable-row">
+            <div class="deliv-left">
+              <span class="status-marker marker-green"></span>
+              <span class="deliverable-name">Creator briefs</span>
+            </div>
+            <span class="deliverable-status">{{ briefsCountText() }}</span>
+          </div>
+          <div class="deliverable-row">
+            <div class="deliv-left">
+              <span class="status-marker marker-blue"></span>
+              <span class="deliverable-name">Content URLs</span>
+            </div>
+            <span class="deliverable-status">{{ urlsCountText() }}</span>
+          </div>
+          <div class="deliverable-row">
+            <div class="deliv-left">
+              <span class="status-marker marker-coral"></span>
+              <span class="deliverable-name">Authorized insights</span>
+            </div>
+            <span class="deliverable-status">{{ insightsCountText() }}</span>
+          </div>
+        </div>
+
+        <p class="desk-note">
+          All the little details. Finally in one place.
+        </p>
+      </section>
 
     <!-- All Campaigns Portfolio Table (Consolidated View) -->
     @if (!isAdmin() && !isAgency() && selectedCampaignId() === null && campaigns().length > 0) {
@@ -878,6 +766,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   }
 

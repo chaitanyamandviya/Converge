@@ -1966,3 +1966,614 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ========================================================
+   Landing Page Inspired Dashboard Experience:
+   "The whole picture." (Image 2) & "The Campaign Desk" (Image 3)
+   ======================================================== */
+
+.landing-preview-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+
+.workspace-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #787774;
+  letter-spacing: 0.2px;
+}
+
+.dashboard-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: relative;
+  padding-bottom: 4px;
+}
+
+.intro-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -1.2px;
+  color: #1F2124;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.dashboard-sub {
+  font-size: 13px;
+  color: #787774;
+  margin: 0;
+  font-weight: 400;
+}
+
+.dashboard-actions-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Perspective Mascot Floating Illustration (Image 2) */
+.perspective-mascot {
+  position: absolute;
+  top: -68px;
+  right: 18px;
+  width: 135px;
+  height: 125px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.mascot-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.mascot-piece {
+  position: absolute;
+}
+
+.piece-eyeball {
+  left: 16.09%;
+  top: 21.86%;
+  width: 48.64%;
+  height: 51.02%;
+}
+
+.piece-magnifier-handle {
+  left: 63.33%;
+  top: 53.85%;
+  width: 21.15%;
+  height: 31.51%;
+}
+
+.piece-magnifier-ring {
+  left: 33.31%;
+  top: 21.52%;
+  width: 39.55%;
+  height: 42.6%;
+}
+
+.piece-spark {
+  left: 71.9%;
+  top: 12.31%;
+  width: 13.34%;
+  height: 15.38%;
+}
+
+.piece-green-accent {
+  left: 16.35%;
+  top: 73.47%;
+  width: 24.04%;
+  height: 11.85%;
+}
+
+.btn-group-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.export-btn {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1F2124;
+  background-color: #FFFFFF;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.export-btn:hover {
+  background-color: #F9F9F9;
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-primary-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #2C54A6;
+  color: #FFFFFF;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(44, 84, 166, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-primary-brand:hover {
+  background: #234385;
+  transform: translateY(-1px);
+}
+
+.btn-icon-white {
+  width: 12px;
+  height: 12px;
+  filter: brightness(0) invert(1);
+}
+
+/* Summary 4 Metrics (Image 2) */
+.summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 20px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  gap: 16px;
+}
+
+.summary-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 16px;
+}
+
+.summary-metric-card:not(:last-child) {
+  border-right: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.summary-metric-card .metric-label {
+  font-size: 11px;
+  color: #787774;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.summary-metric-card .metric-value {
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -1.2px;
+  color: #1F2124;
+  line-height: 1.1;
+}
+
+.summary-metric-card .metric-detail {
+  font-size: 11px;
+  color: #4C825A;
+  font-weight: 500;
+}
+
+/* Performance and Follow-up Row (Image 2) */
+.performance-followup-row {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.performance-chart-box {
+  flex: 1;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-title-area {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1F2124;
+}
+
+.chart-pills-bar {
+  display: flex;
+  background: #F4F1E8;
+  padding: 2px;
+  border-radius: 999px;
+  gap: 2px;
+}
+
+.chart-pill {
+  background: transparent;
+  border: none;
+  font-size: 10px;
+  font-weight: 600;
+  color: #787774;
+  padding: 3px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chart-pill.active {
+  background: #FFFFFF;
+  color: #1F2124;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.chart-period {
+  font-size: 11px;
+  color: #787774;
+}
+
+.chart-canvas-area {
+  height: 130px;
+  position: relative;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.chart-gridline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.performance-svg {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 100%;
+  height: 100px;
+}
+
+.chart-axis-labels {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #787774;
+}
+
+.chart-subview-panel {
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.chart-empty-state {
+  text-align: center;
+  font-size: 12px;
+  color: #787774;
+  padding: 30px;
+}
+
+.chart-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chart-breakdown-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.breakdown-meta-col {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #1F2124;
+}
+
+.breakdown-meta-col strong {
+  font-weight: 600;
+}
+
+.breakdown-meta-col span {
+  color: #787774;
+  font-size: 10px;
+}
+
+.breakdown-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.breakdown-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* Follow-up Box (Image 2) */
+.followup-box {
+  width: 240px;
+  background-color: #E9EDDF;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+  justify-content: space-between;
+}
+
+.followup-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1F2124;
+}
+
+.followup-desc {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #4A4A4A;
+  margin: 0;
+}
+
+.followup-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2C54A6;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.followup-link:hover {
+  text-decoration: underline;
+}
+
+.followup-progress-bar {
+  width: 100%;
+  height: 5px;
+  background-color: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.followup-progress-bar .progress-fill {
+  height: 100%;
+  background-color: #4C825A;
+  border-radius: 999px;
+}
+
+/* ========================================================
+   THE CAMPAIGN DESK (Image 3)
+   ======================================================== */
+.campaign-desk-container {
+  background-color: #F6F4EC;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.desk-window-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.desk-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #1F2124;
+}
+
+.desk-subtitle {
+  font-size: 11px;
+  color: #787774;
+}
+
+.desk-inner-card {
+  background-color: #FFFFFF;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.desk-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.campaign-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #787774;
+  margin-bottom: 4px;
+}
+
+.campaign-name {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  color: #1F2124;
+  margin: 0;
+}
+
+.status-pill-green {
+  background-color: #E9EDDF;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4C825A;
+  display: inline-flex;
+  align-items: center;
+}
+
+.campaign-meta-row {
+  display: flex;
+  gap: 40px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #787774;
+}
+
+.meta-val {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1F2124;
+}
+
+.desk-progress-segments {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.segment {
+  height: 8px;
+  border-radius: 4px;
+  transition: flex 0.3s ease;
+}
+
+.segment-blue { background-color: #2C54A6; }
+.segment-green { background-color: #4C825A; }
+.segment-yellow { background-color: #F4DA40; }
+.segment-gray { background-color: #D9D9D9; }
+
+/* Deliverables Box (Image 3) */
+.deliverables-box {
+  background-color: #ECE9DE;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deliverable-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.deliv-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-marker {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.marker-green { background-color: #4C825A; }
+.marker-blue { background-color: #2C54A6; }
+.marker-coral { background-color: #DC543B; }
+
+.deliverable-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1F2124;
+}
+
+.deliverable-status {
+  font-size: 12px;
+  font-weight: 500;
+  color: #787774;
+}
+
+.desk-note {
+  font-size: 12px;
+  font-style: italic;
+  color: #787774;
+  margin: 0;
+  padding-left: 4px;
+}
+
+@media (max-width: 900px) {
+  .summary-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .performance-followup-row {
+    flex-direction: column;
+  }
+  .followup-box {
+    width: 100%;
+  }
+  .campaign-meta-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

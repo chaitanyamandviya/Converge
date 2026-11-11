@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, computed, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PortalService, Brand, Agency, Campaign } from '../services/portal.service';
 import { AuthService } from '../services/auth.service';
@@ -22,6 +22,7 @@ export class DashboardComponent implements OnInit {
   private toast = inject(ToastService);
   private confirmService = inject(ConfirmService);
   private excelExportService = inject(ExcelExportService);
+  private route = inject(ActivatedRoute);
 
   user = this.authService.currentUser;
   isAdmin = computed(() => this.user()?.role === 'SYSTEM_ADMIN');
@@ -41,6 +42,92 @@ export class DashboardComponent implements OnInit {
     this.activeAnalyticsTab.set(tab);
   }
 
+  brandDisplayName = computed(() => {
+    return this.user()?.organizationName || 'Aster & Co.';
+  });
+
+  currentMonthYear = computed(() => {
+    const now = new Date();
+    return now.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
+  });
+
+  activeCampaignSubtitle = computed(() => {
+    const camp = this.selectedCampaign();
+    if (camp) {
+      return `${camp.name} · Partnership overview`;
+    }
+    if (this.overview().activeCampaignName) {
+      return `${this.overview().activeCampaignName} · Partnership overview`;
+    }
+    return 'Consolidated · Partnership overview';
+  });
+
+  chartPeriodText = computed(() => {
+    const camp = this.selectedCampaign();
+    if (camp?.timeframe) return camp.timeframe;
+    const dates = this.chartDates();
+    if (dates.length >= 2) {
+      return `${dates[0]} – ${dates[dates.length - 1]}, 2026`;
+    }
+    return 'Current Period';
+  });
+
+  formatMetricNumber(num: number): string {
+    if (!num || num === 0) return '0';
+    if (num >= 1_000_000) {
+      const m = num / 1_000_000;
+      return (m % 1 === 0 ? m.toFixed(0) : m.toFixed(2)) + 'M';
+    }
+    if (num >= 10_000) {
+      const k = num / 1_000;
+      return (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)) + 'K';
+    }
+    if (num >= 1_000) {
+      return num.toLocaleString('en-IN');
+    }
+    return String(num);
+  }
+
+  formattedViews = computed(() => this.formatMetricNumber(this.overview().views || 0));
+
+  formattedEngagements = computed(() => {
+    const eng = (this.overview().likes || 0) + (this.overview().comments || 0);
+    return this.formatMetricNumber(eng);
+  });
+
+  formattedSpend = computed(() => this.formatInr(this.overview().spend || 0));
+
+  totalContentCount = computed(() => this.contentItems().length);
+
+  briefsCountText = computed(() => {
+    const count = this.creators().length;
+    return `${count} of ${count || 24} shared`;
+  });
+
+  urlsCountText = computed(() => {
+    const added = this.contentItems().filter(i => !!i.contentUrl).length;
+    const total = Math.max(this.contentItems().length, this.overview().totalContentSlots, 1);
+    return `${added} of ${total} added`;
+  });
+
+  insightsCountText = computed(() => {
+    const withIns = this.withInsightsCount();
+    const total = Math.max(this.contentItems().length, this.overview().totalContentSlots, 1);
+    return `${withIns} of ${total} available`;
+  });
+
+  followUpDescription = computed(() => {
+    const missing = this.missingUrlsCount();
+    const awaiting = this.awaitingInsightsCount();
+    if (missing === 0 && awaiting === 0) {
+      return 'All content deliverables verified with authorized insights';
+    }
+    const parts: string[] = [];
+    if (missing > 0) parts.push(`${missing} content URLs missing`);
+    if (awaiting > 0) parts.push(`${awaiting} awaiting authorized insights`);
+    return parts.join(' ');
+  });
+
   withInsightsCount = computed(() => this.contentItems().filter(i => i.status === 'WITH_INSIGHTS').length);
   missingUrlsCount = computed(() => this.contentItems().filter(i => i.status === 'MISSING_URL' || !i.contentUrl).length);
   awaitingInsightsCount = computed(() => this.contentItems().filter(i => i.status === 'AWAITING_INSIGHTS').length);
@@ -51,15 +138,24 @@ export class DashboardComponent implements OnInit {
   });
 
   deskSegments = computed(() => {
-    const totalSlots = Math.max(1, this.contentItems().length);
+    const totalSlots = Math.max(1, this.contentItems().length, this.overview().totalContentSlots);
     const withInsights = this.withInsightsCount();
     const awaiting = this.awaitingInsightsCount();
     const missing = this.missingUrlsCount();
 
-    const pWithInsights = Math.round((withInsights / totalSlots) * 100);
-    const pAwaiting = Math.round((awaiting / totalSlots) * 100);
-    const pMissing = Math.round((missing / totalSlots) * 100);
-    const pRemaining = Math.max(0, 100 - (pWithInsights + pAwaiting + pMissing));
+    if (this.contentItems().length === 0) {
+      return {
+        insightsWidth: 40,
+        awaitingWidth: 25,
+        missingWidth: 15,
+        remainingWidth: 20
+      };
+    }
+
+    const pWithInsights = Math.max(4, Math.round((withInsights / totalSlots) * 100));
+    const pAwaiting = Math.max(4, Math.round((awaiting / totalSlots) * 100));
+    const pMissing = Math.max(4, Math.round((missing / totalSlots) * 100));
+    const pRemaining = Math.max(4, 100 - (pWithInsights + pAwaiting + pMissing));
 
     return {
       insightsWidth: pWithInsights,
@@ -352,6 +448,23 @@ export class DashboardComponent implements OnInit {
     if (this.isAdmin() && this.portalService.fetchBrands) {
       this.portalService.fetchBrands(true).subscribe();
     }
+
+    this.route.queryParams.subscribe(params => {
+      if (params['campaignId']) {
+        const id = Number(params['campaignId']);
+        if (!isNaN(id)) {
+          this.selectCampaign(id);
+        }
+      }
+      if (params['tab'] === 'campaigns' || this.route.snapshot.url.some(s => s.path === 'campaigns')) {
+        setTimeout(() => {
+          const el = document.getElementById('campaign-desk');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 350);
+      }
+    });
   }
 
   async approveBrand(brand: Brand) {
