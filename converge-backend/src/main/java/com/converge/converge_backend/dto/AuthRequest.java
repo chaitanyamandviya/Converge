@@ -15,4 +15,6 @@ public class AuthRequest {
     private String websiteUrl;
     private Long brandId;
     private String brandName;
+    private String idToken;
+    private String credential;
 }

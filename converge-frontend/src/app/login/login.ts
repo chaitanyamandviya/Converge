@@ -5,6 +5,9 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 import { ConfirmService } from '../services/confirm.service';
+import { getGoogleClientId } from '../config/api.config';
+
+declare const google: any;
 
 export interface SystemGoogleAccount {
   name: string;
@@ -79,6 +82,10 @@ export class LoginComponent implements OnInit {
   readonly useAnotherGoogleAccount = signal(false);
   readonly googleEmail = signal('');
   readonly systemGoogleAccounts = signal<SystemGoogleAccount[]>(this.loadSystemGoogleAccounts());
+  readonly googleClientId = signal<string>(getGoogleClientId());
+  readonly isGoogleGsiAvailable = signal<boolean>(false);
+  readonly showClientIdSettings = signal<boolean>(false);
+  readonly customClientIdInput = signal<string>(getGoogleClientId());
 
   // Privacy & Help Modals
   readonly showPrivacyModal = signal(false);
@@ -141,6 +148,7 @@ export class LoginComponent implements OnInit {
       }
     });
     this.loadBrandsForOnboarding();
+    this.initGoogleIdentityServices();
   }
 
   private loadBrandsForOnboarding(): void {
@@ -289,8 +297,109 @@ export class LoginComponent implements OnInit {
     this.showConfirmPassword.update(show => !show);
   }
 
+  initGoogleIdentityServices(): void {
+    if (typeof window === 'undefined') return;
+
+    const setupGsi = () => {
+      const clientId = this.googleClientId();
+      if (typeof google !== 'undefined' && google?.accounts?.id && clientId) {
+        try {
+          google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (response: any) => this.handleGoogleCredentialResponse(response),
+            auto_select: false,
+            cancel_on_tap_outside: true
+          });
+          this.isGoogleGsiAvailable.set(true);
+
+          setTimeout(() => {
+            const btn = document.getElementById('gsi-main-button');
+            if (btn) {
+              btn.innerHTML = '';
+              google.accounts.id.renderButton(btn, {
+                type: 'standard',
+                theme: 'outline',
+                size: 'large',
+                text: 'continue_with',
+                shape: 'pill',
+                width: 360,
+                logo_alignment: 'left'
+              });
+            }
+          }, 50);
+        } catch (e) {
+          console.warn('Google Identity Services setup:', e);
+        }
+      }
+    };
+
+    if (typeof google !== 'undefined' && google?.accounts?.id) {
+      setupGsi();
+    } else {
+      let attempts = 0;
+      const timer = setInterval(() => {
+        attempts++;
+        if (typeof google !== 'undefined' && google?.accounts?.id) {
+          clearInterval(timer);
+          setupGsi();
+        } else if (attempts > 30) {
+          clearInterval(timer);
+        }
+      }, 100);
+    }
+  }
+
+  handleGoogleCredentialResponse(response: any): void {
+    if (!response || !response.credential) {
+      this.toast.error('Google Sign-In', 'No credential received from Google.');
+      return;
+    }
+    this.isLoading.set(true);
+    this.authService.googleOAuthLogin(response.credential, this.rememberMe()).subscribe({
+      next: (user) => {
+        this.isLoading.set(false);
+        this.showGoogleModal.set(false);
+        this.toast.success('Signed in with Google', `Authenticated as ${user.email}`);
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.showError(err.message || 'Could not authenticate with Google.');
+      }
+    });
+  }
+
+  applyCustomClientId(): void {
+    const val = this.customClientIdInput().trim();
+    if (!val) {
+      this.toast.error('Client ID Required', 'Please enter a valid Google OAuth 2.0 Web Client ID.');
+      return;
+    }
+    if (typeof window !== 'undefined') {
+      (window as any).__CONVERGE_GOOGLE_CLIENT_ID__ = val;
+    }
+    this.googleClientId.set(val);
+    this.initGoogleIdentityServices();
+    this.showClientIdSettings.set(false);
+    this.toast.success('Google Client ID Updated', 'Google Identity Services re-initialized with new Client ID.');
+  }
+
   onGoogleSignIn(): void {
     this.clearMessages();
+    const clientId = this.googleClientId();
+    if (typeof google !== 'undefined' && google?.accounts?.id && clientId) {
+      try {
+        google.accounts.id.prompt((notification: any) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            this.useAnotherGoogleAccount.set(false);
+            this.showGoogleModal.set(true);
+          }
+        });
+        return;
+      } catch {
+        // Fall back to modal
+      }
+    }
     this.useAnotherGoogleAccount.set(false);
     this.showGoogleModal.set(true);
   }

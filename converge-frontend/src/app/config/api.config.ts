@@ -21,3 +21,17 @@ export function getApiBaseUrl(): string {
   }
   return '/api';
 }
+
+/**
+ * Global Google OAuth 2.0 Web Client ID
+ * Set via window.__CONVERGE_GOOGLE_CLIENT_ID__ in public/config.js or environment
+ */
+export function getGoogleClientId(): string {
+  if (typeof window !== 'undefined') {
+    const custom = ((window as any).__CONVERGE_GOOGLE_CLIENT_ID__ || '').trim();
+    if (custom.length > 0) {
+      return custom;
+    }
+  }
+  return '';
+}

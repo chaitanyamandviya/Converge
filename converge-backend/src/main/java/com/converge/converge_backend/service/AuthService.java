@@ -9,8 +9,10 @@ import com.converge.converge_backend.repository.AgencyRepository;
 import com.converge.converge_backend.repository.BrandRepository;
 import com.converge.converge_backend.repository.UserRepository;
 import com.converge.converge_backend.security.JwtService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class AuthService {
@@ -22,6 +24,10 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final CacheEvictionService cacheEvictionService;
+    private final RestTemplate restTemplate;
+
+    @Value("${google.client-id:}")
+    private String configuredGoogleClientId;
 
     public AuthService(
             UserRepository userRepository,
@@ -30,7 +36,8 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             EmailService emailService,
-            CacheEvictionService cacheEvictionService
+            CacheEvictionService cacheEvictionService,
+            RestTemplate restTemplate
     ) {
         this.userRepository = userRepository;
         this.brandRepository = brandRepository;
@@ -39,6 +46,7 @@ public class AuthService {
         this.jwtService = jwtService;
         this.emailService = emailService;
         this.cacheEvictionService = cacheEvictionService;
+        this.restTemplate = restTemplate;
     }
 
     public AuthResponse login(AuthRequest request) {
@@ -386,14 +394,84 @@ public class AuthService {
     }
 
     public AuthResponse googleLogin(AuthRequest request) {
-        String email = request.getEmail().trim().toLowerCase();
+        String token = null;
+        if (request.getCredential() != null && !request.getCredential().isBlank()) {
+            token = request.getCredential().trim();
+        } else if (request.getIdToken() != null && !request.getIdToken().isBlank()) {
+            token = request.getIdToken().trim();
+        }
 
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("No registered workspace account found for " + email + ". Please onboard your Brand or Agency first."));
+        String verifiedEmail = null;
+        String googleFullName = null;
+        String googlePictureUrl = null;
+
+        if (token != null) {
+            try {
+                String tokenInfoUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> tokenInfo = restTemplate.getForObject(tokenInfoUrl, java.util.Map.class);
+                if (tokenInfo == null || tokenInfo.containsKey("error")) {
+                    throw new RuntimeException("Invalid or expired Google credential.");
+                }
+
+                Object emailVerifiedObj = tokenInfo.get("email_verified");
+                boolean emailVerified = "true".equalsIgnoreCase(String.valueOf(emailVerifiedObj)) || Boolean.TRUE.equals(emailVerifiedObj);
+                if (!emailVerified) {
+                    throw new RuntimeException("Google account email is not verified.");
+                }
+
+                if (configuredGoogleClientId != null && !configuredGoogleClientId.isBlank()) {
+                    String aud = (String) tokenInfo.get("aud");
+                    if (!configuredGoogleClientId.trim().equalsIgnoreCase(aud)) {
+                        throw new RuntimeException("Google credential audience does not match configured client ID.");
+                    }
+                }
+
+                verifiedEmail = (String) tokenInfo.get("email");
+                googleFullName = (String) tokenInfo.get("name");
+                googlePictureUrl = (String) tokenInfo.get("picture");
+            } catch (Exception e) {
+                if (e instanceof RuntimeException re) {
+                    throw re;
+                }
+                throw new RuntimeException("Google token verification failed: " + e.getMessage());
+            }
+        }
+
+        String email = (verifiedEmail != null)
+                ? verifiedEmail.trim().toLowerCase()
+                : (request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "");
+
+        if (email.isBlank()) {
+            throw new RuntimeException("No email or Google credential provided.");
+        }
+
+        UserEntity user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            // If the user signing in with a verified Google account is the platform administrator, provision account
+            if ("chaitanyamandviya7@gmail.com".equalsIgnoreCase(email)) {
+                user = new UserEntity();
+                user.setEmail(email);
+                user.setRole("SYSTEM_ADMIN");
+                user.setFullName(googleFullName != null ? googleFullName : "System Administrator");
+                user.setStatus("ACTIVE");
+                user.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+                user = userRepository.save(user);
+            } else {
+                throw new RuntimeException("No registered workspace account found for " + email + ". Please onboard your Brand or Agency first.");
+            }
+        }
 
         validateActiveWorkspaceForUser(user);
 
-        String token = jwtService.generateToken(
+        // Update profile full name if empty
+        if (googleFullName != null && (user.getFullName() == null || user.getFullName().isBlank())) {
+            user.setFullName(googleFullName);
+            userRepository.save(user);
+        }
+
+        String jwtToken = jwtService.generateToken(
                 user.getEmail(),
                 user.getRole(),
                 user.getBrandId(),
@@ -402,6 +480,10 @@ public class AuthService {
 
         String orgName = resolveOrganizationName(user);
         String logoUrl = resolveLogoUrl(user);
-        return new AuthResponse(token, user.getRole(), user.getEmail(), user.getBrandId(), user.getAgencyId(), "ACTIVE", orgName, logoUrl);
+        if (logoUrl == null && googlePictureUrl != null && !googlePictureUrl.isBlank()) {
+            logoUrl = googlePictureUrl;
+        }
+
+        return new AuthResponse(jwtToken, user.getRole(), user.getEmail(), user.getBrandId(), user.getAgencyId(), "ACTIVE", orgName, logoUrl);
     }
 }

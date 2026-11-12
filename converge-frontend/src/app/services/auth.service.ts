@@ -160,6 +160,15 @@ export class AuthService {
     );
   }
 
+  googleOAuthLogin(credential: string, rememberMe = false): Observable<User> {
+    return this.http.post<AuthResponse>(`${getBaseAuthUrl()}/google`, {
+      credential
+    }).pipe(
+      map(response => this.handleAuthResponse(response, rememberMe)),
+      catchError(err => this.handleAuthError(err))
+    );
+  }
+
   fetchCurrentUserProfile(): void {
     const user = this.currentUser();
     if (!user || !user.token) return;
