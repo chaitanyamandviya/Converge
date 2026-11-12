@@ -150,6 +150,8 @@ export class PortalService {
   readonly selectedCreatorContent = signal<ContentItem[]>([]);
   readonly campaigns = signal<Campaign[]>([]);
   readonly activeCampaignId = signal<number | null>(null);
+  readonly onboardBrandTrigger = signal(0);
+  readonly adminSearchQuery = signal('');
 
   private lastFetchTime: Record<string, number> = {};
   private readonly CACHE_TTL_MS = 60_000; // 60s client-side cache

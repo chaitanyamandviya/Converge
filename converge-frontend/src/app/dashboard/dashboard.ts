@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed, signal, HostListener } from '@angular/core';
+import { Component, inject, OnInit, computed, signal, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -36,6 +36,159 @@ export class DashboardComponent implements OnInit {
   creators = this.portalService.creators;
   contentItems = this.portalService.contentItems;
   selectedCampaignId = signal<number | null>(null);
+
+  // Superadmin Mesh UI State
+  adminTab = signal<'overview' | 'brands'>('overview');
+  brandStatusFilter = signal<'ALL' | 'ACTIVE' | 'PENDING_APPROVAL' | 'DEACTIVATED'>('ALL');
+  brandCategoryFilter = signal<string>('ALL');
+  brandPage = signal(1);
+  readonly brandPageSize = 10;
+  selectedBrandDrawer = signal<Brand | null>(null);
+  brandModalShake = signal(false);
+  adminSearchQuery = this.portalService.adminSearchQuery;
+
+  private lastOnboardTrigger = 0;
+  private onboardEffect = effect(() => {
+    const trigger = this.portalService.onboardBrandTrigger();
+    if (trigger > this.lastOnboardTrigger) {
+      this.lastOnboardTrigger = trigger;
+      this.openBrandModal = true;
+    }
+  });
+
+  activeBrandsCount = computed(() =>
+    this.brands().filter(b => !b.status || b.status === 'ACTIVE').length
+  );
+  pendingBrandsCount = computed(() =>
+    this.brands().filter(b => b.status === 'PENDING_APPROVAL').length
+  );
+  deactivatedBrandsCount = computed(() =>
+    this.brands().filter(b => b.status === 'DEACTIVATED').length
+  );
+  activeAgenciesCount = computed(() =>
+    this.agencies().filter(a => !a.status || a.status === 'ACTIVE').length
+  );
+  pendingAgenciesCount = computed(() =>
+    this.agencies().filter(a => a.status === 'PENDING_APPROVAL').length
+  );
+  totalCreatorsMetric = computed(() =>
+    this.overview().totalCreators || this.creators().length
+  );
+
+  donutStats = computed(() => {
+    const bCount = this.brands().length;
+    const aCount = this.agencies().length;
+    const cCount = this.totalCreatorsMetric();
+    const total = bCount + aCount + cCount;
+    const circ = 402.12; // 2 * PI * 64
+    if (total === 0) {
+      return {
+        total: 0,
+        brandsCount: 0,
+        agenciesCount: 0,
+        creatorsCount: 0,
+        brandsPct: 0,
+        agenciesPct: 0,
+        creatorsPct: 0,
+        brandsDash: `0 ${circ}`,
+        agenciesDash: `0 ${circ}`,
+        creatorsDash: `0 ${circ}`,
+        brandsOffset: 0,
+        agenciesOffset: 0,
+        creatorsOffset: 0
+      };
+    }
+    const bLen = (bCount / total) * circ;
+    const aLen = (aCount / total) * circ;
+    const cLen = (cCount / total) * circ;
+    return {
+      total,
+      brandsCount: bCount,
+      agenciesCount: aCount,
+      creatorsCount: cCount,
+      brandsPct: Math.round((bCount / total) * 100),
+      agenciesPct: Math.round((aCount / total) * 100),
+      creatorsPct: Math.round((cCount / total) * 100),
+      brandsDash: `${bLen.toFixed(2)} ${circ}`,
+      agenciesDash: `${aLen.toFixed(2)} ${circ}`,
+      creatorsDash: `${cLen.toFixed(2)} ${circ}`,
+      brandsOffset: 0,
+      agenciesOffset: -bLen,
+      creatorsOffset: -(bLen + aLen)
+    };
+  });
+
+  filteredAdminBrands = computed(() => {
+    const q = this.adminSearchQuery().trim().toLowerCase();
+    const status = this.brandStatusFilter();
+    const cat = this.brandCategoryFilter();
+    return this.brands().filter(b => {
+      const normalizedStatus = b.status || 'ACTIVE';
+      if (status !== 'ALL' && normalizedStatus !== status) return false;
+      if (cat !== 'ALL' && (b.category || '') !== cat) return false;
+      if (q) {
+        const hay = `${b.name || ''} ${b.primaryManagerEmail || ''} ${b.contactEmail || ''} ${b.category || ''} ${b.websiteUrl || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  });
+
+  brandTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredAdminBrands().length / this.brandPageSize))
+  );
+
+  paginatedAdminBrands = computed(() => {
+    const page = Math.min(this.brandPage(), this.brandTotalPages());
+    const start = (page - 1) * this.brandPageSize;
+    return this.filteredAdminBrands().slice(start, start + this.brandPageSize);
+  });
+
+  recentEcosystemActivity = computed(() => {
+    const items: Array<{ title: string; detail: string; time: string; tone: 'emerald' | 'amber' | 'neutral' }> = [];
+    for (const b of this.brands().slice(0, 3)) {
+      items.push({
+        title: `Brand workspace "${b.name}"`,
+        detail: `${b.primaryManagerEmail || b.contactEmail} · ${b.category || 'General'}`,
+        time: b.status === 'PENDING_APPROVAL' ? 'Pending' : (b.status || 'ACTIVE'),
+        tone: b.status === 'PENDING_APPROVAL' ? 'amber' : 'emerald'
+      });
+    }
+    for (const a of this.agencies().slice(0, 2)) {
+      items.push({
+        title: `Agency "${a.name}"`,
+        detail: a.brandName ? `Linked to ${a.brandName}` : (a.email || 'Partner agency'),
+        time: a.status === 'PENDING_APPROVAL' ? 'Pending' : (a.status || 'ACTIVE'),
+        tone: a.status === 'PENDING_APPROVAL' ? 'amber' : 'neutral'
+      });
+    }
+    return items.slice(0, 5);
+  });
+
+  getBrandSlug(name: string): string {
+    return (name || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'brand-workspace';
+  }
+
+  setBrandStatusFilter(status: 'ALL' | 'ACTIVE' | 'PENDING_APPROVAL' | 'DEACTIVATED'): void {
+    this.brandStatusFilter.set(status);
+    this.brandPage.set(1);
+  }
+
+  setBrandCategoryFilter(cat: string): void {
+    this.brandCategoryFilter.set(cat);
+    this.brandPage.set(1);
+  }
+
+  clearBrandFilters(): void {
+    this.portalService.adminSearchQuery.set('');
+    this.brandStatusFilter.set('ALL');
+    this.brandCategoryFilter.set('ALL');
+    this.brandPage.set(1);
+  }
 
   activeAnalyticsTab = signal<'performance' | 'agency' | 'creator'>('performance');
   setAnalyticsTab(tab: 'performance' | 'agency' | 'creator') {
@@ -437,6 +590,7 @@ export class DashboardComponent implements OnInit {
     this.openBrandModal = false;
     this.openEditBrandModal = false;
     this.openCampaignModal = false;
+    this.selectedBrandDrawer.set(null);
   }
 
   ngOnInit() {
@@ -450,6 +604,9 @@ export class DashboardComponent implements OnInit {
     }
 
     this.route.queryParams.subscribe(params => {
+      if (this.isAdmin()) {
+        this.adminTab.set(params['tab'] === 'brands' ? 'brands' : 'overview');
+      }
       if (params['campaignId']) {
         const id = Number(params['campaignId']);
         if (!isNaN(id)) {
@@ -663,9 +820,29 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  private triggerBrandModalShake(): void {
+    this.brandModalShake.set(false);
+    setTimeout(() => this.brandModalShake.set(true), 10);
+    setTimeout(() => this.brandModalShake.set(false), 500);
+  }
+
   async submitBrand() {
-    if (!this.newBrandName || !this.newBrandManagerEmail || this.isSubmittingBrand()) return;
+    if (this.isSubmittingBrand()) return;
+    if (!this.newBrandName.trim() || !this.newBrandManagerEmail.trim()) {
+      this.triggerBrandModalShake();
+      this.toast.error('Missing Fields', 'Please enter both a Brand Name and Brand Manager Email.');
+      return;
+    }
+    const dupBrand = this.brands().some(
+      b => (b.name || '').trim().toLowerCase() === this.newBrandName.trim().toLowerCase()
+    );
+    if (dupBrand) {
+      this.triggerBrandModalShake();
+      this.toast.error('Duplicate Brand Name', `A brand named "${this.newBrandName.trim()}" already exists.`);
+      return;
+    }
     if (this.isSystemAdminEmail(this.newBrandManagerEmail)) {
+      this.triggerBrandModalShake();
       this.toast.error('Security Policy Violation', 'System Administrator email cannot be registered as a Brand Manager.');
       return;
     }

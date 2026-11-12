@@ -1,265 +1,751 @@
 <div class="overview-view">
   @if (isAdmin()) {
-    <!-- Top View Header for System Admin -->
-    <header class="overview-header">
-      <div class="campaign-title-group">
-        <span class="campaign-tag">SYSTEM ADMIN CONSOLE</span>
-        <h1 class="campaign-title">Converge Master Console</h1>
-        <p class="campaign-desc">
-          Platform-level control: oversee brand workspaces, enterprise agency connections, and outbound Resend emails.
-        </p>
-      </div>
-
-      <div class="header-actions">
-        <button type="button" class="btn-action-primary" (click)="openBrandModal = true">
-          <img src="/assets/plus.svg" alt="" class="btn-icon" />
-          <span>Add brand</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- macOS Soft Capsule Status Strip (Zero Big Boxy Cards) -->
-    <div class="macos-stat-strip">
-      <div class="stat-pill-item">
-        <span class="pill-dot blue"></span>
-        <span class="pill-label">Registered Brands</span>
-        <span class="pill-count">{{ brands().length }}</span>
-      </div>
-      <span class="strip-sep">/</span>
-      <div class="stat-pill-item">
-        <span class="pill-dot green"></span>
-        <span class="pill-label">Connected Agencies</span>
-        <span class="pill-count">{{ agencies().length }}</span>
-      </div>
-      <span class="strip-sep">/</span>
-      <div class="stat-pill-item">
-        <span class="pill-dot sky"></span>
-        <span class="pill-label">Rostered Creators</span>
-        <span class="pill-count">{{ overview().totalCreators }}</span>
-      </div>
-      <span class="strip-sep">/</span>
-      <div class="stat-pill-item">
-        <span class="pill-dot orange"></span>
-        <span class="pill-label">Platform Spend</span>
-        <span class="pill-count">₹{{ formatInr(overview().spend) }}</span>
-      </div>
-    </div>
-
-    <!-- Admin View: Brand Workspaces & Connected Agency Hierarchy (Full User Directory) -->
-    <div class="admin-hierarchy-container">
-      <div class="card-head">
-        <div>
-          <h2 class="card-title">Brand Workspaces & Connected Agency Hierarchy</h2>
-          <p class="card-sub">Platform user directory: review registered brand managers and the partner agencies operating under each brand workspace.</p>
-        </div>
-      </div>
-
-      @if (brands().length === 0) {
-        <div class="macos-empty-state">
-          <div class="macos-empty-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 21h18"/>
-              <path d="M5 21V7l8-4v18"/>
-              <path d="M19 21V11l-6-4"/>
-              <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/>
-            </svg>
+    <!-- ==================== SYSTEM ADMIN: OVERVIEW PANEL ==================== -->
+    @if (adminTab() === 'overview') {
+      <div class="space-y-6 sm:space-y-8">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container-low border border-outline-variant/25 text-[11px] font-mono font-medium text-secondary mb-2.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>CONVERGE SUPERADMIN MESH</span>
+            </div>
+            <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-on-surface">
+              Platform Overview
+            </h1>
+            <p class="text-sm text-secondary mt-1">
+              Global governance metrics, convergence flow topology, and live multi-tenant telemetry.
+            </p>
           </div>
-          <h3 class="macos-empty-title">No Brands Onboarded Yet</h3>
-          <p class="macos-empty-text">Register your first Brand Workspace to configure client governance and issue invitation emails.</p>
-          <button type="button" class="macos-empty-cta" (click)="openBrandModal = true">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            <span>Add Brand</span>
-          </button>
-        </div>
-      } @else {
-        <div class="brand-hierarchy-list">
-          @for (brand of brands(); track brand.id || brand.name) {
-            <div class="brand-hierarchy-card">
-              <!-- Brand Workspace Header -->
-              <div class="brand-card-top">
-                <div class="brand-identity-col">
-                  <div class="brand-avatar-box">
-                    @if (brand.logoUrl) {
-                      <img [src]="brand.logoUrl" alt="" class="brand-avatar-img" (error)="brand.logoUrl = ''" />
-                    } @else {
-                      {{ (brand.name || 'B')[0].toUpperCase() }}
-                    }
-                  </div>
-                  <div class="brand-info">
-                    <div class="brand-title-line">
-                      <h3 class="brand-name-heading">{{ brand.name }}</h3>
-                      <span class="brand-role-chip">BRAND WORKSPACE</span>
-                      @if (brand.status === 'PENDING_APPROVAL') {
-                        <span class="status-badge-pending">PENDING APPROVAL</span>
-                      } @else if (brand.status === 'DEACTIVATED') {
-                        <span class="status-badge-deactivated">DEACTIVATED</span>
-                      } @else {
-                        <span class="status-badge-active">{{ brand.status || 'ACTIVE' }}</span>
-                      }
-                    </div>
-                    <div class="brand-meta-line">
-                      <span class="user-email-tag">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        Manager: <strong>{{ brand.primaryManagerEmail || brand.contactEmail || '—' }}</strong>
-                      </span>
-                      <span class="dot-sep">·</span>
-                      <span class="category-tag">{{ brand.category || 'General' }}</span>
-                      @if (brand.websiteUrl) {
-                        <span class="dot-sep">·</span>
-                        <a [href]="brand.websiteUrl" target="_blank" rel="noopener" class="brand-web-link">
-                          {{ brand.websiteUrl }} ↗
-                        </a>
-                      }
-                    </div>
-                  </div>
-                </div>
 
-                <!-- Brand Actions Toolbar -->
-                <div class="brand-actions-bar">
-                  <button
-                    type="button"
-                    class="btn-table-action"
-                    title="Edit Brand"
-                    [disabled]="processingBrandId() === brand.id"
-                    (click)="openEditBrand(brand)"
-                  >
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="btn-table-action danger"
-                    title="Delete Brand"
-                    [disabled]="processingBrandId() === brand.id"
-                    (click)="deleteBrand(brand)"
-                  >
-                    @if (processingBrandId() === brand.id && processingBrandAction() === 'delete') {
-                      <span class="btn-spinner dark"></span>
-                      <span>Deleting...</span>
-                    } @else {
-                      <span>Delete</span>
-                    }
-                  </button>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <a
+              routerLink="/dashboard"
+              [queryParams]="{ tab: 'brands' }"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors">
+              <span class="material-symbols-outlined text-[16px]">domain</span>
+              <span>Manage Brands</span>
+            </a>
+            <button
+              type="button"
+              (click)="openBrandModal = true"
+              class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-all shadow-xs active:scale-[0.98]">
+              <span class="material-symbols-outlined text-[16px]">add</span>
+              <span>Onboard Brand</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+          <!-- Brands KPI -->
+          <div
+            (click)="adminTab.set('brands')"
+            class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/20 shadow-xs hover:shadow-md transition-all cursor-pointer group">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-secondary">Brand Workspaces</span>
+              <div class="w-9 h-9 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                <span class="material-symbols-outlined text-[19px]">domain</span>
+              </div>
+            </div>
+            <div class="mt-3 flex items-baseline justify-between gap-2">
+              <span class="font-display text-3xl font-bold tabular-nums text-on-surface">{{ brands().length }}</span>
+              <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium">
+                {{ activeBrandsCount() }} active
+              </span>
+            </div>
+            <div class="mt-2 text-xs text-secondary">
+              @if (pendingBrandsCount() > 0) {
+                <span class="text-amber-700 font-medium">{{ pendingBrandsCount() }} awaiting approval</span>
+              } @else {
+                <span>Unique brand names enforced</span>
+              }
+            </div>
+          </div>
+
+          <!-- Agencies KPI -->
+          <a
+            routerLink="/agencies"
+            class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/20 shadow-xs hover:shadow-md transition-all group block">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-secondary">Partner Agencies</span>
+              <div class="w-9 h-9 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                <span class="material-symbols-outlined text-[19px]">corporate_fare</span>
+              </div>
+            </div>
+            <div class="mt-3 flex items-baseline justify-between gap-2">
+              <span class="font-display text-3xl font-bold tabular-nums text-on-surface">{{ agencies().length }}</span>
+              <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-medium">
+                {{ activeAgenciesCount() }} active
+              </span>
+            </div>
+            <div class="mt-2 text-xs text-secondary">
+              @if (pendingAgenciesCount() > 0) {
+                <span class="text-amber-700 font-medium">{{ pendingAgenciesCount() }} pending brand review</span>
+              } @else {
+                <span>Connected representation nodes</span>
+              }
+            </div>
+          </a>
+
+          <!-- Creators KPI -->
+          <a
+            routerLink="/creators"
+            class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/20 shadow-xs hover:shadow-md transition-all group block">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-secondary">Rostered Creators</span>
+              <div class="w-9 h-9 rounded-xl bg-tertiary-fixed/40 flex items-center justify-center text-on-tertiary-fixed-variant group-hover:bg-tertiary-fixed-dim transition-colors">
+                <span class="material-symbols-outlined text-[19px]">person_search</span>
+              </div>
+            </div>
+            <div class="mt-3 flex items-baseline justify-between gap-2">
+              <span class="font-display text-3xl font-bold tabular-nums text-on-surface">{{ totalCreatorsMetric() }}</span>
+              <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-tertiary-fixed/50 text-on-tertiary-fixed-variant font-medium">
+                Verified
+              </span>
+            </div>
+            <div class="mt-2 text-xs text-secondary">
+              Active talent across agency rosters
+            </div>
+          </a>
+
+          <!-- Platform Spend & Campaigns KPI -->
+          <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/20 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-secondary">Platform Spend</span>
+              <div class="w-9 h-9 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface">
+                <span class="material-symbols-outlined text-[19px]">payments</span>
+              </div>
+            </div>
+            <div class="mt-3 flex items-baseline justify-between gap-2">
+              <span class="font-display text-2xl sm:text-3xl font-bold tabular-nums text-on-surface truncate">
+                ₹{{ formatInr(overview().spend) }}
+              </span>
+              <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-surface-container text-secondary font-medium shrink-0">
+                {{ campaigns().length }} campaigns
+              </span>
+            </div>
+            <div class="mt-2 text-xs text-secondary">
+              Consolidated ecosystem campaign volume
+            </div>
+          </div>
+        </div>
+
+        <!-- Topology & Proportional Distribution -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+          <!-- Convergence Flow Architecture -->
+          <div class="lg:col-span-8 bg-surface-container-lowest rounded-2xl p-5 sm:p-6 border border-outline-variant/20 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+              <div>
+                <h2 class="font-display text-base sm:text-lg font-bold text-on-surface">Convergence Flow Architecture</h2>
+                <p class="text-xs text-secondary mt-0.5">Multi-tenant hierarchical relationship topology (Admin Isolated)</p>
+              </div>
+              <div class="inline-flex items-center gap-1.5 text-[11px] font-mono text-secondary bg-surface-container-low px-2.5 py-1 rounded-lg border border-outline-variant/20 self-start">
+                <span>Brand</span>
+                <span>→</span>
+                <span>Agency</span>
+                <span>→</span>
+                <span>Creator</span>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto -mx-2 px-2">
+              <svg viewBox="0 0 720 240" class="w-full min-w-[540px] h-auto" role="img" aria-label="Convergence Flow Architecture">
+                <defs>
+                  <linearGradient id="meshLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#1c1b1b" stop-opacity="0.7" />
+                    <stop offset="50%" stop-color="#747878" stop-opacity="0.5" />
+                    <stop offset="100%" stop-color="#feba4c" stop-opacity="0.8" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Connector Curves -->
+                <path d="M 190 120 C 245 120, 245 70, 300 70" fill="none" stroke="url(#meshLineGrad)" stroke-width="2" stroke-dasharray="5 4" />
+                <path d="M 190 120 C 245 120, 245 170, 300 170" fill="none" stroke="url(#meshLineGrad)" stroke-width="2" />
+                <path d="M 450 70 C 500 70, 500 120, 540 120" fill="none" stroke="#c4c7c7" stroke-width="2" stroke-dasharray="4 4" />
+                <path d="M 450 170 C 500 170, 500 120, 540 120" fill="none" stroke="#feba4c" stroke-width="2" />
+
+                <!-- Node 1: Brands -->
+                <g transform="translate(20, 74)">
+                  <rect width="170" height="92" rx="14" fill="#fcf9f5" stroke="#1c1b1b" stroke-width="1.5" />
+                  <text x="16" y="28" font-size="10" font-family="JetBrains Mono, monospace" fill="#747878" font-weight="600">TIER 1 · TENANTS</text>
+                  <text x="16" y="54" font-size="18" font-family="Plus Jakarta Sans, sans-serif" fill="#1b1c1a" font-weight="700">
+                    {{ brands().length }} Brands
+                  </text>
+                  <text x="16" y="75" font-size="11" font-family="Inter, sans-serif" fill="#5f5e5a">
+                    {{ activeBrandsCount() }} Active Workspaces
+                  </text>
+                </g>
+
+                <!-- Node 2A: Agencies -->
+                <g transform="translate(300, 28)">
+                  <rect width="150" height="82" rx="12" fill="#ffffff" stroke="#c4c7c7" stroke-width="1.2" />
+                  <text x="14" y="25" font-size="10" font-family="JetBrains Mono, monospace" fill="#747878" font-weight="600">TIER 2 · MESH</text>
+                  <text x="14" y="48" font-size="16" font-family="Plus Jakarta Sans, sans-serif" fill="#1b1c1a" font-weight="700">
+                    {{ agencies().length }} Agencies
+                  </text>
+                  <text x="14" y="67" font-size="11" font-family="Inter, sans-serif" fill="#5f5e5a">
+                    {{ activeAgenciesCount() }} Verified
+                  </text>
+                </g>
+
+                <!-- Node 2B: Campaigns -->
+                <g transform="translate(300, 130)">
+                  <rect width="150" height="82" rx="12" fill="#f6f3ef" stroke="#c4c7c7" stroke-width="1.2" />
+                  <text x="14" y="25" font-size="10" font-family="JetBrains Mono, monospace" fill="#747878" font-weight="600">EXECUTION</text>
+                  <text x="14" y="48" font-size="16" font-family="Plus Jakarta Sans, sans-serif" fill="#1b1c1a" font-weight="700">
+                    {{ campaigns().length }} Campaigns
+                  </text>
+                  <text x="14" y="67" font-size="11" font-family="Inter, sans-serif" fill="#5f5e5a">
+                    Live Deliverables
+                  </text>
+                </g>
+
+                <!-- Node 3: Creators -->
+                <g transform="translate(540, 74)">
+                  <rect width="160" height="92" rx="14" fill="#fffaf0" stroke="#feba4c" stroke-width="1.6" />
+                  <text x="16" y="28" font-size="10" font-family="JetBrains Mono, monospace" fill="#614000" font-weight="600">TIER 3 · TALENT</text>
+                  <text x="16" y="54" font-size="18" font-family="Plus Jakarta Sans, sans-serif" fill="#1b1c1a" font-weight="700">
+                    {{ totalCreatorsMetric() }} Creators
+                  </text>
+                  <text x="16" y="75" font-size="11" font-family="Inter, sans-serif" fill="#614000">
+                    Attributed Output
+                  </text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Proportional Distribution Donut -->
+          <div class="lg:col-span-4 bg-surface-container-lowest rounded-2xl p-5 sm:p-6 border border-outline-variant/20 shadow-xs flex flex-col justify-between">
+            <div>
+              <h2 class="font-display text-base sm:text-lg font-bold text-on-surface">Proportional Distribution</h2>
+              <p class="text-xs text-secondary mt-0.5">Live entity share across the mesh</p>
+            </div>
+
+            <div class="my-5 flex items-center justify-center">
+              <div class="relative w-44 h-44 flex items-center justify-center">
+                <svg viewBox="0 0 180 180" class="w-full h-full -rotate-90">
+                  <circle cx="90" cy="90" r="64" fill="none" stroke="#eae8e4" stroke-width="20"></circle>
+                  @if (donutStats().total > 0) {
+                    <circle
+                      cx="90" cy="90" r="64" fill="none"
+                      stroke="#000000" stroke-width="20"
+                      [attr.stroke-dasharray]="donutStats().brandsDash"
+                      [attr.stroke-dashoffset]="donutStats().brandsOffset"
+                      stroke-linecap="butt">
+                    </circle>
+                    <circle
+                      cx="90" cy="90" r="64" fill="none"
+                      stroke="#747878" stroke-width="20"
+                      [attr.stroke-dasharray]="donutStats().agenciesDash"
+                      [attr.stroke-dashoffset]="donutStats().agenciesOffset"
+                      stroke-linecap="butt">
+                    </circle>
+                    <circle
+                      cx="90" cy="90" r="64" fill="none"
+                      stroke="#feba4c" stroke-width="20"
+                      [attr.stroke-dasharray]="donutStats().creatorsDash"
+                      [attr.stroke-dashoffset]="donutStats().creatorsOffset"
+                      stroke-linecap="butt">
+                    </circle>
+                  }
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span class="font-display text-2xl font-bold tabular-nums text-on-surface">{{ donutStats().total }}</span>
+                  <span class="text-[10px] font-mono uppercase tracking-wider text-secondary">Total Entities</span>
                 </div>
               </div>
+            </div>
 
-              <!-- Nested Agencies Section Under This Brand -->
-              <div class="nested-agencies-container">
-                <div class="nested-section-title">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  <span>CONNECTED PARTNER AGENCIES ({{ getAgenciesForBrand(brand).length }})</span>
+            <div class="space-y-2.5 text-xs">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+                  <span class="font-medium text-on-surface">Brands</span>
                 </div>
+                <span class="font-mono text-secondary">{{ donutStats().brandsCount }} ({{ donutStats().brandsPct }}%)</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-outline"></span>
+                  <span class="font-medium text-on-surface">Agencies</span>
+                </div>
+                <span class="font-mono text-secondary">{{ donutStats().agenciesCount }} ({{ donutStats().agenciesPct }}%)</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim"></span>
+                  <span class="font-medium text-on-surface">Creators</span>
+                </div>
+                <span class="font-mono text-secondary">{{ donutStats().creatorsCount }} ({{ donutStats().creatorsPct }}%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                @if (getAgenciesForBrand(brand).length === 0) {
-                  <div class="nested-empty-agencies">
-                    No partner agencies onboarded by this brand yet. (Agency invitations are managed directly by the Brand Manager).
-                  </div>
-                } @else {
-                  <div class="nested-agencies-table-wrap">
-                    <table class="nested-agencies-table">
-                      <thead>
-                        <tr>
-                          <th>AGENCY</th>
-                          <th>AGENCY MANAGER (USER)</th>
-                          <th>CATEGORY</th>
-                          <th>ROSTERED TALENT</th>
-                          <th>COMMITTED SPEND</th>
-                          <th>STATUS</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (agency of getAgenciesForBrand(brand); track agency.id || agency.name) {
-                          <tr>
-                            <td class="agency-title-td">
-                              <div class="agency-cell-wrap">
-                                <span class="agency-bullet-circle" [style.background-color]="agency.avatarColor || '#0071E3'">{{ agency.name[0] }}</span>
-                                <div>
-                                  <strong class="agency-name-text">{{ agency.name }}</strong>
-                                  @if (agency.websiteUrl) {
-                                    <a [href]="agency.websiteUrl" target="_blank" rel="noopener" class="agency-sub-link">
-                                      {{ agency.websiteUrl }} ↗
-                                    </a>
-                                  }
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              <div class="manager-user-chip">
-                                <span class="manager-email">{{ agency.email }}</span>
-                                <span class="user-badge agency-role">AGENCY MANAGER</span>
-                              </div>
-                            </td>
-                            <td><span class="tag-pill">{{ agency.category || 'General' }}</span></td>
-                            <td><strong class="number-data">{{ agency.creatorsCount }}</strong> creators</td>
-                            <td><strong class="spend-data">₹{{ formatInr(agency.spend) }}</strong></td>
-                            <td>
-                              @if (agency.status === 'PENDING_APPROVAL') {
-                                <span class="status-chip pending">PENDING APPROVAL</span>
-                              } @else if (agency.status === 'DEACTIVATED') {
-                                <span class="status-chip deactivated">DEACTIVATED</span>
-                              } @else {
-                                <span class="status-chip active">{{ agency.status || 'ACTIVE' }}</span>
-                              }
-                            </td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
+        <!-- Recent Activity & Multi-Tenant Governance -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+          <!-- Recent Ecosystem Activity -->
+          <div class="lg:col-span-7 bg-surface-container-lowest rounded-2xl p-5 sm:p-6 border border-outline-variant/20 shadow-xs">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="font-display text-base sm:text-lg font-bold text-on-surface">Recent Ecosystem Activity</h2>
+                <p class="text-xs text-secondary mt-0.5">Live onboarding & partnership events from database</p>
+              </div>
+              <button
+                type="button"
+                (click)="adminTab.set('brands')"
+                class="text-xs font-semibold text-on-surface hover:underline">
+                View directory →
+              </button>
+            </div>
+
+            @if (recentEcosystemActivity().length === 0) {
+              <div class="rounded-xl bg-surface-container-low border border-dashed border-outline-variant/50 p-6 text-center">
+                <div class="w-10 h-10 rounded-full bg-surface-container-lowest border border-outline-variant/30 mx-auto flex items-center justify-center text-secondary mb-2.5">
+                  <span class="material-symbols-outlined text-[20px]">bolt</span>
+                </div>
+                <p class="text-sm font-semibold text-on-surface">No ecosystem activity yet</p>
+                <p class="text-xs text-secondary mt-1">Onboard your first Brand Workspace to initialize multi-tenant operations.</p>
+                <button
+                  type="button"
+                  (click)="openBrandModal = true"
+                  class="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary text-on-primary text-xs font-semibold">
+                  <span class="material-symbols-outlined text-[15px]">add</span>
+                  <span>Onboard Brand</span>
+                </button>
+              </div>
+            } @else {
+              <div class="divide-y divide-outline-variant/15">
+                @for (item of recentEcosystemActivity(); track $index) {
+                  <div class="py-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <span
+                        [class]="
+                          'w-2 h-2 rounded-full shrink-0 ' +
+                          (item.tone === 'emerald' ? 'bg-emerald-500' : item.tone === 'amber' ? 'bg-amber-500' : 'bg-outline')
+                        ">
+                      </span>
+                      <div class="min-w-0">
+                        <div class="text-xs sm:text-sm font-semibold text-on-surface truncate">{{ item.title }}</div>
+                        <div class="text-xs text-secondary truncate">{{ item.detail }}</div>
+                      </div>
+                    </div>
+                    <span class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-surface-container text-secondary shrink-0">
+                      {{ item.time }}
+                    </span>
                   </div>
                 }
+              </div>
+            }
+          </div>
+
+          <!-- Multi-Tenant Governance -->
+          <div class="lg:col-span-5 bg-surface-container-lowest rounded-2xl p-5 sm:p-6 border border-outline-variant/20 shadow-xs">
+            <h2 class="font-display text-base sm:text-lg font-bold text-on-surface">Multi-Tenant Governance</h2>
+            <p class="text-xs text-secondary mt-0.5 mb-4">Active security & data integrity guardrails</p>
+
+            <div class="space-y-3">
+              <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="material-symbols-outlined text-[18px] text-emerald-700">verified_user</span>
+                  <div class="min-w-0">
+                    <div class="text-xs font-semibold text-on-surface">System Admin Isolation</div>
+                    <div class="text-[11px] text-secondary truncate">Unlinked from Brand, Agency &amp; Creator tables</div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0">Enforced</span>
+              </div>
+
+              <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="material-symbols-outlined text-[18px] text-on-surface">fingerprint</span>
+                  <div class="min-w-0">
+                    <div class="text-xs font-semibold text-on-surface">Unique Brand &amp; Agency Names</div>
+                    <div class="text-[11px] text-secondary truncate">Case-insensitive PostgreSQL unique indexes</div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono font-semibold text-on-surface bg-surface-container px-2 py-0.5 rounded-full shrink-0">Active</span>
+              </div>
+
+              <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="material-symbols-outlined text-[18px] text-on-surface">lock</span>
+                  <div class="min-w-0">
+                    <div class="text-xs font-semibold text-on-surface">BCrypt Credential Hashing</div>
+                    <div class="text-[11px] text-secondary truncate">All passwords salted &amp; encrypted at rest</div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono font-semibold text-on-surface bg-surface-container px-2 py-0.5 rounded-full shrink-0">Active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <!-- ==================== SYSTEM ADMIN: BRANDS DIRECTORY PANEL ==================== -->
+      <div class="space-y-6">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-on-surface">
+              Brands Directory
+            </h1>
+            <p class="text-sm text-secondary mt-1">
+              Manage brand workspaces, primary managers, onboarding emails, and connected agency meshes.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            (click)="openBrandModal = true"
+            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-all shadow-xs active:scale-[0.98] self-start sm:self-auto">
+            <span class="material-symbols-outlined text-[17px]">add</span>
+            <span>Onboard Brand</span>
+          </button>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="bg-surface-container-lowest rounded-2xl p-4 border border-outline-variant/20 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <!-- Status Pills -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              (click)="setBrandStatusFilter('ALL')"
+              [class]="'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ' + (brandStatusFilter() === 'ALL' ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-secondary hover:text-on-surface')">
+              All ({{ brands().length }})
+            </button>
+            <button
+              type="button"
+              (click)="setBrandStatusFilter('ACTIVE')"
+              [class]="'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ' + (brandStatusFilter() === 'ACTIVE' ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-secondary hover:text-on-surface')">
+              Active ({{ activeBrandsCount() }})
+            </button>
+            <button
+              type="button"
+              (click)="setBrandStatusFilter('PENDING_APPROVAL')"
+              [class]="'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ' + (brandStatusFilter() === 'PENDING_APPROVAL' ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-secondary hover:text-on-surface')">
+              Pending ({{ pendingBrandsCount() }})
+            </button>
+            <button
+              type="button"
+              (click)="setBrandStatusFilter('DEACTIVATED')"
+              [class]="'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ' + (brandStatusFilter() === 'DEACTIVATED' ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-secondary hover:text-on-surface')">
+              Deactivated ({{ deactivatedBrandsCount() }})
+            </button>
+          </div>
+
+          <!-- Search + Vertical Filter -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div class="relative flex-1 sm:w-56">
+              <span class="material-symbols-outlined text-[17px] text-secondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">search</span>
+              <input
+                type="text"
+                [ngModel]="adminSearchQuery()"
+                (ngModelChange)="portalService.adminSearchQuery.set($event); brandPage.set(1)"
+                placeholder="Filter by name or email..."
+                class="w-full pl-9 pr-3 py-2 text-xs bg-surface-container-low border border-outline-variant/25 rounded-xl text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/15" />
+            </div>
+
+            <select
+              [ngModel]="brandCategoryFilter()"
+              (ngModelChange)="setBrandCategoryFilter($event)"
+              class="px-3 py-2 text-xs bg-surface-container-low border border-outline-variant/25 rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/15">
+              <option value="ALL">All Verticals</option>
+              @for (cat of primaryVerticals; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Directory Table / Empty State -->
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-xs overflow-hidden">
+          @if (brands().length === 0) {
+            <div class="py-14 px-6 text-center">
+              <div class="w-12 h-12 rounded-2xl bg-surface-container-low border border-outline-variant/25 mx-auto flex items-center justify-center text-on-surface mb-3">
+                <span class="material-symbols-outlined text-[24px]">domain_add</span>
+              </div>
+              <h3 class="font-display text-base font-bold text-on-surface">No Brands Onboarded Yet</h3>
+              <p class="text-xs sm:text-sm text-secondary mt-1 max-w-md mx-auto">
+                Register your first Brand Workspace to configure client governance and trigger a Set-Initial-Password invitation email.
+              </p>
+              <button
+                type="button"
+                (click)="openBrandModal = true"
+                class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                <span>Onboard First Brand</span>
+              </button>
+            </div>
+          } @else if (filteredAdminBrands().length === 0) {
+            <div class="py-12 px-6 text-center">
+              <p class="text-sm font-semibold text-on-surface">No matching brand workspaces</p>
+              <p class="text-xs text-secondary mt-1">Try adjusting your search query or status filter.</p>
+              <button
+                type="button"
+                (click)="clearBrandFilters()"
+                class="mt-3 px-3.5 py-1.5 rounded-xl bg-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container-high">
+                Clear Filters
+              </button>
+            </div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse min-w-[760px]">
+                <thead>
+                  <tr class="border-b border-outline-variant/20 bg-surface-container-low/60 text-[11px] font-mono uppercase tracking-wider text-secondary">
+                    <th class="py-3.5 px-5 font-semibold">Brand Workspace</th>
+                    <th class="py-3.5 px-4 font-semibold">Primary Manager</th>
+                    <th class="py-3.5 px-4 font-semibold">Connected Agencies</th>
+                    <th class="py-3.5 px-4 font-semibold">Campaigns &amp; Spend</th>
+                    <th class="py-3.5 px-4 font-semibold">Status</th>
+                    <th class="py-3.5 px-5 font-semibold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant/15 text-xs sm:text-sm">
+                  @for (brand of paginatedAdminBrands(); track brand.id || brand.name) {
+                    <tr
+                      (click)="selectedBrandDrawer.set(brand)"
+                      class="hover:bg-surface-container-low/60 transition-colors cursor-pointer">
+                      <td class="py-3.5 px-5">
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-xl bg-surface-container border border-outline-variant/25 flex items-center justify-center font-display font-bold text-sm text-on-surface shrink-0 overflow-hidden">
+                            @if (brand.logoUrl) {
+                              <img [src]="brand.logoUrl" alt="" class="w-full h-full object-contain p-1" (error)="brand.logoUrl = ''" />
+                            } @else {
+                              {{ (brand.name || 'B')[0].toUpperCase() }}
+                            }
+                          </div>
+                          <div class="min-w-0">
+                            <div class="font-semibold text-on-surface truncate">{{ brand.name }}</div>
+                            <div class="text-[11px] text-secondary truncate">
+                              {{ brand.category || 'General' }}
+                              @if (brand.websiteUrl) {
+                                <span> · {{ brand.websiteUrl }}</span>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td class="py-3.5 px-4">
+                        <div class="font-mono text-xs text-on-surface truncate max-w-[200px]">
+                          {{ brand.primaryManagerEmail || brand.contactEmail || '—' }}
+                        </div>
+                      </td>
+
+                      <td class="py-3.5 px-4">
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-low border border-outline-variant/20 text-xs font-medium text-on-surface">
+                          <span class="font-mono font-bold">{{ getAgenciesForBrand(brand).length }}</span>
+                          <span class="text-secondary">agencies</span>
+                        </div>
+                      </td>
+
+                      <td class="py-3.5 px-4">
+                        <div class="font-semibold text-on-surface tabular-nums">₹{{ formatInr(brand.totalBudgetDeployed) }}</div>
+                        <div class="text-[11px] text-secondary">{{ brand.activeCampaignsCount || 0 }} active campaigns</div>
+                      </td>
+
+                      <td class="py-3.5 px-4">
+                        @if (brand.status === 'PENDING_APPROVAL') {
+                          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/70">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            Pending
+                          </span>
+                        } @else if (brand.status === 'DEACTIVATED') {
+                          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-error-container/50 text-on-error-container">
+                            <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                            Deactivated
+                          </span>
+                        } @else {
+                          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/70">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Active
+                          </span>
+                        }
+                      </td>
+
+                      <td class="py-3.5 px-5 text-right" (click)="$event.stopPropagation()">
+                        <div class="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            (click)="selectedBrandDrawer.set(brand)"
+                            class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors">
+                            Inspect
+                          </button>
+                          <button
+                            type="button"
+                            (click)="openEditBrand(brand)"
+                            class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors">
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            [disabled]="processingBrandId() === brand.id"
+                            (click)="deleteBrand(brand)"
+                            class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-error hover:bg-error-container/40 transition-colors">
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="px-5 py-3.5 border-t border-outline-variant/20 bg-surface-container-low/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-secondary">
+              <div>
+                Showing <span class="font-semibold text-on-surface">{{ paginatedAdminBrands().length }}</span> of
+                <span class="font-semibold text-on-surface">{{ filteredAdminBrands().length }}</span> brand workspaces
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  [disabled]="brandPage() <= 1"
+                  (click)="brandPage.set(brandPage() - 1)"
+                  class="px-3 py-1.5 rounded-lg border border-outline-variant/30 bg-surface-container-lowest text-on-surface disabled:opacity-40 hover:bg-surface-container transition-colors">
+                  Previous
+                </button>
+                <span class="font-mono text-[11px] px-2">
+                  Page {{ brandPage() }} / {{ brandTotalPages() }}
+                </span>
+                <button
+                  type="button"
+                  [disabled]="brandPage() >= brandTotalPages()"
+                  (click)="brandPage.set(brandPage() + 1)"
+                  class="px-3 py-1.5 rounded-lg border border-outline-variant/30 bg-surface-container-lowest text-on-surface disabled:opacity-40 hover:bg-surface-container transition-colors">
+                  Next
+                </button>
               </div>
             </div>
           }
         </div>
-      }
+      </div>
+    }
 
-      <!-- Independent / Global Agencies (if any unassigned to a brand) -->
-      @if (unassignedAgencies().length > 0) {
-        <div class="unassigned-agencies-card" style="margin-top: 24px;">
-          <div class="card-head">
+    <!-- ==================== ECOSYSTEM SLIDE-OVER DRAWER ==================== -->
+    @if (selectedBrandDrawer(); as drawerBrand) {
+      <div class="fixed inset-0 bg-black/35 backdrop-blur-[2px] z-50 flex justify-end" (click)="selectedBrandDrawer.set(null)">
+        <div
+          class="w-full max-w-md bg-surface-container-lowest h-full shadow-2xl border-l border-outline-variant/25 flex flex-col overflow-hidden"
+          (click)="$event.stopPropagation()">
+          <!-- Drawer Header -->
+          <div class="p-5 border-b border-outline-variant/20 flex items-center justify-between gap-3 shrink-0">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-11 h-11 rounded-xl bg-surface-container border border-outline-variant/25 flex items-center justify-center font-display font-bold text-base text-on-surface shrink-0 overflow-hidden">
+                @if (drawerBrand.logoUrl) {
+                  <img [src]="drawerBrand.logoUrl" alt="" class="w-full h-full object-contain p-1" (error)="drawerBrand.logoUrl = ''" />
+                } @else {
+                  {{ (drawerBrand.name || 'B')[0].toUpperCase() }}
+                }
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-display text-lg font-bold text-on-surface truncate">{{ drawerBrand.name }}</h3>
+                <div class="text-xs font-mono text-secondary truncate">
+                  https://{{ getBrandSlug(drawerBrand.name) }}.converge.app
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              (click)="selectedBrandDrawer.set(null)"
+              class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container">
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+
+          <!-- Drawer Body -->
+          <div class="flex-1 overflow-y-auto p-5 space-y-5">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/20">
+                <div class="text-[11px] font-mono uppercase text-secondary">Status</div>
+                <div class="text-sm font-bold text-on-surface mt-1">{{ drawerBrand.status || 'ACTIVE' }}</div>
+              </div>
+              <div class="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/20">
+                <div class="text-[11px] font-mono uppercase text-secondary">Vertical</div>
+                <div class="text-sm font-bold text-on-surface mt-1 truncate">{{ drawerBrand.category || 'General' }}</div>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 space-y-2 text-xs">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-secondary">Primary Manager</span>
+                <span class="font-mono font-semibold text-on-surface truncate">{{ drawerBrand.primaryManagerEmail || drawerBrand.contactEmail }}</span>
+              </div>
+              @if (drawerBrand.websiteUrl) {
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-secondary">Website</span>
+                  <a [href]="drawerBrand.websiteUrl" target="_blank" rel="noopener" class="font-medium text-on-surface underline truncate">
+                    {{ drawerBrand.websiteUrl }}
+                  </a>
+                </div>
+              }
+            </div>
+
+            <!-- Connected Agencies -->
             <div>
-              <h3 class="card-title" style="font-size: 15px;">Independent / Global Partner Agencies ({{ unassignedAgencies().length }})</h3>
-              <p class="card-sub">Agencies registered across platform without a single parent brand link</p>
+              <div class="flex items-center justify-between mb-2.5">
+                <h4 class="text-xs font-mono uppercase tracking-wider font-semibold text-secondary">
+                  Connected Agencies ({{ getAgenciesForBrand(drawerBrand).length }})
+                </h4>
+              </div>
+              @if (getAgenciesForBrand(drawerBrand).length === 0) {
+                <div class="p-4 rounded-xl bg-surface-container-low border border-dashed border-outline-variant/40 text-xs text-secondary text-center">
+                  No partner agencies connected to this brand yet.
+                </div>
+              } @else {
+                <div class="space-y-2">
+                  @for (agency of getAgenciesForBrand(drawerBrand); track agency.id || agency.name) {
+                    <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <div class="text-xs font-semibold text-on-surface truncate">{{ agency.name }}</div>
+                        <div class="text-[11px] text-secondary truncate">{{ agency.email }} · {{ agency.creatorsCount }} creators</div>
+                      </div>
+                      <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-surface-container text-on-surface shrink-0">
+                        {{ agency.status || 'ACTIVE' }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              }
             </div>
           </div>
-          <div class="nested-agencies-table-wrap">
-            <table class="nested-agencies-table">
-              <thead>
-                <tr>
-                  <th>AGENCY</th>
-                  <th>AGENCY MANAGER (USER)</th>
-                  <th>CATEGORY</th>
-                  <th>ROSTERED TALENT</th>
-                  <th>COMMITTED SPEND</th>
-                  <th>STATUS</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (agency of unassignedAgencies(); track agency.id || agency.name) {
-                  <tr>
-                    <td class="agency-title-td">
-                      <div class="agency-cell-wrap">
-                        <span class="agency-bullet-circle" [style.background-color]="agency.avatarColor || '#0071E3'">{{ agency.name[0] }}</span>
-                        <strong class="agency-name-text">{{ agency.name }}</strong>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="manager-user-chip">
-                        <span class="manager-email">{{ agency.email }}</span>
-                        <span class="user-badge agency-role">AGENCY MANAGER</span>
-                      </div>
-                    </td>
-                    <td><span class="tag-pill">{{ agency.category || 'General' }}</span></td>
-                    <td><strong class="number-data">{{ agency.creatorsCount }}</strong> creators</td>
-                    <td><strong class="spend-data">₹{{ formatInr(agency.spend) }}</strong></td>
-                    <td><span class="status-chip active">{{ agency.status || 'ACTIVE' }}</span></td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+
+          <!-- Drawer Footer Actions -->
+          <div class="p-4 border-t border-outline-variant/20 bg-surface-container-low/50 grid grid-cols-2 gap-2.5 shrink-0">
+            <button
+              type="button"
+              (click)="resendBrandInvite(drawerBrand)"
+              [disabled]="processingBrandId() === drawerBrand.id"
+              class="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors">
+              Resend Invite
+            </button>
+            <button
+              type="button"
+              (click)="toggleBrandStatus(drawerBrand)"
+              [disabled]="processingBrandId() === drawerBrand.id"
+              class="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors">
+              {{ drawerBrand.status === 'DEACTIVATED' ? 'Activate' : 'Deactivate' }}
+            </button>
+            <button
+              type="button"
+              (click)="openEditBrand(drawerBrand); selectedBrandDrawer.set(null)"
+              class="px-3 py-2 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-colors">
+              Edit Brand
+            </button>
+            <button
+              type="button"
+              (click)="deleteBrand(drawerBrand); selectedBrandDrawer.set(null)"
+              class="px-3 py-2 rounded-xl bg-error-container/60 text-on-error-container text-xs font-semibold hover:bg-error-container transition-colors">
+              Delete Brand
+            </button>
           </div>
         </div>
-      }
-    </div>
+      </div>
+    }
   } @else {
     <!-- Brand / Agency Workspace: Delivering EXACTLY the Landing Page Experience (Image 2 & Image 3) -->
     <div class="landing-preview-scope">
@@ -752,40 +1238,79 @@
 
   <!-- Modal: Add Brand (Admin only — Single Brand Manager Email & Triggers Set-Password Email) -->
   @if (openBrandModal) {
-    <div class="modal-backdrop" (click)="openBrandModal = false">
-      <div class="modal-card" (click)="$event.stopPropagation()">
-        <div class="modal-head">
-          <h3>Register New Brand Workspace</h3>
-          <button class="close-btn" (click)="openBrandModal = false">✕</button>
-        </div>
-        <form (ngSubmit)="submitBrand()">
-          <div class="form-group">
-            <label>Brand Name *</label>
-            <input type="text" [(ngModel)]="newBrandName" name="name" required placeholder="e.g. Lumina Health" class="form-input" />
+    <div class="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" (click)="openBrandModal = false">
+      <div
+        [class]="'w-full max-w-lg bg-surface-container-lowest rounded-2xl border border-outline-variant/25 shadow-2xl overflow-hidden my-auto ' + (brandModalShake() ? 'animate-shake' : '')"
+        (click)="$event.stopPropagation()">
+        <div class="px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between gap-3">
+          <div>
+            <h3 class="font-display text-lg font-bold text-on-surface">Onboard Brand Workspace</h3>
+            <p class="text-xs text-secondary mt-0.5">Provision an isolated tenant and send a Set-Password invite</p>
           </div>
-          <div class="form-group">
-            <label>Brand Website URL (if available)</label>
-            <div class="website-input-row">
-              <input type="url" [(ngModel)]="newBrandWebsiteUrl" (blur)="newBrandWebsiteUrl && !newBrandLogoUrl ? fetchBrandLogo('new') : null" name="websiteUrl" placeholder="https://luminahealth.com" class="form-input" />
-              <button type="button" class="btn-fetch-logo" (click)="fetchBrandLogo('new')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <button
+            type="button"
+            (click)="openBrandModal = false"
+            class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container">
+            <span class="material-symbols-outlined text-[19px]">close</span>
+          </button>
+        </div>
+
+        <form (ngSubmit)="submitBrand()" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-on-surface mb-1.5">Brand Name *</label>
+            <input
+              type="text"
+              [(ngModel)]="newBrandName"
+              name="name"
+              required
+              placeholder="e.g. Lumina Health"
+              class="w-full px-3.5 py-2.5 text-sm bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary" />
+            <div class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-mono text-secondary bg-surface-container-low px-2.5 py-1 rounded-lg border border-outline-variant/20">
+              <span class="material-symbols-outlined text-[14px] text-emerald-600">language</span>
+              <span>https://{{ getBrandSlug(newBrandName) }}.converge.app</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-on-surface mb-1.5">Brand Website URL (optional)</label>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input
+                type="url"
+                [(ngModel)]="newBrandWebsiteUrl"
+                (blur)="newBrandWebsiteUrl && !newBrandLogoUrl ? fetchBrandLogo('new') : null"
+                name="websiteUrl"
+                placeholder="https://luminahealth.com"
+                class="flex-1 px-3.5 py-2.5 text-sm bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary" />
+              <button
+                type="button"
+                (click)="fetchBrandLogo('new')"
+                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors shrink-0">
+                <span class="material-symbols-outlined text-[16px]">auto_awesome</span>
                 <span>Fetch Logo</span>
               </button>
             </div>
             @if (newBrandLogoUrl) {
-              <div class="logo-preview-chip">
-                <img [src]="newBrandLogoUrl" alt="Brand Logo" class="preview-logo-thumb" (error)="newBrandLogoUrl = ''" />
-                <span class="preview-logo-text">Detected Logo Preview</span>
-                <button type="button" class="btn-clear-logo" (click)="newBrandLogoUrl = ''" title="Clear logo">✕</button>
+              <div class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container-low border border-outline-variant/25">
+                <img [src]="newBrandLogoUrl" alt="Brand Logo" class="w-5 h-5 object-contain rounded" (error)="newBrandLogoUrl = ''" />
+                <span class="text-xs text-secondary">Detected Logo Preview</span>
+                <button type="button" (click)="newBrandLogoUrl = ''" class="text-xs text-secondary hover:text-error ml-1">✕</button>
               </div>
             }
           </div>
-          <div class="form-group">
-            <label>Brand Manager Email *</label>
-            <input type="email" [(ngModel)]="newBrandManagerEmail" name="managerEmail" required placeholder="manager@luminahealth.com" class="form-input" />
+
+          <div>
+            <label class="block text-xs font-semibold text-on-surface mb-1.5">Primary Brand Manager Email *</label>
+            <input
+              type="email"
+              [(ngModel)]="newBrandManagerEmail"
+              name="managerEmail"
+              required
+              placeholder="manager@luminahealth.com"
+              class="w-full px-3.5 py-2.5 text-sm bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary" />
           </div>
-          <div class="form-group">
-            <label>Primary Vertical *</label>
+
+          <div>
+            <label class="block text-xs font-semibold text-on-surface mb-1.5">Primary Vertical *</label>
             <app-custom-select
               [(ngModel)]="newBrandCategory"
               name="category"
@@ -793,17 +1318,28 @@
               placeholder="Select Primary Vertical"
             ></app-custom-select>
           </div>
-          <p class="modal-helper-note">
-            An invitation email with a <strong>Set Initial Password</strong> link will be triggered automatically for the Brand Manager.
-          </p>
-          <div class="modal-actions">
-            <button type="button" class="btn-cancel" [disabled]="isSubmittingBrand()" (click)="openBrandModal = false">Cancel</button>
-            <button type="submit" class="btn-submit" [disabled]="isSubmittingBrand()">
+
+          <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 text-xs text-secondary leading-relaxed">
+            An invitation email with a <strong class="text-on-surface">Set Initial Password</strong> link will be triggered automatically for the Brand Manager.
+          </div>
+
+          <div class="pt-2 flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5">
+            <button
+              type="button"
+              [disabled]="isSubmittingBrand()"
+              (click)="openBrandModal = false"
+              class="px-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="isSubmittingBrand()"
+              class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-all disabled:opacity-50">
               @if (isSubmittingBrand()) {
                 <span class="btn-spinner"></span>
-                <span>Creating & Sending...</span>
+                <span>Provisioning...</span>
               } @else {
-                <span>Create Brand & Send Invite</span>
+                <span>Provision Workspace</span>
               }
             </button>
           </div>

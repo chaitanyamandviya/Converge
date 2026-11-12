@@ -1,6 +1,7 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { PortalService } from '../../services/portal.service';
 import { ConfirmService } from '../../services/confirm.service';
@@ -8,101 +9,369 @@ import { ConfirmService } from '../../services/confirm.service';
 @Component({
   selector: 'app-portal-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, RouterOutlet],
   template: `
-    <div class="portal-root">
-      <!-- Notion-style Top Header / Breadcrumbs -->
-      <header class="app-header">
-        <div class="header-left">
-          <a routerLink="/dashboard" class="logo-link" title="Return to Overview">
-            <img src="/assets/converge-logo.svg" alt="Converge" class="header-logo" />
-          </a>
-          <span class="header-divider">/</span>
-          <div class="breadcrumb-chip">
-            <span class="workspace-dot"></span>
-            <span class="workspace-name">{{ workspaceName() }}</span>
+    @if (isAdmin()) {
+      <!-- Converge Superadmin Mesh Shell -->
+      <div class="min-h-screen bg-surface text-on-surface flex flex-col lg:flex-row font-sans antialiased">
+        <!-- Mobile Sidebar Backdrop -->
+        @if (mobileSidebarOpen()) {
+          <div
+            class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40 lg:hidden"
+            (click)="mobileSidebarOpen.set(false)">
           </div>
-        </div>
+        }
 
-        <div class="header-right">
-          <div class="user-chip">
-            <span class="user-avatar">{{ (user()?.email || 'U')[0].toUpperCase() }}</span>
-            <div class="user-details">
-              <span class="user-email">{{ user()?.email }}</span>
-              <span class="user-role-badge">{{ roleDisplay() }}</span>
+        <!-- Superadmin Collapsible / Off-canvas Sidebar -->
+        <aside
+          [class]="
+            'fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:h-screen bg-surface-container-low border-r border-outline-variant/25 flex flex-col transition-all duration-300 ease-in-out shrink-0 ' +
+            (mobileSidebarOpen() ? 'translate-x-0 ' : '-translate-x-full lg:translate-x-0 ') +
+            (sidebarCollapsed() ? 'lg:w-20 w-64' : 'w-64')
+          ">
+          <!-- Brand Header -->
+          <div class="h-16 px-4 flex items-center justify-between border-b border-outline-variant/20 shrink-0">
+            <a routerLink="/dashboard" (click)="mobileSidebarOpen.set(false)" class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-surface-container-lowest border border-outline-variant/25 shadow-xs flex items-center justify-center shrink-0 overflow-hidden">
+                <img src="/assets/converge-logo.png" alt="Converge" class="w-6 h-6 object-contain" />
+              </div>
+              @if (!sidebarCollapsed()) {
+                <div class="min-w-0">
+                  <div class="font-display font-bold text-base tracking-tight text-on-surface leading-none">Converge</div>
+                  <div class="text-[11px] font-medium text-secondary mt-1 truncate">Superadmin Mesh</div>
+                </div>
+              }
+            </a>
+
+            <!-- Desktop Collapse Toggle -->
+            <button
+              type="button"
+              (click)="sidebarCollapsed.set(!sidebarCollapsed())"
+              class="hidden lg:inline-flex items-center justify-center w-8 h-8 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container transition-colors"
+              [title]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
+              <span class="material-symbols-outlined text-[19px]">
+                {{ sidebarCollapsed() ? 'left_panel_open' : 'left_panel_close' }}
+              </span>
+            </button>
+
+            <!-- Mobile Close Button -->
+            <button
+              type="button"
+              (click)="mobileSidebarOpen.set(false)"
+              class="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container">
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+
+          <!-- Primary Navigation -->
+          <div class="flex-1 overflow-y-auto px-3 py-5 space-y-6">
+            <div>
+              @if (!sidebarCollapsed()) {
+                <div class="px-3 mb-2 text-[10px] font-mono font-semibold uppercase tracking-[0.14em] text-outline">
+                  Control Plane
+                </div>
+              }
+              <nav class="space-y-1">
+                <a
+                  routerLink="/dashboard"
+                  (click)="navigateAdminTab('overview')"
+                  [class]="adminNavClass(isOverviewRoute())"
+                  [title]="sidebarCollapsed() ? 'Overview' : ''">
+                  <span class="material-symbols-outlined text-[20px] shrink-0">dashboard</span>
+                  @if (!sidebarCollapsed()) {
+                    <span class="truncate">Overview</span>
+                  }
+                </a>
+
+                <a
+                  routerLink="/dashboard"
+                  [queryParams]="{ tab: 'brands' }"
+                  (click)="navigateAdminTab('brands')"
+                  [class]="adminNavClass(isBrandsRoute())"
+                  [title]="sidebarCollapsed() ? 'Brands' : ''">
+                  <span class="material-symbols-outlined text-[20px] shrink-0">domain</span>
+                  @if (!sidebarCollapsed()) {
+                    <span class="truncate flex-1">Brands</span>
+                    <span class="text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant">
+                      {{ brandsCount() }}
+                    </span>
+                  }
+                </a>
+
+                <a
+                  routerLink="/agencies"
+                  routerLinkActive="bg-primary text-on-primary shadow-xs"
+                  (click)="mobileSidebarOpen.set(false)"
+                  class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
+                  [title]="sidebarCollapsed() ? 'Agencies' : ''">
+                  <span class="material-symbols-outlined text-[20px] shrink-0">corporate_fare</span>
+                  @if (!sidebarCollapsed()) {
+                    <span class="truncate flex-1">Agencies</span>
+                    <span class="text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-black/5 text-current opacity-80">
+                      {{ agenciesCount() }}
+                    </span>
+                  }
+                </a>
+
+                <a
+                  routerLink="/creators"
+                  routerLinkActive="bg-primary text-on-primary shadow-xs"
+                  (click)="mobileSidebarOpen.set(false)"
+                  class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
+                  [title]="sidebarCollapsed() ? 'Creators' : ''">
+                  <span class="material-symbols-outlined text-[20px] shrink-0">person_search</span>
+                  @if (!sidebarCollapsed()) {
+                    <span class="truncate">Creators</span>
+                  }
+                </a>
+
+                <a
+                  routerLink="/content-library"
+                  routerLinkActive="bg-primary text-on-primary shadow-xs"
+                  (click)="mobileSidebarOpen.set(false)"
+                  class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
+                  [title]="sidebarCollapsed() ? 'Deliverables Audit' : ''">
+                  <span class="material-symbols-outlined text-[20px] shrink-0">monitoring</span>
+                  @if (!sidebarCollapsed()) {
+                    <span class="truncate">Deliverables Audit</span>
+                  }
+                </a>
+              </nav>
             </div>
           </div>
-          <button type="button" class="logout-btn" (click)="logout()" title="Sign out of workspace">
-            <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            <span>Log out</span>
-          </button>
-        </div>
-      </header>
 
-      <!-- Portal Body: Slim Notion Sidebar + Main Canvas -->
-      <div class="portal-layout">
-        <!-- Notion Slim Sidebar -->
-        <aside class="portal-sidebar">
-          <div class="sidebar-ws-card">
-            <div class="ws-identity">
-              <span class="ws-badge-icon">📋</span>
-              <span class="ws-title-text">{{ workspaceName() }}</span>
-            </div>
-          </div>
-
-          <div class="sidebar-category">WORKSPACE</div>
-          <nav class="sidebar-nav">
-            <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-              <span class="nav-emoji">🏢</span>
-              <span>{{ isAdmin() ? 'Brands & Organizations' : 'Overview' }}</span>
-            </a>
-
-            @if (!isAdmin() && !isAgencyManager()) {
-              <a routerLink="/campaigns" routerLinkActive="active" class="nav-item">
-                <span class="nav-emoji">📢</span>
-                <span>Campaigns</span>
-              </a>
+          <!-- Sidebar Footer: System Health + Profile -->
+          <div class="p-3 border-t border-outline-variant/20 space-y-2.5 shrink-0">
+            @if (!sidebarCollapsed()) {
+              <div class="bg-surface-container-lowest rounded-xl p-3 border border-outline-variant/20 shadow-2xs">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-semibold text-on-surface">System Health</span>
+                  </div>
+                  <span class="text-[11px] font-mono font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    Optimal
+                  </span>
+                </div>
+                <div class="text-[11px] text-secondary mt-1.5 font-mono">
+                  Isolated Admin · API Live
+                </div>
+              </div>
             }
 
-            @if (!isAgencyManager()) {
-              <a routerLink="/agencies" routerLinkActive="active" class="nav-item">
-                <span class="nav-emoji">🤝</span>
-                <span>{{ isAdmin() ? 'Agencies (Directory)' : 'Agencies' }}</span>
-              </a>
-            }
-
-            <a routerLink="/creators" routerLinkActive="active" class="nav-item">
-              <span class="nav-emoji">✨</span>
-              <span>{{ isAgencyManager() ? 'My Talent Roster' : (isAdmin() ? 'Creators (Directory)' : 'Creators') }}</span>
-            </a>
-          </nav>
-
-          <div class="sidebar-category" style="margin-top: 14px;">ADMIN &amp; AUDIT</div>
-          <nav class="sidebar-nav">
-            <a routerLink="/content-library" routerLinkActive="active" class="nav-item">
-              <span class="nav-emoji">📊</span>
-              <span>{{ isAdmin() ? 'Deliverables Audit' : 'Content library' }}</span>
-            </a>
-          </nav>
-
-          <div class="sidebar-footer">
-            <div class="sidebar-stat-chip">
-              <span class="status-indicator-dot"></span>
-              <span>{{ isAgencyManager() ? 'Agency active' : (activeAgenciesCount() + ' agencies active') }}</span>
+            <div class="flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl bg-surface-container-lowest border border-outline-variant/20">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-primary text-on-primary flex items-center justify-center text-xs font-bold shrink-0">
+                  {{ (user()?.email || 'S')[0].toUpperCase() }}
+                </div>
+                @if (!sidebarCollapsed()) {
+                  <div class="min-w-0">
+                    <div class="text-xs font-semibold text-on-surface truncate">{{ user()?.email }}</div>
+                    <div class="text-[10px] font-mono text-secondary uppercase tracking-wider">System Admin</div>
+                  </div>
+                }
+              </div>
+              <button
+                type="button"
+                (click)="logout()"
+                class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-secondary hover:text-error hover:bg-error-container/40 transition-colors shrink-0"
+                title="Sign out">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+              </button>
             </div>
           </div>
         </aside>
 
-        <!-- Main Notion Canvas -->
-        <main class="portal-main">
-          <router-outlet></router-outlet>
-        </main>
+        <!-- Main Column -->
+        <div class="flex-1 flex flex-col min-w-0">
+          <!-- Top Sticky Header -->
+          <header class="h-16 px-4 sm:px-6 lg:px-8 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20 flex items-center justify-between gap-3 sticky top-0 z-30">
+            <div class="flex items-center gap-3 min-w-0">
+              <button
+                type="button"
+                (click)="mobileSidebarOpen.set(true)"
+                class="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-on-surface hover:bg-surface-container">
+                <span class="material-symbols-outlined text-[20px]">menu</span>
+              </button>
+
+              <div class="flex items-center gap-2 text-xs sm:text-sm min-w-0">
+                <span class="font-semibold text-on-surface hidden sm:inline">Converge</span>
+                <span class="text-outline-variant hidden sm:inline">/</span>
+                <span class="text-secondary truncate">{{ adminPageTitle() }}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+              <!-- Global Search -->
+              <div class="relative hidden md:flex items-center">
+                <span class="material-symbols-outlined text-[18px] text-secondary absolute left-3 pointer-events-none">search</span>
+                <input
+                  #adminSearchInput
+                  type="text"
+                  [ngModel]="portal.adminSearchQuery()"
+                  (ngModelChange)="onGlobalSearch($event)"
+                  placeholder="Search brands, managers..."
+                  class="w-56 lg:w-64 pl-9 pr-12 py-1.5 text-xs bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary transition-all" />
+                <kbd class="absolute right-2.5 px-1.5 py-0.5 text-[10px] font-mono bg-surface-container text-secondary rounded border border-outline-variant/30">
+                  ⌘K
+                </kbd>
+              </div>
+
+              <!-- Notifications Popover -->
+              <div class="relative">
+                <button
+                  type="button"
+                  (click)="notificationsOpen.set(!notificationsOpen())"
+                  class="relative w-9 h-9 rounded-xl bg-surface-container-lowest border border-outline-variant/25 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                  title="Notifications">
+                  <span class="material-symbols-outlined text-[19px]">notifications</span>
+                  @if (pendingApprovalsCount() > 0) {
+                    <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500"></span>
+                  }
+                </button>
+
+                @if (notificationsOpen()) {
+                  <div class="fixed inset-0 z-30" (click)="notificationsOpen.set(false)"></div>
+                  <div class="absolute right-0 mt-2 w-72 sm:w-80 bg-surface-container-lowest rounded-2xl border border-outline-variant/25 shadow-xl p-4 z-40">
+                    <div class="flex items-center justify-between mb-3">
+                      <span class="text-xs font-bold uppercase tracking-wider text-on-surface">Governance Alerts</span>
+                      <span class="text-[11px] font-mono text-secondary">{{ pendingApprovalsCount() }} pending</span>
+                    </div>
+                    @if (pendingApprovalsCount() === 0) {
+                      <div class="py-4 text-center text-xs text-secondary">
+                        All caught up — no pending brand or agency approvals.
+                      </div>
+                    } @else {
+                      <div class="space-y-2 text-xs">
+                        @if (pendingBrandsCount() > 0) {
+                          <a
+                            routerLink="/dashboard"
+                            [queryParams]="{ tab: 'brands' }"
+                            (click)="notificationsOpen.set(false)"
+                            class="block p-2.5 rounded-xl bg-amber-50 border border-amber-200/70 text-amber-900 hover:bg-amber-100/70 transition-colors">
+                            <span class="font-semibold">{{ pendingBrandsCount() }} Brand(s)</span> awaiting approval
+                          </a>
+                        }
+                        @if (pendingAgenciesCount() > 0) {
+                          <a
+                            routerLink="/agencies"
+                            (click)="notificationsOpen.set(false)"
+                            class="block p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 text-on-surface hover:bg-surface-container transition-colors">
+                            <span class="font-semibold">{{ pendingAgenciesCount() }} Agency(s)</span> pending review
+                          </a>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Onboard Brand Primary CTA -->
+              <button
+                type="button"
+                (click)="triggerOnboardBrand()"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-all shadow-xs active:scale-[0.98] shrink-0">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                <span>Onboard Brand</span>
+              </button>
+            </div>
+          </header>
+
+          <!-- Main Content Outlet -->
+          <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+            <router-outlet></router-outlet>
+          </main>
+        </div>
       </div>
-    </div>
+    } @else {
+      <!-- Existing Brand / Agency Manager Notion-style Shell -->
+      <div class="portal-root">
+        <header class="app-header">
+          <div class="header-left">
+            <a routerLink="/dashboard" class="logo-link" title="Return to Overview">
+              <img src="/assets/converge-logo.svg" alt="Converge" class="header-logo" />
+            </a>
+            <span class="header-divider">/</span>
+            <div class="breadcrumb-chip">
+              <span class="workspace-dot"></span>
+              <span class="workspace-name">{{ workspaceName() }}</span>
+            </div>
+          </div>
+
+          <div class="header-right">
+            <div class="user-chip">
+              <span class="user-avatar">{{ (user()?.email || 'U')[0].toUpperCase() }}</span>
+              <div class="user-details">
+                <span class="user-email">{{ user()?.email }}</span>
+                <span class="user-role-badge">{{ roleDisplay() }}</span>
+              </div>
+            </div>
+            <button type="button" class="logout-btn" (click)="logout()" title="Sign out of workspace">
+              <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              <span class="logout-label">Log out</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="portal-layout">
+          <aside class="portal-sidebar">
+            <div class="sidebar-ws-card">
+              <div class="ws-identity">
+                <span class="ws-badge-icon">📋</span>
+                <span class="ws-title-text">{{ workspaceName() }}</span>
+              </div>
+            </div>
+
+            <div class="sidebar-category">WORKSPACE</div>
+            <nav class="sidebar-nav">
+              <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+                <span class="nav-emoji">🏢</span>
+                <span>Overview</span>
+              </a>
+
+              @if (!isAgencyManager()) {
+                <a routerLink="/campaigns" routerLinkActive="active" class="nav-item">
+                  <span class="nav-emoji">📢</span>
+                  <span>Campaigns</span>
+                </a>
+                <a routerLink="/agencies" routerLinkActive="active" class="nav-item">
+                  <span class="nav-emoji">🤝</span>
+                  <span>Agencies</span>
+                </a>
+              }
+
+              <a routerLink="/creators" routerLinkActive="active" class="nav-item">
+                <span class="nav-emoji">✨</span>
+                <span>{{ isAgencyManager() ? 'My Talent Roster' : 'Creators' }}</span>
+              </a>
+            </nav>
+
+            <div class="sidebar-category" style="margin-top: 14px;">ADMIN &amp; AUDIT</div>
+            <nav class="sidebar-nav">
+              <a routerLink="/content-library" routerLinkActive="active" class="nav-item">
+                <span class="nav-emoji">📊</span>
+                <span>Content library</span>
+              </a>
+            </nav>
+
+            <div class="sidebar-footer">
+              <div class="sidebar-stat-chip">
+                <span class="status-indicator-dot"></span>
+                <span>{{ isAgencyManager() ? 'Agency active' : (activeAgenciesCount() + ' agencies active') }}</span>
+              </div>
+            </div>
+          </aside>
+
+          <main class="portal-main">
+            <router-outlet></router-outlet>
+          </main>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .portal-root {
@@ -119,7 +388,6 @@ import { ConfirmService } from '../../services/confirm.service';
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Notion Minimalist Header */
     .app-header {
       height: 48px;
       min-height: 48px;
@@ -140,6 +408,7 @@ import { ConfirmService } from '../../services/confirm.service';
       display: flex;
       align-items: center;
       gap: 10px;
+      min-width: 0;
     }
 
     .header-logo {
@@ -159,6 +428,13 @@ import { ConfirmService } from '../../services/confirm.service';
       font-size: 13px;
       font-weight: 500;
       color: #787774;
+      min-width: 0;
+    }
+
+    .workspace-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .workspace-dot {
@@ -166,12 +442,14 @@ import { ConfirmService } from '../../services/confirm.service';
       height: 6px;
       background-color: #10B981;
       border-radius: 50%;
+      flex-shrink: 0;
     }
 
     .header-right {
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-shrink: 0;
     }
 
     .user-chip {
@@ -247,7 +525,6 @@ import { ConfirmService } from '../../services/confirm.service';
       width: 100%;
     }
 
-    /* Notion Slim Sidebar */
     .portal-sidebar {
       width: 240px;
       flex-shrink: 0;
@@ -341,7 +618,6 @@ import { ConfirmService } from '../../services/confirm.service';
       border-radius: 50%;
     }
 
-    /* Notion Canvas */
     .portal-main {
       flex: 1 1 auto;
       width: 100%;
@@ -360,10 +636,15 @@ import { ConfirmService } from '../../services/confirm.service';
         width: 100%;
         border-right: none;
         border-bottom: 1px solid #EDEDED;
+        padding: 12px;
+      }
+      .sidebar-ws-card, .sidebar-category {
+        display: none;
       }
       .sidebar-nav {
         flex-direction: row;
         flex-wrap: wrap;
+        gap: 6px;
       }
       .sidebar-footer {
         display: none;
@@ -372,24 +653,107 @@ import { ConfirmService } from '../../services/confirm.service';
         padding: 20px 16px;
       }
     }
+
+    @media (max-width: 640px) {
+      .app-header {
+        padding: 0 12px;
+      }
+      .user-details, .logout-label {
+        display: none;
+      }
+      .user-chip {
+        padding: 3px;
+      }
+    }
   `]
 })
 export class PortalLayoutComponent {
   private auth = inject(AuthService);
-  private portal = inject(PortalService);
+  public portal = inject(PortalService);
   private confirmService = inject(ConfirmService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  @ViewChild('adminSearchInput') adminSearchInput?: ElementRef<HTMLInputElement>;
 
   user = this.auth.currentUser;
-  logoFailed = false;
+  mobileSidebarOpen = signal(false);
+  sidebarCollapsed = signal(false);
+  notificationsOpen = signal(false);
 
+  brandsCount = computed(() => this.portal.brands().length);
+  agenciesCount = computed(() => this.portal.agencies().length);
   activeAgenciesCount = computed(() =>
     this.portal.agencies().filter(a => a.status === 'ACTIVE').length
   );
+  pendingBrandsCount = computed(() =>
+    this.portal.brands().filter(b => b.status === 'PENDING_APPROVAL').length
+  );
+  pendingAgenciesCount = computed(() =>
+    this.portal.agencies().filter(a => a.status === 'PENDING_APPROVAL').length
+  );
+  pendingApprovalsCount = computed(() => this.pendingBrandsCount() + this.pendingAgenciesCount());
 
   isAdmin = computed(() => this.user()?.role === 'SYSTEM_ADMIN');
   isAgencyManager = computed(() => this.user()?.role === 'AGENCY_MANAGER');
   isBrandManager = computed(() => this.user()?.role === 'BRAND_MANAGER');
+
+  isOverviewRoute(): boolean {
+    const url = this.router.url;
+    return (url === '/dashboard' || url.startsWith('/dashboard?')) && !url.includes('tab=brands');
+  }
+
+  isBrandsRoute(): boolean {
+    return this.router.url.includes('tab=brands');
+  }
+
+  adminPageTitle(): string {
+    const url = this.router.url;
+    if (url.includes('tab=brands')) return 'Brands Directory';
+    if (url.startsWith('/agencies')) return 'Agencies Directory';
+    if (url.startsWith('/creators')) return 'Creators Directory';
+    if (url.startsWith('/content-library')) return 'Deliverables Audit';
+    return 'Platform Overview';
+  }
+
+  adminNavClass(active: boolean): string {
+    const base = 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all ';
+    return active
+      ? base + 'bg-primary text-on-primary shadow-xs'
+      : base + 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface';
+  }
+
+  navigateAdminTab(tab: 'overview' | 'brands'): void {
+    this.mobileSidebarOpen.set(false);
+    this.router.navigate(['/dashboard'], {
+      queryParams: tab === 'brands' ? { tab: 'brands' } : {}
+    });
+  }
+
+  onGlobalSearch(query: string): void {
+    this.portal.adminSearchQuery.set(query);
+    if (query.trim() && !this.router.url.includes('tab=brands') && !this.router.url.startsWith('/agencies') && !this.router.url.startsWith('/creators')) {
+      this.router.navigate(['/dashboard'], { queryParams: { tab: 'brands' } });
+    }
+  }
+
+  triggerOnboardBrand(): void {
+    this.mobileSidebarOpen.set(false);
+    this.portal.onboardBrandTrigger.update(n => n + 1);
+    if (!this.router.url.startsWith('/dashboard')) {
+      this.router.navigate(['/dashboard'], { queryParams: { tab: 'brands' } });
+    }
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardShortcut(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if (this.isAdmin() && this.adminSearchInput?.nativeElement) {
+        event.preventDefault();
+        this.adminSearchInput.nativeElement.focus();
+      }
+    }
+  }
 
   workspaceName = computed(() => {
     const org = this.user()?.organizationName;

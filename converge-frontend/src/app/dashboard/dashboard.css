@@ -2707,3 +2707,28 @@
     gap: 12px;
   }
 }
+
+@media (max-width: 640px) {
+  .summary-metrics {
+    grid-template-columns: 1fr;
+  }
+  .modal-card {
+    width: 100%;
+    max-width: calc(100vw - 24px);
+    padding: 18px;
+  }
+}
+
+@keyframes headShake {
+  0% { transform: scale(1) translateX(0); }
+  15% { transform: scale(1) translateX(-6px) rotate(-0.5deg); }
+  30% { transform: scale(1) translateX(5px) rotate(0.5deg); }
+  45% { transform: scale(1) translateX(-4px) rotate(-0.3deg); }
+  60% { transform: scale(1) translateX(3px) rotate(0.2deg); }
+  75% { transform: scale(1) translateX(-1px); }
+  100% { transform: scale(1) translateX(0); }
+}
+
+.animate-shake {
+  animation: headShake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+}
