@@ -38,25 +38,26 @@ import { ConfirmService } from '../../services/confirm.service';
       position: fixed;
       inset: 0;
       z-index: 10000;
-      background: rgba(18, 32, 68, 0.45);
-      backdrop-filter: blur(4px);
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
-      animation: cfFadeIn 0.14s ease-out;
+      animation: cfFadeIn 0.2s ease-out;
     }
 
     .confirm-card {
       width: 100%;
-      max-width: 380px;
+      max-width: 400px;
       background: #FFFFFF;
-      border: 1px solid rgba(0, 0, 0, 0.14);
-      border-radius: 14px;
-      padding: 22px 24px;
-      box-shadow: 0 20px 44px rgba(18, 32, 68, 0.22);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 16px;
+      padding: 24px 26px;
+      box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.22);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      animation: cfPopIn 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+      animation: cfPopIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .confirm-title {
@@ -175,7 +176,7 @@ import { ConfirmService } from '../../services/confirm.service';
     }
 
     @keyframes cfPopIn {
-      from { opacity: 0; transform: scale(0.96) translateY(4px); }
+      from { opacity: 0; transform: scale(0.92) translateY(8px); }
       to { opacity: 1; transform: scale(1) translateY(0); }
     }
   `]

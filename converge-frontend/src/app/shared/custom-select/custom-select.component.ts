@@ -137,6 +137,7 @@ export interface SelectOption {
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
       padding: 5px;
       z-index: 1000;
+      transform-origin: top center;
       animation: menuPopIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
     }
 

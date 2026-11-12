@@ -2,7 +2,7 @@
   @if (isAdmin()) {
     <!-- ==================== SYSTEM ADMIN: OVERVIEW PANEL (Stitch Carbon Copy) ==================== -->
     @if (adminTab() === 'overview') {
-      <div class="space-y-6">
+      <div class="space-y-6 tab-panel-enter">
         <!-- Top Pill + Header Row -->
         <div>
           <div class="flex flex-wrap items-center gap-3 mb-2">
@@ -353,7 +353,7 @@
 
     } @else if (adminTab() === 'brands') {
       <!-- ==================== SYSTEM ADMIN: BRANDS DIRECTORY PANEL (Stitch Carbon Copy) ==================== -->
-      <div class="space-y-6">
+      <div class="space-y-6 tab-panel-enter">
         <!-- Header Row -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -833,7 +833,7 @@
 
     } @else {
       <!-- ==================== SYSTEM ADMIN: PLATFORM SETTINGS (Stitch Carbon Copy) ==================== -->
-      <div class="space-y-6">
+      <div class="space-y-6 tab-panel-enter">
         <div class="bg-white rounded-2xl p-6 border border-[#e6e2da] shadow-2xs">
           <h1 class="font-display text-2xl font-bold text-[#0f172a]">Superadmin Platform Settings</h1>
           <p class="text-xs sm:text-sm text-[#64748b] mt-1">
@@ -876,9 +876,9 @@
 
     <!-- ==================== BRAND DETAIL SLIDE-OVER DRAWER (Stitch Carbon Copy) ==================== -->
     @if (selectedBrandDrawer(); as drawerBrand) {
-      <div class="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-50 flex justify-end" (click)="selectedBrandDrawer.set(null)">
+      <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-end modal-backdrop-enter" (click)="selectedBrandDrawer.set(null)">
         <div
-          class="w-full max-w-md bg-white h-full shadow-2xl border-l border-[#e2e8f0] flex flex-col overflow-hidden"
+          class="w-full max-w-md bg-white h-full shadow-2xl border-l border-[#e2e8f0] flex flex-col overflow-hidden drawer-enter"
           (click)="$event.stopPropagation()">
           <!-- Drawer Header -->
           <div class="p-5 border-b border-[#f1f5f9] flex items-center justify-between gap-3 shrink-0">
@@ -998,7 +998,7 @@
     }
   } @else {
     <!-- Brand / Agency Workspace: Delivering EXACTLY the Landing Page Experience (Image 2 & Image 3) -->
-    <div class="landing-preview-scope">
+    <div class="landing-preview-scope tab-panel-enter">
       <!-- 1. Workspace Bar -->
       <div class="workspace-bar">
         <span>{{ brandDisplayName() }} / Overview</span>
@@ -1488,9 +1488,9 @@
 
   <!-- Modal: Add Brand (Stitch Carbon Copy) -->
   @if (openBrandModal) {
-    <div class="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" (click)="openBrandModal = false">
+    <div class="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto modal-backdrop-enter" (click)="openBrandModal = false">
       <div
-        [class]="'w-full max-w-lg bg-white rounded-2xl border border-[#e2e8f0] shadow-2xl overflow-hidden my-auto ' + (brandModalShake() ? 'animate-shake' : '')"
+        [class]="'w-full max-w-lg bg-white rounded-2xl border border-[#e2e8f0] shadow-2xl overflow-hidden my-auto modal-card-enter ' + (brandModalShake() ? 'animate-shake' : '')"
         (click)="$event.stopPropagation()">
         <div class="px-6 pt-5 pb-4 border-b border-[#f1f5f9] flex items-start justify-between gap-3">
           <div>

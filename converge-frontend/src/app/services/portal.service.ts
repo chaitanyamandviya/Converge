@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap, of } from 'rxjs';
+import { Observable, tap, of, finalize } from 'rxjs';
 import { getApiBaseUrl } from '../config/api.config';
 
 export interface OverviewMetrics {
@@ -152,6 +152,7 @@ export class PortalService {
   readonly activeCampaignId = signal<number | null>(null);
   readonly onboardBrandTrigger = signal(0);
   readonly adminSearchQuery = signal('');
+  readonly isLoading = signal(false);
 
   private lastFetchTime: Record<string, number> = {};
   private readonly CACHE_TTL_MS = 60_000; // 60s client-side cache
@@ -211,6 +212,7 @@ export class PortalService {
     if (campaignId != null) {
       params = params.set('campaignId', String(campaignId));
     }
+    this.isLoading.set(true);
     return this.http.get<any>(`${this.apiUrl}/overview`, { params }).pipe(
       tap(dto => {
         let filledSlots = 0;
@@ -242,7 +244,8 @@ export class PortalService {
         }
         this.activeCampaignId.set(dto.activeCampaignId ?? null);
         this.lastFetchTime[key] = Date.now();
-      })
+      }),
+      finalize(() => this.isLoading.set(false))
     );
   }
 
@@ -303,11 +306,13 @@ export class PortalService {
     if (!force && this.isFresh(key) && this.brands().length > 0) {
       return of(this.brands());
     }
+    this.isLoading.set(true);
     return this.http.get<Brand[]>(`${this.apiUrl}/brands`).pipe(
       tap(data => {
         this.brands.set(data);
         this.lastFetchTime[key] = Date.now();
-      })
+      }),
+      finalize(() => this.isLoading.set(false))
     );
   }
 

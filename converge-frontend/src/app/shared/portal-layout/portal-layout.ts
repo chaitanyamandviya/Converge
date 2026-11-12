@@ -28,7 +28,7 @@ import { ConfirmService } from '../../services/confirm.service';
         <!-- Left White Sidebar -->
         <aside
           [class]="
-            'fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:h-screen bg-white border-r border-[#e6e2da] flex flex-col transition-all duration-300 ease-in-out shrink-0 ' +
+            'fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:h-screen bg-white border-r border-[#e6e2da] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 ' +
             (mobileSidebarOpen() ? 'translate-x-0 ' : '-translate-x-full lg:translate-x-0 ') +
             (sidebarCollapsed() ? 'lg:w-20 w-64' : 'w-64')
           ">
@@ -146,7 +146,7 @@ import { ConfirmService } from '../../services/confirm.service';
         <!-- Main Column -->
         <div class="flex-1 flex flex-col min-w-0">
           <!-- Top Sticky Header -->
-          <header class="h-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-[#e6e2da] flex items-center justify-between gap-3 sticky top-0 z-30">
+          <header class="h-16 px-4 sm:px-6 lg:px-8 bg-white/85 backdrop-blur-md border-b border-[#e6e2da]/80 flex items-center justify-between gap-3 sticky top-0 z-30 transition-all duration-200">
             <div class="flex items-center gap-3 min-w-0">
               <button
                 type="button"
@@ -191,7 +191,7 @@ import { ConfirmService } from '../../services/confirm.service';
 
                 @if (notificationsOpen()) {
                   <div class="fixed inset-0 z-30" (click)="notificationsOpen.set(false)"></div>
-                  <div class="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl border border-[#e2e8f0] shadow-xl p-4 z-40">
+                  <div class="absolute right-0 mt-2 w-72 sm:w-80 bg-white/95 backdrop-blur-md rounded-2xl border border-[#e2e8f0] shadow-xl p-4 z-40 modal-card-enter">
                     <div class="flex items-center justify-between mb-3">
                       <span class="text-xs font-bold uppercase tracking-wider text-[#0f172a]">Governance Alerts</span>
                       <span class="text-[11px] font-mono text-[#64748b]">{{ pendingApprovalsCount() }} pending</span>
@@ -318,13 +318,16 @@ import { ConfirmService } from '../../services/confirm.service';
       align-items: center;
       justify-content: space-between;
       padding: 0 20px;
-      background: #FFFFFF;
-      border-bottom: 1px solid #EDEDED;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.85);
       position: sticky;
       top: 0;
       z-index: 50;
       width: 100%;
       box-sizing: border-box;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .header-left {

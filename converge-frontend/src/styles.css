@@ -1,78 +1,97 @@
 /* ==========================================================================
-   Converge Minimalist SaaS & Notion-Style Design System Foundations
-   Inspired by: Notion, Linear, Stripe
+   Converge Design System & Fluidity Foundations
+   Philosophy: Apple Fluid Design (WWDC 2018/2026) × Executive SaaS (Stripe/Linear precision)
    Core Design Foundations:
-   - Primary Canvas: Pure White (#FFFFFF)
-   - Sidebar Canvas: Warm Off-White / Light Neutral (#F7F6F3)
+   - Primary Canvas: Pure White (#FFFFFF) & Soft Slate Canvas (#F8FAFC)
+   - Sidebar Canvas: Warm Clean Off-White (#F7F6F3)
    - Hairline Subtle Borders (#EDEDED & #E2E8F0)
-   - High-Contrast Typography: Primary Charcoal (#37352F), Secondary Muted (#787774), Dim (#9B9A97)
-   - Notion Signature Pastel Status Pills:
-       - Verified / Done: Soft Sage Green (#EDF3EC / #448361)
-       - Auditing / In Progress: Soft Sky Blue (#EBF5FB / #2870BD)
-       - Pending / Awaiting: Soft Warm Amber (#FAF1E5 / #D9730D)
-       - Default / Neutral: Soft Slate (#F1F1EF / #787774)
-   - Tabular Numerals ("tnum" 1) for currency and metrics
-   - Zero glowing neon, zero liquid reflections, zero clutter
+   - High-Contrast Typography: Primary Slate (#0F172A), Secondary Slate (#334155), Muted (#64748B)
+   - Apple WWDC Fluid Spring Physics: Critical Damping 1.0 (no overshoot, zero lag)
+   - Instant Tactile Response on Pointer-Down (:active scale 0.975)
+   - Continuous Translucent Glass Materials & Shimmer Skeletal Loading
    ========================================================================== */
 
 :root {
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
-  --font-family-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
-  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", "Inter", "Segoe UI", Roboto, sans-serif;
+  --font-family-body: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   
-  /* Notion Canvas & Surfaces */
+  /* Canvas & Surfaces */
   --color-bg-primary: #FFFFFF;
-  --color-canvas: #FFFFFF;
+  --color-canvas: #F8FAFC;
   --color-surface: #FFFFFF;
-  --color-surface-subtle: #F7F6F3;
-  --color-sidebar: #F7F6F3;
-  --color-sidebar-hover: #EFEFED;
+  --color-surface-subtle: #F8FAFC;
+  --color-sidebar: #FFFFFF;
+  --color-sidebar-hover: #F1F5F9;
   --color-white: #FFFFFF;
   
-  /* Notion Typographic Hierarchy */
-  --color-text-main: #37352F;
-  --color-text-secondary: #787774;
-  --color-text-muted: #787774;
-  --color-text-light: #9B9A97;
+  /* Typographic Hierarchy */
+  --color-text-main: #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-text-light: #94A3B8;
   --color-text-white: #FFFFFF;
   
-  /* Purposeful Interactive Accent */
+  /* Executive Brand Electric Blue */
   --color-brand-blue: #0066CC;
   --color-brand-blue-hover: #0052A3;
   --color-brand-blue-light: #EFF6FF;
+  --color-brand-primary: #2563EB;
+  --color-brand-primary-hover: #1D4ED8;
   
-  /* Notion Pastel Status Tags */
-  --tag-green-bg: #EDF3EC;
-  --tag-green-text: #448361;
-  --tag-blue-bg: #EBF5FB;
-  --tag-blue-text: #2870BD;
-  --tag-amber-bg: #FAF1E5;
-  --tag-amber-text: #D9730D;
-  --tag-gray-bg: #F1F1EF;
-  --tag-gray-text: #787774;
-  --tag-purple-bg: #F4F0F7;
-  --tag-purple-text: #6940A5;
-  --tag-red-bg: #FDEBEC;
-  --tag-red-text: #D44C47;
+  /* Notion & Executive Status Tags */
+  --tag-green-bg: #ECFDF5;
+  --tag-green-text: #059669;
+  --tag-green-border: #A7F3D0;
+  --tag-blue-bg: #EFF6FF;
+  --tag-blue-text: #2563EB;
+  --tag-blue-border: #BFDBFE;
+  --tag-amber-bg: #FFFBEB;
+  --tag-amber-text: #D97706;
+  --tag-amber-border: #FDE68A;
+  --tag-gray-bg: #F1F5F9;
+  --tag-gray-text: #475569;
+  --tag-purple-bg: #FAF5FF;
+  --tag-purple-text: #7E22CE;
+  --tag-red-bg: #FEF2F2;
+  --tag-red-text: #DC2626;
+  --tag-red-border: #FECACA;
   
   /* Hairline Borders */
-  --color-border: #EDEDED;
-  --color-border-card: #EDEDED;
-  --color-border-subtle: #F1F1EF;
-  --color-border-strong: #D3D1CB;
+  --color-border: #E2E8F0;
+  --color-border-card: #E2E8F0;
+  --color-border-subtle: #F1F5F9;
+  --color-border-strong: #CBD5E1;
 
-  /* Notion Subtle Radii */
-  --radius-xs: 3px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-card: 8px;
-  --radius-pill: 999px;
+  /* Subtle Radii System */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-card: 14px;
+  --radius-xl: 18px;
+  --radius-pill: 9999px;
 
-  /* Elevation Tokens (Subtle Notion Shadows) */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-modal: 0 12px 36px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  /* Elevation Tokens */
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-card-hover: 0 8px 24px -4px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-modal: 0 24px 48px -12px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  --shadow-drawer: -8px 0 32px rgba(15, 23, 42, 0.12), -1px 0 0 rgba(15, 23, 42, 0.06);
+
+  /* ========================================================================
+     APPLE WWDC FLUID SPRING CURVES & DURATIONS
+     ======================================================================== */
+  --spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-gentle: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --duration-instant: 120ms;
+  --duration-fast: 180ms;
+  --duration-normal: 280ms;
+  --duration-smooth: 420ms;
 
   /* Tabular numbers for financial & analytics alignment */
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
@@ -84,7 +103,12 @@
   padding: 0;
 }
 
-html, body {
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
+body {
   min-height: 100%;
   width: 100%;
   max-width: 100vw;
@@ -97,6 +121,45 @@ html, body {
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ==========================================================================
+   GLOBAL TACTILE RESPONSE & MICRO-INTERACTIONS (APPLE FLUIDITY)
+   ========================================================================== */
+button,
+a,
+.btn,
+.interactive-action,
+[role="button"] {
+  touch-action: manipulation;
+  transition: transform var(--duration-instant) var(--spring-snappy),
+              background-color var(--duration-fast) ease,
+              border-color var(--duration-fast) ease,
+              box-shadow var(--duration-fast) ease,
+              color var(--duration-fast) ease;
+}
+
+button:active:not(:disabled),
+.btn:active:not(:disabled),
+a.btn:active,
+[role="button"]:active:not([aria-disabled="true"]),
+.interactive-action:active {
+  transform: scale(0.972);
+}
+
+button:disabled,
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none !important;
+}
+
+/* Smooth Focus Indicators */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-brand-primary);
+  transition: box-shadow var(--duration-fast) var(--spring-snappy);
 }
 
 /* Headings */
@@ -106,49 +169,174 @@ h1, h2, h3, .heading-display, .dashboard-title, .page-title, .brand-title, .hero
   font-weight: 700;
 }
 
-/* Common Notion Components */
+/* ==========================================================================
+   FLUID ENTRANCE ANIMATIONS & VIEW TRANSITIONS
+   ========================================================================== */
+@keyframes fluidPageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter,
+router-outlet + * {
+  animation: fluidPageEnter 0.32s var(--spring-snappy) forwards;
+}
+
+@keyframes tabFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tab-panel-enter {
+  animation: tabFadeIn 0.28s var(--spring-snappy) forwards;
+}
+
+@keyframes drawerSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.drawer-enter {
+  animation: drawerSlideIn 0.34s var(--spring-snappy) forwards;
+}
+
+@keyframes modalBackdropFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(12px);
+  }
+}
+
+.modal-backdrop-enter {
+  animation: modalBackdropFadeIn 0.24s ease-out forwards;
+}
+
+@keyframes modalScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.93) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-card-enter {
+  animation: modalScaleIn 0.28s var(--spring-snappy) forwards;
+}
+
+/* ==========================================================================
+   SKELETON SHIMMER (ZERO JARRING CLS)
+   ========================================================================== */
+@keyframes skeletonShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.8s infinite ease-in-out;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+/* ==========================================================================
+   TRANSLUCENT MATERIALS & GLASS SURFACES
+   ========================================================================== */
+.glass-header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.glass-dropdown {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-modal);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+/* Status Badges */
 .notion-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: var(--radius-xs);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
   line-height: 1.4;
+  white-space: nowrap;
+  transition: all var(--duration-fast) ease;
 }
 
 .notion-pill.green {
   background: var(--tag-green-bg);
   color: var(--tag-green-text);
+  border: 1px solid var(--tag-green-border);
 }
 
 .notion-pill.blue {
   background: var(--tag-blue-bg);
   color: var(--tag-blue-text);
+  border: 1px solid var(--tag-blue-border);
 }
 
 .notion-pill.amber {
   background: var(--tag-amber-bg);
   color: var(--tag-amber-text);
+  border: 1px solid var(--tag-amber-border);
 }
 
 .notion-pill.gray {
   background: var(--tag-gray-bg);
   color: var(--tag-gray-text);
+  border: 1px solid var(--color-border);
 }
 
 .notion-pill.purple {
   background: var(--tag-purple-bg);
   color: var(--tag-purple-text);
+  border: 1px solid #E9D5FF;
 }
 
 .notion-pill.red {
   background: var(--tag-red-bg);
   color: var(--tag-red-text);
+  border: 1px solid var(--tag-red-border);
 }
 
-/* Common Button Styles */
+/* Common Buttons */
 .btn-notion-primary {
   display: inline-flex;
   align-items: center;
@@ -157,17 +345,19 @@ h1, h2, h3, .heading-display, .dashboard-title, .page-title, .brand-title, .hero
   font-size: 13px;
   font-weight: 600;
   color: #FFFFFF;
-  background: var(--color-brand-blue);
-  border: none;
-  padding: 6px 14px;
-  border-radius: var(--radius-sm);
+  background: var(--color-brand-primary);
+  border: 1px solid var(--color-brand-primary);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .btn-notion-primary:hover {
-  background: var(--color-brand-blue-hover);
+  background: var(--color-brand-primary-hover);
+  border-color: var(--color-brand-primary-hover);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
 }
 
 .btn-notion-secondary {
@@ -176,15 +366,15 @@ h1, h2, h3, .heading-display, .dashboard-title, .page-title, .brand-title, .hero
   justify-content: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text-main);
   background: #FFFFFF;
   border: 1px solid var(--color-border);
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.15s ease;
+  box-shadow: var(--shadow-card);
 }
 
 .btn-notion-secondary:hover {
@@ -201,11 +391,12 @@ h1, h2, h3, .heading-display, .dashboard-title, .page-title, .brand-title, .hero
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D3D1CB;
+  background: #CBD5E1;
   border-radius: 999px;
+  transition: background var(--duration-fast) ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #B4B2AC;
+  background: #94A3B8;
 }
 
 /* Accessibility: Respect Reduced Motion Preferences */

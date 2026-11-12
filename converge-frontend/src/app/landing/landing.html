@@ -476,7 +476,7 @@
        ======================================================== -->
   @if (showPrivacyModal()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn" (click)="showPrivacyModal.set(false)">
-      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto modal-card-enter" (click)="$event.stopPropagation()">
         <button type="button" (click)="showPrivacyModal.set(false)" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
@@ -498,7 +498,7 @@
        ======================================================== -->
   @if (showTermsModal()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn" (click)="showTermsModal.set(false)">
-      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto modal-card-enter" (click)="$event.stopPropagation()">
         <button type="button" (click)="showTermsModal.set(false)" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>

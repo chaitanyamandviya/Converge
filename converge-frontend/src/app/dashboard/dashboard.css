@@ -724,12 +724,14 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
+  animation: modalBackdropFadeIn 0.22s ease-out forwards;
 }
 
 .modal-card {
@@ -738,7 +740,9 @@
   width: 100%;
   max-width: 480px;
   padding: 28px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.25);
+  animation: modalScaleIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .modal-head {
