@@ -9,7 +9,7 @@ import java.time.Duration;
 
 /**
  * Resilient HTTP Client Configuration with strict connection and read timeouts.
- * Prevents threads from hanging indefinitely when calling external APIs (Meta, Resend).
+ * Prevents threads from hanging indefinitely when calling external APIs (Meta, Brevo).
  */
 @Configuration
 public class RestClientConfig {

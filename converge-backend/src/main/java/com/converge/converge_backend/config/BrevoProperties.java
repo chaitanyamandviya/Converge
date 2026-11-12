@@ -6,11 +6,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "resend")
+@ConfigurationProperties(prefix = "brevo")
 @Getter
 @Setter
-public class ResendProperties {
+public class BrevoProperties {
     private String apiKey = "";
-    private String fromEmail = "Converge <onboarding@resend.dev>";
+    private String senderEmail = "chaitanyamandviya7@gmail.com";
+    private String senderName = "Converge";
     private String adminEmail = "chaitanyamandviya7@gmail.com";
 }

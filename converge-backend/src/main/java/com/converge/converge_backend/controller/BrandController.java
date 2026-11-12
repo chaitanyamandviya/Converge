@@ -83,12 +83,6 @@ public class BrandController {
         return ResponseEntity.ok(visibleBrands);
     }
 
-    @PostMapping("/sync-templates")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
-    public ResponseEntity<Map<String, String>> syncResendTemplates() {
-        return ResponseEntity.ok(emailService.provisionResendTemplates());
-    }
-
     @PostMapping
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<BrandEntity> createBrand(@RequestBody BrandEntity brand) {
