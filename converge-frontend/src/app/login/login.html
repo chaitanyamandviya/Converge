@@ -373,14 +373,14 @@
             </div>
 
             <!-- Conditional Field: Agency Manager Brand Selection Custom Dropdown -->
-            <div class="transition-all duration-200 relative animate-fadeIn">
+            <div class="transition-all duration-200 relative animate-fadeIn brand-dropdown-container" [style.zIndex]="brandDropdownOpen() ? 50 : 1">
               <label class="block font-label-sm text-label-sm text-on-surface mb-1.5 pl-1">
                 Select client brand
               </label>
-              <div class="relative">
+              <div class="relative" [style.zIndex]="brandDropdownOpen() ? 50 : 1">
                 <button 
                   type="button"
-                  (click)="toggleBrandDropdown()"
+                  (click)="toggleBrandDropdown($event)"
                   class="w-full h-11 px-4 pl-10 pr-10 rounded-full bg-surface-container-low hover:bg-surface-container font-body-md text-body-md text-on-surface text-left flex items-center justify-between focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-[#4285F4]/30 transition-all duration-200 border border-transparent shadow-sm cursor-pointer">
                   <div class="flex items-center gap-2.5 truncate">
                     <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" [style.backgroundColor]="selectedBrandColor() + '25'" [style.color]="selectedBrandColor()">
@@ -396,7 +396,10 @@
 
                 <!-- Dropdown Menu Panel -->
                 @if (brandDropdownOpen()) {
-                  <div class="absolute top-full left-0 right-0 mt-1.5 bg-surface-container-lowest border border-surface-container-high rounded-xl shadow-xl z-50 p-2 overflow-hidden transition-all duration-150 animate-fadeIn">
+                  <div 
+                    (click)="$event.stopPropagation()"
+                    class="absolute top-full left-0 right-0 mt-1.5 bg-white border border-surface-container-high rounded-xl shadow-2xl z-50 p-2 overflow-hidden transition-all duration-150 animate-fadeIn"
+                    style="z-index: 50;">
                     <div class="relative mb-2">
                       <input 
                         type="text" 

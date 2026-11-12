@@ -178,7 +178,14 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  toggleBrandDropdown(force?: boolean): void {
+  toggleBrandDropdown(event?: Event | boolean, force?: boolean): void {
+    if (typeof event === 'boolean') {
+      this.brandDropdownOpen.set(event);
+      return;
+    }
+    if (event && 'stopPropagation' in event) {
+      (event as Event).stopPropagation();
+    }
     if (typeof force === 'boolean') {
       this.brandDropdownOpen.set(force);
     } else {
@@ -192,6 +199,13 @@ export class LoginComponent implements OnInit {
     this.selectedBrandBadge.set(brand.badge);
     this.selectedBrandColor.set(brand.color);
     this.brandDropdownOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.brandDropdownOpen()) {
+      this.brandDropdownOpen.set(false);
+    }
   }
 
   @HostListener('document:keydown.escape')
