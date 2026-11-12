@@ -1,7 +1,7 @@
 import { Component, inject, computed, signal, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet, ActivatedRoute } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { PortalService } from '../../services/portal.service';
 import { ConfirmService } from '../../services/confirm.service';
@@ -12,8 +12,8 @@ import { ConfirmService } from '../../services/confirm.service';
   imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, RouterOutlet],
   template: `
     @if (isAdmin()) {
-      <!-- Converge Superadmin Mesh Shell -->
-      <div class="min-h-screen bg-surface text-on-surface flex flex-col lg:flex-row font-sans antialiased">
+      <!-- Converge Superadmin Mesh (Stitch Carbon Copy) -->
+      <div class="min-h-screen bg-[#f8f6f2] text-[#111827] flex flex-col lg:flex-row font-sans antialiased">
         <!-- Mobile Sidebar Backdrop -->
         @if (mobileSidebarOpen()) {
           <div
@@ -22,23 +22,23 @@ import { ConfirmService } from '../../services/confirm.service';
           </div>
         }
 
-        <!-- Superadmin Collapsible / Off-canvas Sidebar -->
+        <!-- Left White Sidebar -->
         <aside
           [class]="
-            'fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:h-screen bg-surface-container-low border-r border-outline-variant/25 flex flex-col transition-all duration-300 ease-in-out shrink-0 ' +
+            'fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:h-screen bg-white border-r border-[#e6e2da] flex flex-col transition-all duration-300 ease-in-out shrink-0 ' +
             (mobileSidebarOpen() ? 'translate-x-0 ' : '-translate-x-full lg:translate-x-0 ') +
             (sidebarCollapsed() ? 'lg:w-20 w-64' : 'w-64')
           ">
           <!-- Brand Header -->
-          <div class="h-16 px-4 flex items-center justify-between border-b border-outline-variant/20 shrink-0">
-            <a routerLink="/dashboard" (click)="mobileSidebarOpen.set(false)" class="flex items-center gap-3 min-w-0">
-              <div class="w-9 h-9 rounded-xl bg-surface-container-lowest border border-outline-variant/25 shadow-xs flex items-center justify-center shrink-0 overflow-hidden">
-                <img src="/assets/converge-logo.png" alt="Converge" class="w-6 h-6 object-contain" />
+          <div class="h-16 px-4 flex items-center justify-between border-b border-[#f0ede8] shrink-0">
+            <a routerLink="/dashboard" (click)="navigateAdminTab('overview')" class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-full bg-[#f8fafc] border border-[#e2e8f0] flex items-center justify-center shrink-0 overflow-hidden">
+                <img src="/assets/converge-logo.png" alt="Converge" class="w-5 h-5 object-contain" />
               </div>
               @if (!sidebarCollapsed()) {
                 <div class="min-w-0">
-                  <div class="font-display font-bold text-base tracking-tight text-on-surface leading-none">Converge</div>
-                  <div class="text-[11px] font-medium text-secondary mt-1 truncate">Superadmin Mesh</div>
+                  <div class="font-display font-bold text-[15px] tracking-tight text-[#0f172a] leading-none">Converge</div>
+                  <div class="text-[11px] font-medium text-[#64748b] mt-1 truncate">Superadmin Mesh</div>
                 </div>
               }
             </a>
@@ -47,10 +47,10 @@ import { ConfirmService } from '../../services/confirm.service';
             <button
               type="button"
               (click)="sidebarCollapsed.set(!sidebarCollapsed())"
-              class="hidden lg:inline-flex items-center justify-center w-8 h-8 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container transition-colors"
+              class="hidden lg:inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#64748b] hover:text-[#0f172a] hover:bg-[#f1f5f9] transition-colors"
               [title]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
-              <span class="material-symbols-outlined text-[19px]">
-                {{ sidebarCollapsed() ? 'left_panel_open' : 'left_panel_close' }}
+              <span class="material-symbols-outlined text-[18px]">
+                {{ sidebarCollapsed() ? 'left_panel_open' : 'menu_open' }}
               </span>
             </button>
 
@@ -58,125 +58,115 @@ import { ConfirmService } from '../../services/confirm.service';
             <button
               type="button"
               (click)="mobileSidebarOpen.set(false)"
-              class="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container">
+              class="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#64748b] hover:text-[#0f172a] hover:bg-[#f1f5f9]">
               <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
 
           <!-- Primary Navigation -->
-          <div class="flex-1 overflow-y-auto px-3 py-5 space-y-6">
-            <div>
-              @if (!sidebarCollapsed()) {
-                <div class="px-3 mb-2 text-[10px] font-mono font-semibold uppercase tracking-[0.14em] text-outline">
-                  Control Plane
-                </div>
-              }
-              <nav class="space-y-1">
-                <a
-                  routerLink="/dashboard"
-                  (click)="navigateAdminTab('overview')"
-                  [class]="adminNavClass(isOverviewRoute())"
-                  [title]="sidebarCollapsed() ? 'Overview' : ''">
-                  <span class="material-symbols-outlined text-[20px] shrink-0">dashboard</span>
-                  @if (!sidebarCollapsed()) {
-                    <span class="truncate">Overview</span>
-                  }
-                </a>
-
-                <a
-                  routerLink="/dashboard"
-                  [queryParams]="{ tab: 'brands' }"
-                  (click)="navigateAdminTab('brands')"
-                  [class]="adminNavClass(isBrandsRoute())"
-                  [title]="sidebarCollapsed() ? 'Brands' : ''">
-                  <span class="material-symbols-outlined text-[20px] shrink-0">domain</span>
-                  @if (!sidebarCollapsed()) {
-                    <span class="truncate flex-1">Brands</span>
-                    <span class="text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant">
-                      {{ brandsCount() }}
-                    </span>
-                  }
-                </a>
-
-                <a
-                  routerLink="/agencies"
-                  routerLinkActive="bg-primary text-on-primary shadow-xs"
-                  (click)="mobileSidebarOpen.set(false)"
-                  class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
-                  [title]="sidebarCollapsed() ? 'Agencies' : ''">
-                  <span class="material-symbols-outlined text-[20px] shrink-0">corporate_fare</span>
-                  @if (!sidebarCollapsed()) {
-                    <span class="truncate flex-1">Agencies</span>
-                    <span class="text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-black/5 text-current opacity-80">
-                      {{ agenciesCount() }}
-                    </span>
-                  }
-                </a>
-
-                <a
-                  routerLink="/creators"
-                  routerLinkActive="bg-primary text-on-primary shadow-xs"
-                  (click)="mobileSidebarOpen.set(false)"
-                  class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
-                  [title]="sidebarCollapsed() ? 'Creators' : ''">
-                  <span class="material-symbols-outlined text-[20px] shrink-0">person_search</span>
-                  @if (!sidebarCollapsed()) {
-                    <span class="truncate">Creators</span>
-                  }
-                </a>
-
-                <a
-                  routerLink="/content-library"
-                  routerLinkActive="bg-primary text-on-primary shadow-xs"
-                  (click)="mobileSidebarOpen.set(false)"
-                  class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
-                  [title]="sidebarCollapsed() ? 'Deliverables Audit' : ''">
-                  <span class="material-symbols-outlined text-[20px] shrink-0">monitoring</span>
-                  @if (!sidebarCollapsed()) {
-                    <span class="truncate">Deliverables Audit</span>
-                  }
-                </a>
-              </nav>
-            </div>
-          </div>
-
-          <!-- Sidebar Footer: System Health + Profile -->
-          <div class="p-3 border-t border-outline-variant/20 space-y-2.5 shrink-0">
+          <div class="flex-1 overflow-y-auto px-3 py-5">
             @if (!sidebarCollapsed()) {
-              <div class="bg-surface-container-lowest rounded-xl p-3 border border-outline-variant/20 shadow-2xs">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span class="text-xs font-semibold text-on-surface">System Health</span>
-                  </div>
-                  <span class="text-[11px] font-mono font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                    Optimal
-                  </span>
-                </div>
-                <div class="text-[11px] text-secondary mt-1.5 font-mono">
-                  Isolated Admin · API Live
-                </div>
+              <div class="px-3 mb-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#94a3b8]">
+                ECOSYSTEM WORKSPACE
               </div>
             }
+            <nav class="space-y-1">
+              <!-- Overview -->
+              <a
+                routerLink="/dashboard"
+                (click)="navigateAdminTab('overview')"
+                [class]="adminNavClass(isOverviewRoute())"
+                [title]="sidebarCollapsed() ? 'Overview' : ''">
+                <span class="material-symbols-outlined text-[19px] shrink-0">grid_view</span>
+                @if (!sidebarCollapsed()) {
+                  <span class="truncate flex-1">Overview</span>
+                  <span [class]="adminBadgeClass(isOverviewRoute())">All-in-One</span>
+                }
+              </a>
 
-            <div class="flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl bg-surface-container-lowest border border-outline-variant/20">
+              <!-- Brands -->
+              <a
+                routerLink="/dashboard"
+                [queryParams]="{ tab: 'brands' }"
+                (click)="navigateAdminTab('brands')"
+                [class]="adminNavClass(isBrandsRoute())"
+                [title]="sidebarCollapsed() ? 'Brands' : ''">
+                <span class="material-symbols-outlined text-[19px] shrink-0">verified</span>
+                @if (!sidebarCollapsed()) {
+                  <span class="truncate flex-1">Brands</span>
+                  <span [class]="adminBadgeClass(isBrandsRoute())">{{ brandsCount() }}</span>
+                }
+              </a>
+
+              <!-- Agencies -->
+              <a
+                routerLink="/agencies"
+                routerLinkActive="bg-[#eef4ff] !text-[#2563eb] font-semibold border border-[#dbeafe]"
+                (click)="mobileSidebarOpen.set(false)"
+                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] transition-all border border-transparent"
+                [title]="sidebarCollapsed() ? 'Agencies' : ''">
+                <span class="material-symbols-outlined text-[19px] shrink-0">corporate_fare</span>
+                @if (!sidebarCollapsed()) {
+                  <span class="truncate flex-1">Agencies</span>
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#f1f5f9] text-[#475569]">
+                    {{ agenciesCount() }}
+                  </span>
+                }
+              </a>
+
+              <!-- Creators -->
+              <a
+                routerLink="/creators"
+                routerLinkActive="bg-[#eef4ff] !text-[#2563eb] font-semibold border border-[#dbeafe]"
+                (click)="mobileSidebarOpen.set(false)"
+                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] transition-all border border-transparent"
+                [title]="sidebarCollapsed() ? 'Creators' : ''">
+                <span class="material-symbols-outlined text-[19px] shrink-0">groups</span>
+                @if (!sidebarCollapsed()) {
+                  <span class="truncate flex-1">Creators</span>
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#f1f5f9] text-[#475569]">
+                    {{ creatorsCount() }}
+                  </span>
+                }
+              </a>
+            </nav>
+          </div>
+
+          <!-- Sidebar Footer: Platform Settings + Admin Session Card -->
+          <div class="p-3 border-t border-[#f0ede8] space-y-2 shrink-0">
+            <a
+              routerLink="/dashboard"
+              [queryParams]="{ tab: 'settings' }"
+              (click)="navigateAdminTab('settings')"
+              [class]="adminNavClass(isSettingsRoute())"
+              [title]="sidebarCollapsed() ? 'Platform Settings' : ''">
+              <span class="material-symbols-outlined text-[19px] shrink-0">settings</span>
+              @if (!sidebarCollapsed()) {
+                <span class="truncate flex-1">Platform Settings</span>
+              }
+            </a>
+
+            <div class="flex items-center justify-between gap-2 px-2.5 py-2.5 rounded-2xl bg-[#f8fafc] border border-[#e2e8f0]">
               <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-8 h-8 rounded-lg bg-primary text-on-primary flex items-center justify-center text-xs font-bold shrink-0">
-                  {{ (user()?.email || 'S')[0].toUpperCase() }}
+                <div class="w-8 h-8 rounded-full bg-[#2563eb] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  SA
                 </div>
                 @if (!sidebarCollapsed()) {
                   <div class="min-w-0">
-                    <div class="text-xs font-semibold text-on-surface truncate">{{ user()?.email }}</div>
-                    <div class="text-[10px] font-mono text-secondary uppercase tracking-wider">System Admin</div>
+                    <div class="text-xs font-semibold text-[#0f172a] truncate">System Admin</div>
+                    <div class="flex items-center gap-1 text-[10.5px] font-medium text-[#10b981]">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                      <span>Active Session</span>
+                    </div>
                   </div>
                 }
               </div>
               <button
                 type="button"
                 (click)="logout()"
-                class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-secondary hover:text-error hover:bg-error-container/40 transition-colors shrink-0"
+                class="w-7 h-7 rounded-lg inline-flex items-center justify-center text-[#64748b] hover:text-[#dc2626] hover:bg-red-50 transition-colors shrink-0"
                 title="Sign out">
-                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <span class="material-symbols-outlined text-[17px]">shield</span>
               </button>
             </div>
           </div>
@@ -185,34 +175,32 @@ import { ConfirmService } from '../../services/confirm.service';
         <!-- Main Column -->
         <div class="flex-1 flex flex-col min-w-0">
           <!-- Top Sticky Header -->
-          <header class="h-16 px-4 sm:px-6 lg:px-8 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20 flex items-center justify-between gap-3 sticky top-0 z-30">
+          <header class="h-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-[#e6e2da] flex items-center justify-between gap-3 sticky top-0 z-30">
             <div class="flex items-center gap-3 min-w-0">
               <button
                 type="button"
                 (click)="mobileSidebarOpen.set(true)"
-                class="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-on-surface hover:bg-surface-container">
+                class="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-xl border border-[#e2e8f0] bg-white text-[#0f172a] hover:bg-[#f8fafc]">
                 <span class="material-symbols-outlined text-[20px]">menu</span>
               </button>
 
-              <div class="flex items-center gap-2 text-xs sm:text-sm min-w-0">
-                <span class="font-semibold text-on-surface hidden sm:inline">Converge</span>
-                <span class="text-outline-variant hidden sm:inline">/</span>
-                <span class="text-secondary truncate">{{ adminPageTitle() }}</span>
-              </div>
+              <h2 class="text-sm sm:text-[15px] font-semibold text-[#0f172a] truncate">
+                {{ adminPageTitle() }}
+              </h2>
             </div>
 
-            <div class="flex items-center gap-2 sm:gap-3">
-              <!-- Global Search -->
-              <div class="relative hidden md:flex items-center">
-                <span class="material-symbols-outlined text-[18px] text-secondary absolute left-3 pointer-events-none">search</span>
+            <div class="flex items-center gap-2.5 sm:gap-3">
+              <!-- Global Omnibar Search -->
+              <div class="relative hidden sm:flex items-center">
+                <span class="material-symbols-outlined text-[17px] text-[#94a3b8] absolute left-3.5 pointer-events-none">search</span>
                 <input
                   #adminSearchInput
                   type="text"
                   [ngModel]="portal.adminSearchQuery()"
                   (ngModelChange)="onGlobalSearch($event)"
-                  placeholder="Search brands, managers..."
-                  class="w-56 lg:w-64 pl-9 pr-12 py-1.5 text-xs bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary transition-all" />
-                <kbd class="absolute right-2.5 px-1.5 py-0.5 text-[10px] font-mono bg-surface-container text-secondary rounded border border-outline-variant/30">
+                  placeholder="Search brands, agencies, creators..."
+                  class="w-56 md:w-72 pl-10 pr-12 py-2 text-xs bg-[#f5f3ef] border border-[#e6e2da] rounded-full text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all" />
+                <kbd class="absolute right-3 px-1.5 py-0.5 text-[10px] font-mono bg-white text-[#64748b] rounded border border-[#e2e8f0]">
                   ⌘K
                 </kbd>
               </div>
@@ -222,23 +210,23 @@ import { ConfirmService } from '../../services/confirm.service';
                 <button
                   type="button"
                   (click)="notificationsOpen.set(!notificationsOpen())"
-                  class="relative w-9 h-9 rounded-xl bg-surface-container-lowest border border-outline-variant/25 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                  class="relative w-9 h-9 rounded-full bg-white border border-[#e2e8f0] flex items-center justify-center text-[#475569] hover:text-[#0f172a] hover:bg-[#f8fafc] transition-colors"
                   title="Notifications">
                   <span class="material-symbols-outlined text-[19px]">notifications</span>
                   @if (pendingApprovalsCount() > 0) {
-                    <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span class="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-[#ef4444]"></span>
                   }
                 </button>
 
                 @if (notificationsOpen()) {
                   <div class="fixed inset-0 z-30" (click)="notificationsOpen.set(false)"></div>
-                  <div class="absolute right-0 mt-2 w-72 sm:w-80 bg-surface-container-lowest rounded-2xl border border-outline-variant/25 shadow-xl p-4 z-40">
+                  <div class="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl border border-[#e2e8f0] shadow-xl p-4 z-40">
                     <div class="flex items-center justify-between mb-3">
-                      <span class="text-xs font-bold uppercase tracking-wider text-on-surface">Governance Alerts</span>
-                      <span class="text-[11px] font-mono text-secondary">{{ pendingApprovalsCount() }} pending</span>
+                      <span class="text-xs font-bold uppercase tracking-wider text-[#0f172a]">Governance Alerts</span>
+                      <span class="text-[11px] font-mono text-[#64748b]">{{ pendingApprovalsCount() }} pending</span>
                     </div>
                     @if (pendingApprovalsCount() === 0) {
-                      <div class="py-4 text-center text-xs text-secondary">
+                      <div class="py-4 text-center text-xs text-[#64748b]">
                         All caught up — no pending brand or agency approvals.
                       </div>
                     } @else {
@@ -256,7 +244,7 @@ import { ConfirmService } from '../../services/confirm.service';
                           <a
                             routerLink="/agencies"
                             (click)="notificationsOpen.set(false)"
-                            class="block p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 text-on-surface hover:bg-surface-container transition-colors">
+                            class="block p-2.5 rounded-xl bg-[#f8fafc] border border-[#e2e8f0] text-[#0f172a] hover:bg-[#f1f5f9] transition-colors">
                             <span class="font-semibold">{{ pendingAgenciesCount() }} Agency(s)</span> pending review
                           </a>
                         }
@@ -265,20 +253,11 @@ import { ConfirmService } from '../../services/confirm.service';
                   </div>
                 }
               </div>
-
-              <!-- Onboard Brand Primary CTA -->
-              <button
-                type="button"
-                (click)="triggerOnboardBrand()"
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-all shadow-xs active:scale-[0.98] shrink-0">
-                <span class="material-symbols-outlined text-[16px]">add</span>
-                <span>Onboard Brand</span>
-              </button>
             </div>
           </header>
 
           <!-- Main Content Outlet -->
-          <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+          <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-7">
             <router-outlet></router-outlet>
           </main>
         </div>
@@ -672,7 +651,6 @@ export class PortalLayoutComponent {
   public portal = inject(PortalService);
   private confirmService = inject(ConfirmService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
 
   @ViewChild('adminSearchInput') adminSearchInput?: ElementRef<HTMLInputElement>;
 
@@ -683,6 +661,7 @@ export class PortalLayoutComponent {
 
   brandsCount = computed(() => this.portal.brands().length);
   agenciesCount = computed(() => this.portal.agencies().length);
+  creatorsCount = computed(() => this.portal.overview().totalCreators || this.portal.creators().length);
   activeAgenciesCount = computed(() =>
     this.portal.agencies().filter(a => a.status === 'ACTIVE').length
   );
@@ -700,47 +679,51 @@ export class PortalLayoutComponent {
 
   isOverviewRoute(): boolean {
     const url = this.router.url;
-    return (url === '/dashboard' || url.startsWith('/dashboard?')) && !url.includes('tab=brands');
+    return (url === '/dashboard' || url.startsWith('/dashboard?')) && !url.includes('tab=brands') && !url.includes('tab=settings');
   }
 
   isBrandsRoute(): boolean {
     return this.router.url.includes('tab=brands');
   }
 
+  isSettingsRoute(): boolean {
+    return this.router.url.includes('tab=settings');
+  }
+
   adminPageTitle(): string {
     const url = this.router.url;
     if (url.includes('tab=brands')) return 'Brands Directory';
-    if (url.startsWith('/agencies')) return 'Agencies Directory';
-    if (url.startsWith('/creators')) return 'Creators Directory';
+    if (url.includes('tab=settings')) return 'Platform Settings';
+    if (url.startsWith('/agencies')) return 'Ecosystem Agencies';
+    if (url.startsWith('/creators')) return 'Verified Creators';
     if (url.startsWith('/content-library')) return 'Deliverables Audit';
-    return 'Platform Overview';
+    return 'System Overview';
   }
 
   adminNavClass(active: boolean): string {
-    const base = 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all ';
+    const base = 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] transition-all border ';
     return active
-      ? base + 'bg-primary text-on-primary shadow-xs'
-      : base + 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface';
+      ? base + 'bg-[#eef4ff] text-[#2563eb] font-semibold border-[#dbeafe]'
+      : base + 'text-[#475569] font-medium border-transparent hover:bg-[#f8fafc] hover:text-[#0f172a]';
   }
 
-  navigateAdminTab(tab: 'overview' | 'brands'): void {
+  adminBadgeClass(active: boolean): string {
+    const base = 'text-[11px] font-semibold px-2 py-0.5 rounded-full ';
+    return active
+      ? base + 'bg-[#dbeafe] text-[#1d4ed8]'
+      : base + 'bg-[#f1f5f9] text-[#475569]';
+  }
+
+  navigateAdminTab(tab: 'overview' | 'brands' | 'settings'): void {
     this.mobileSidebarOpen.set(false);
     this.router.navigate(['/dashboard'], {
-      queryParams: tab === 'brands' ? { tab: 'brands' } : {}
+      queryParams: tab === 'overview' ? {} : { tab }
     });
   }
 
   onGlobalSearch(query: string): void {
     this.portal.adminSearchQuery.set(query);
     if (query.trim() && !this.router.url.includes('tab=brands') && !this.router.url.startsWith('/agencies') && !this.router.url.startsWith('/creators')) {
-      this.router.navigate(['/dashboard'], { queryParams: { tab: 'brands' } });
-    }
-  }
-
-  triggerOnboardBrand(): void {
-    this.mobileSidebarOpen.set(false);
-    this.portal.onboardBrandTrigger.update(n => n + 1);
-    if (!this.router.url.startsWith('/dashboard')) {
       this.router.navigate(['/dashboard'], { queryParams: { tab: 'brands' } });
     }
   }

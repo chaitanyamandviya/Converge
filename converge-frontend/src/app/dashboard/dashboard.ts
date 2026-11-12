@@ -38,14 +38,17 @@ export class DashboardComponent implements OnInit {
   selectedCampaignId = signal<number | null>(null);
 
   // Superadmin Mesh UI State
-  adminTab = signal<'overview' | 'brands'>('overview');
+  adminTab = signal<'overview' | 'brands' | 'settings'>('overview');
   brandStatusFilter = signal<'ALL' | 'ACTIVE' | 'PENDING_APPROVAL' | 'DEACTIVATED'>('ALL');
   brandCategoryFilter = signal<string>('ALL');
   brandPage = signal(1);
   readonly brandPageSize = 10;
   selectedBrandDrawer = signal<Brand | null>(null);
+  openBrandActionMenuId = signal<number | null>(null);
+  isRefreshingAdmin = signal(false);
   brandModalShake = signal(false);
   adminSearchQuery = this.portalService.adminSearchQuery;
+  newBrandManagerName = '';
 
   private lastOnboardTrigger = 0;
   private onboardEffect = effect(() => {
@@ -74,6 +77,37 @@ export class DashboardComponent implements OnInit {
   totalCreatorsMetric = computed(() =>
     this.overview().totalCreators || this.creators().length
   );
+  agenciesPerBrand = computed(() => {
+    const bCount = this.brands().length;
+    if (bCount === 0) return '0.0';
+    return (this.agencies().length / bCount).toFixed(1);
+  });
+
+  getCreatorsForBrand(brand: Brand) {
+    const brandAgencies = this.getAgenciesForBrand(brand);
+    const agencyNames = new Set(brandAgencies.map(a => (a.name || '').toLowerCase()).filter(Boolean));
+    return this.creators().filter(c => c.agencyName && agencyNames.has(c.agencyName.toLowerCase()));
+  }
+
+  getCreatorsCountForBrand(brand: Brand): number {
+    const matched = this.getCreatorsForBrand(brand).length;
+    if (matched > 0) return matched;
+    return this.getAgenciesForBrand(brand).reduce((sum, a) => sum + (a.creatorsCount || 0), 0);
+  }
+
+  refreshAdminMesh(): void {
+    if (this.isRefreshingAdmin()) return;
+    this.isRefreshingAdmin.set(true);
+    this.portalService.fetchOverview(null, true).subscribe();
+    this.portalService.fetchBrands(true).subscribe();
+    this.portalService.fetchAgencies(true).subscribe();
+    this.portalService.fetchCreators(undefined, true).subscribe();
+    this.portalService.fetchCampaigns(true).subscribe();
+    setTimeout(() => {
+      this.isRefreshingAdmin.set(false);
+      this.toast.success('Mesh Synced', 'Latest ecosystem telemetry loaded from database.');
+    }, 450);
+  }
 
   donutStats = computed(() => {
     const bCount = this.brands().length;
@@ -591,6 +625,7 @@ export class DashboardComponent implements OnInit {
     this.openEditBrandModal = false;
     this.openCampaignModal = false;
     this.selectedBrandDrawer.set(null);
+    this.openBrandActionMenuId.set(null);
   }
 
   ngOnInit() {
@@ -605,7 +640,13 @@ export class DashboardComponent implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       if (this.isAdmin()) {
-        this.adminTab.set(params['tab'] === 'brands' ? 'brands' : 'overview');
+        if (params['tab'] === 'brands') {
+          this.adminTab.set('brands');
+        } else if (params['tab'] === 'settings') {
+          this.adminTab.set('settings');
+        } else {
+          this.adminTab.set('overview');
+        }
       }
       if (params['campaignId']) {
         const id = Number(params['campaignId']);
