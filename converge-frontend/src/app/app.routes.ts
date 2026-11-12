@@ -1,29 +1,50 @@
 import { Routes } from '@angular/router';
-import { LandingComponent } from './landing/landing';
-import { LoginComponent } from './login/login';
-import { PortalLayoutComponent } from './shared/portal-layout/portal-layout';
-import { DashboardComponent } from './dashboard/dashboard';
-import { AgenciesComponent } from './agencies/agencies';
-import { CreatorsComponent } from './creators/creators';
-import { CreatorDetailComponent } from './creator-detail/creator-detail';
-import { ContentLibraryComponent } from './content-library/content-library';
 import { authGuard, guestGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: LandingComponent },
-  { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
   {
     path: '',
-    component: PortalLayoutComponent,
+    loadComponent: () => import('./landing/landing').then(m => m.LandingComponent)
+  },
+  {
+    path: 'login',
+    loadComponent: () => import('./login/login').then(m => m.LoginComponent),
+    canActivate: [guestGuard]
+  },
+  {
+    path: '',
+    loadComponent: () => import('./shared/portal-layout/portal-layout').then(m => m.PortalLayoutComponent),
     canActivate: [authGuard],
     children: [
-      { path: 'dashboard', component: DashboardComponent },
-      { path: 'campaigns', component: DashboardComponent },
-      { path: 'overview', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'agencies', component: AgenciesComponent },
-      { path: 'creators', component: CreatorsComponent },
-      { path: 'creators/:handle', component: CreatorDetailComponent },
-      { path: 'content-library', component: ContentLibraryComponent }
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./dashboard/dashboard').then(m => m.DashboardComponent)
+      },
+      {
+        path: 'campaigns',
+        loadComponent: () => import('./dashboard/dashboard').then(m => m.DashboardComponent)
+      },
+      {
+        path: 'overview',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+      },
+      {
+        path: 'agencies',
+        loadComponent: () => import('./agencies/agencies').then(m => m.AgenciesComponent)
+      },
+      {
+        path: 'creators',
+        loadComponent: () => import('./creators/creators').then(m => m.CreatorsComponent)
+      },
+      {
+        path: 'creators/:handle',
+        loadComponent: () => import('./creator-detail/creator-detail').then(m => m.CreatorDetailComponent)
+      },
+      {
+        path: 'content-library',
+        loadComponent: () => import('./content-library/content-library').then(m => m.ContentLibraryComponent)
+      }
     ]
   },
   { path: '**', redirectTo: '' }

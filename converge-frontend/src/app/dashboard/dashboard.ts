@@ -629,14 +629,24 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.portalService.fetchOverview(null, true).subscribe();
-    this.portalService.fetchAgencies(true).subscribe();
-    this.portalService.fetchCampaigns(true).subscribe();
-    this.portalService.fetchCreators(undefined, true).subscribe();
-    this.portalService.fetchContent(undefined, undefined, true).subscribe();
-    if (this.isAdmin() && this.portalService.fetchBrands) {
-      this.portalService.fetchBrands(true).subscribe();
+    // 1. Fetch core view data using cache (0ms instant render if fresh)
+    this.portalService.fetchOverview(null, false).subscribe();
+    if (this.isAdmin()) {
+      this.portalService.fetchBrands(false).subscribe();
+      this.portalService.fetchAgencies(false).subscribe();
+    } else {
+      this.portalService.fetchAgencies(false).subscribe();
+      this.portalService.fetchCampaigns(false).subscribe();
     }
+
+    // 2. Stagger non-critical background data so we don't saturate Render's 0.1 vCPU at once
+    setTimeout(() => {
+      this.portalService.fetchCreators(undefined, false).subscribe();
+      this.portalService.fetchContent(undefined, undefined, false).subscribe();
+      if (this.isAdmin()) {
+        this.portalService.fetchCampaigns(false).subscribe();
+      }
+    }, 400);
 
     this.route.queryParams.subscribe(params => {
       if (this.isAdmin()) {
