@@ -8,12 +8,16 @@ import com.resend.services.templates.model.CreateTemplateResponseSuccess;
 import com.resend.services.templates.model.Variable;
 import com.resend.services.templates.model.VariableType;
 import jakarta.annotation.PostConstruct;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -33,19 +37,41 @@ public class EmailService {
     private final ResendProperties resendProperties;
     private final RestTemplate restTemplate;
     private final java.util.concurrent.Executor taskExecutor;
+    private final ObjectProvider<JavaMailSender> mailSenderProvider;
 
     @Value("${app.frontend-url:https://converge-etp.pages.dev}")
     private String frontendUrl;
 
-    public EmailService(ResendProperties resendProperties, RestTemplate restTemplate, java.util.concurrent.Executor taskExecutor) {
+    @Value("${spring.mail.username:}")
+    private String smtpUsername;
+
+    @Value("${spring.mail.password:}")
+    private String smtpPassword;
+
+    public EmailService(
+            ResendProperties resendProperties,
+            RestTemplate restTemplate,
+            java.util.concurrent.Executor taskExecutor,
+            ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.resendProperties = resendProperties;
         this.restTemplate = restTemplate;
         this.taskExecutor = taskExecutor;
+        this.mailSenderProvider = mailSenderProvider;
+    }
+
+    public boolean isSmtpConfigured() {
+        return mailSenderProvider.getIfAvailable() != null
+                && smtpUsername != null && !smtpUsername.isBlank()
+                && smtpPassword != null && !smtpPassword.isBlank();
+    }
+
+    public boolean isResendConfigured() {
+        String key = resendProperties.getApiKey();
+        return key != null && !key.isBlank() && !key.contains("YOUR_RESEND_API_KEY");
     }
 
     public boolean isConfigured() {
-        String key = resendProperties.getApiKey();
-        return key != null && !key.isBlank() && !key.contains("YOUR_RESEND_API_KEY");
+        return isSmtpConfigured() || isResendConfigured();
     }
 
     @PostConstruct
@@ -190,6 +216,31 @@ public class EmailService {
 
         if (!isConfigured()) {
             log.info("Email triggered for {} [Subject: {}] [Link: {}]", to, subject, actionUrl);
+            return;
+        }
+
+        // 1. Prefer Gmail SMTP when MAIL_USERNAME + MAIL_PASSWORD are configured (delivers to any recipient).
+        if (isSmtpConfigured()) {
+            try {
+                JavaMailSender sender = mailSenderProvider.getIfAvailable();
+                if (sender != null) {
+                    MimeMessage mimeMessage = sender.createMimeMessage();
+                    MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, StandardCharsets.UTF_8.name());
+                    helper.setFrom("Converge <" + smtpUsername.trim() + ">");
+                    helper.setTo(to);
+                    helper.setSubject(subject);
+                    helper.setText(htmlBody, true);
+                    sender.send(mimeMessage);
+                    log.info("Delivered email via Gmail SMTP to {} [Subject: {}]", to, subject);
+                    return;
+                }
+            } catch (Exception smtpEx) {
+                log.warn("Gmail SMTP delivery failed for {} ({}). Falling back if Resend is configured.", to, smtpEx.getMessage());
+            }
+        }
+
+        if (!isResendConfigured()) {
+            log.warn("Email delivery failed for {} and Resend API key is not configured.", to);
             return;
         }
 
