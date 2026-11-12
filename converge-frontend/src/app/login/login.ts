@@ -38,8 +38,8 @@ export class LoginComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);
 
-  // Mode: 'login' | 'signup' | 'forgot' | 'brand_welcome'
-  readonly mode = signal<'login' | 'signup' | 'forgot' | 'brand_welcome'>('login');
+  // Mode: 'login' | 'signup' | 'forgot' | 'brand_welcome' | 'agency_confirmation'
+  readonly mode = signal<'login' | 'signup' | 'forgot' | 'brand_welcome' | 'agency_confirmation'>('login');
 
   readonly email = signal('');
   readonly password = signal('');
@@ -141,12 +141,17 @@ export class LoginComponent implements OnInit {
       if (params['email']) {
         this.email.set(params['email']);
       }
+      if (params['brand'] || params['brandName']) {
+        this.selectedBrandName.set(params['brand'] || params['brandName']);
+      }
       if (params['mode'] === 'signup') {
         this.setMode('signup');
       } else if (params['mode'] === 'forgot') {
         this.setMode('forgot');
-      } else if (params['mode'] === 'welcome' || params['mode'] === 'status') {
+      } else if (params['mode'] === 'welcome' || params['mode'] === 'status' || params['mode'] === 'brand_welcome') {
         this.setMode('brand_welcome');
+      } else if (params['mode'] === 'agency_confirmation' || params['mode'] === 'agency_status' || params['mode'] === 'pending') {
+        this.setMode('agency_confirmation');
       }
     });
     this.loadBrandsForOnboarding();
@@ -245,7 +250,7 @@ export class LoginComponent implements OnInit {
     return defaultAccounts;
   }
 
-  setMode(newMode: 'login' | 'signup' | 'forgot' | 'brand_welcome'): void {
+  setMode(newMode: 'login' | 'signup' | 'forgot' | 'brand_welcome' | 'agency_confirmation'): void {
     this.mode.set(newMode);
     this.clearMessages();
     this.confirmPassword.set('');
@@ -637,8 +642,8 @@ export class LoginComponent implements OnInit {
           this.toast.success('Workspace Ready', `Welcome to Converge, ${nameVal}!`);
           this.setMode('brand_welcome');
         } else {
-          this.toast.success('Account Submitted', `Your agency application has been sent to ${this.selectedBrandName()} for review.`);
-          this.setMode('login');
+          this.toast.success('Request Dispatched', `Notification sent to ${this.selectedBrandName()} for review!`);
+          this.setMode('agency_confirmation');
         }
       },
       error: (err) => {
@@ -646,6 +651,14 @@ export class LoginComponent implements OnInit {
         this.showError(err.message || 'Registration failed. Please check your details.');
       }
     });
+  }
+
+  checkAgencyStatus(): void {
+    this.toast.info('Still in the oven! 🥐', 'We’ll alert you the second they approve.');
+  }
+
+  backToHome(): void {
+    this.router.navigate(['/']);
   }
 
   jumpToWorkspace(): void {

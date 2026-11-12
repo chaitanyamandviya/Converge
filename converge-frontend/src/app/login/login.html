@@ -50,7 +50,7 @@
             class="font-label-md text-label-md transition-colors bg-transparent border-0 cursor-pointer p-0">
             Get Started
           </button>
-          @if (mode() === 'brand_welcome') {
+          @if (mode() === 'brand_welcome' || mode() === 'agency_confirmation') {
             <span class="font-label-md text-label-md text-on-surface font-semibold">Status</span>
           }
         </nav>
@@ -178,6 +178,127 @@
                   <span class="w-1.5 h-1.5 rounded-full bg-[#34A853]"></span> All systems ready
                 </span>
               </div>
+            </div>
+
+          </div>
+        </div>
+      } @else if (mode() === 'agency_confirmation') {
+        <!-- Agency Confirmation Card Canvas -->
+        <div class="flex flex-col w-full items-center justify-center py-4 px-2 sm:px-4 animate-fadeIn my-2">
+          <!-- Status Chip Notification Floating Pill -->
+          <div class="mb-6 inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-surface-container-low shadow-sm transition-all hover:bg-surface-container">
+            <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#34A853]/15 text-[#34A853]">
+              <span class="material-symbols-outlined text-[13px] font-bold">check</span>
+            </span>
+            <span class="font-label-sm text-on-surface font-medium">Agency onboarded</span>
+            <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+            <span class="font-body-sm text-secondary">Notification sent to brand manager</span>
+          </div>
+
+          <!-- Main Card Canvas -->
+          <div class="w-full max-w-[560px] bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-container-high/40 px-6 py-8 sm:px-10 sm:py-10 relative flex flex-col items-center text-center">
+            
+            <!-- Organic Doodle Art Piece: Converge Google-coded concentric motif & flying dispatch letter -->
+            <div class="relative w-48 h-40 flex items-center justify-center mb-4 select-none">
+              <!-- Converge Rings & Paper Plane Vector Illustration -->
+              <svg class="w-full h-full overflow-visible" fill="none" viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background gentle glow -->
+                <circle cx="100" cy="80" fill="#f6f3ef" fill-opacity="0.6" r="64"></circle>
+                <!-- Blue Outer Orbital Arc (Reference Logo style) -->
+                <path d="M 148 56 A 58 58 0 1 0 162 98" stroke="#4285F4" stroke-linecap="round" stroke-width="12"></path>
+                <!-- Green tracker orbital dot -->
+                <circle cx="145" cy="53" fill="#34A853" r="6"></circle>
+                <!-- Red Inner Arc -->
+                <path d="M 86 64 A 32 32 0 0 1 126 102" stroke="#EA4335" stroke-linecap="round" stroke-width="8.5"></path>
+                <!-- Yellow Core Bullseye -->
+                <circle cx="106" cy="84" fill="#FBBC05" fill-opacity="0.18" r="14" stroke="#FBBC05" stroke-width="4.5"></circle>
+                <circle cx="106" cy="84" fill="#FBBC05" r="4.5"></circle>
+                <!-- Dynamic Flying Paper Airplane with Dotted Trail -->
+                <path d="M 32 120 C 44 140, 78 136, 92 110" stroke="#c4c7c7" stroke-dasharray="4 4" stroke-linecap="round" stroke-width="2"></path>
+                <!-- Agency Airplane / Letter Origami -->
+                <g transform="translate(86, 96) rotate(-16)">
+                  <path d="M0 14 L28 0 L14 30 L10 18 Z" fill="#4285F4"></path>
+                  <path d="M10 18 L28 0 L14 30 Z" fill="#2968d9"></path>
+                  <path d="M10 18 L14 30 L8 24 Z" fill="#1b4fb5"></path>
+                </g>
+                <!-- Playful Hand-drawn Sparkles -->
+                <!-- Blue Sparkle Top Right -->
+                <path d="M 166 28 Q 166 35 173 35 Q 166 35 166 42 Q 166 35 159 35 Q 166 35 166 28 Z" fill="#4285F4"></path>
+                <!-- Amber Star Top Left -->
+                <path d="M 34 42 Q 34 48 40 48 Q 34 48 34 54 Q 34 48 28 48 Q 34 48 34 42 Z" fill="#FBBC05"></path>
+                <!-- Red Small Star Bottom -->
+                <circle cx="162" cy="124" fill="#EA4335" r="2.5"></circle>
+                <!-- Soft Mint Dot -->
+                <circle cx="28" cy="82" fill="#34A853" r="3"></circle>
+              </svg>
+
+              <!-- Whimsical floating coffee note doodle pinned to side -->
+              <div class="hidden sm:flex absolute left-full ml-3 top-4 flex-col items-start text-left pointer-events-none w-max">
+                <span class="font-body-sm text-secondary -rotate-6 italic tracking-tight">grab a coffee, we'll<br>take it from here ☕️</span>
+                <svg class="w-12 h-8 text-outline -rotate-12 mt-0.5 ml-2" fill="none" viewBox="0 0 54 36">
+                  <path d="M4 4 C14 22, 28 32, 48 22" fill="none" stroke="currentColor" stroke-dasharray="3 3" stroke-linecap="round" stroke-width="1.5"></path>
+                  <path d="M42 26 L50 21 L46 13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Targeted Brand Status Pill -->
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-surface-container mb-4">
+              <span class="font-label-sm text-on-surface font-medium flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px] text-[#FBBC05]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                Target brand: <span class="text-on-surface font-semibold">{{ selectedBrandName() || 'Blitz Lifestyle' }}</span>
+              </span>
+              <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+              <span class="inline-flex items-center gap-1.5 font-label-sm text-secondary">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#feba4c] opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-[#b17901]"></span>
+                </span>
+                Pending approval
+              </span>
+            </div>
+
+            <!-- Friendly Editorial Headline -->
+            <h1 class="font-headline-lg text-headline-lg text-on-surface mb-3 tracking-tight">
+              Request sent! Now we let the brand say hello 👋
+            </h1>
+
+            <!-- Conversational Subtext -->
+            <p class="font-body-lg text-body-lg text-secondary max-w-[440px] mb-8 leading-relaxed">
+              You’ve linked up with the brand! We pinged their team for a quick thumbs-up. As soon as they hit approve, your agency workspace and live campaigns will unlock right here.
+            </p>
+
+            <!-- Action Group -->
+            <div class="w-full flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button 
+                type="button"
+                id="checkStatusBtn"
+                (click)="checkAgencyStatus()" 
+                class="w-full sm:w-auto min-w-[140px] px-6 py-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 cursor-pointer border-0">
+                <span class="material-symbols-outlined text-[18px]">sync</span>
+                <span>Check status</span>
+              </button>
+
+              <button 
+                type="button"
+                (click)="backToHome()" 
+                class="w-full sm:w-auto min-w-[140px] px-8 py-2.5 rounded-full bg-primary text-on-primary font-label-md transition-all hover:bg-primary-container active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 cursor-pointer border-0">
+                <span>Back to home</span>
+              </button>
+            </div>
+
+            <!-- Meta Sign-In Option -->
+            <div class="flex items-center gap-3 pt-6">
+              <button 
+                type="button" 
+                (click)="setMode('login')" 
+                class="font-label-sm text-label-sm text-secondary hover:text-on-surface transition-colors flex items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0">
+                <span>Sign in with another account</span>
+              </button>
+              <span class="text-outline-variant text-[12px]">•</span>
+              <span class="font-label-sm text-label-sm text-secondary/70 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#FBBC05]"></span> Awaiting approval
+              </span>
             </div>
 
           </div>
