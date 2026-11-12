@@ -251,28 +251,28 @@ export class AuthService {
   private saveUser(user: User, rememberMe: boolean): void {
     this.portalService.resetState();
     const serialized = JSON.stringify(user);
-    // Keep active session in sessionStorage for strict per-tab isolation
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(STORAGE_KEY, serialized);
     }
-    // Clean up localStorage so new tabs open fresh and don't inherit another tab's session
     if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY);
+      if (rememberMe) {
+        localStorage.setItem(STORAGE_KEY, serialized);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
     }
   }
 
   private loadStoredUser(): User | null {
     try {
-      // Clean up any stale localStorage token on boot
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-      const stored = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(STORAGE_KEY) : null;
+      const fromSession = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(STORAGE_KEY) : null;
+      const stored = fromSession || (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null);
       if (!stored) return null;
       const user: User = JSON.parse(stored);
       // Validate expiration
       if (user.expiresAt && Date.now() > user.expiresAt) {
         if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(STORAGE_KEY);
+        if (typeof localStorage !== 'undefined') localStorage.removeItem(STORAGE_KEY);
         return null;
       }
       return user;

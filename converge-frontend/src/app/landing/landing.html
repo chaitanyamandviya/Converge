@@ -15,9 +15,9 @@
 
         <!-- Center Nav Links -->
         <nav class="hidden md:flex items-center gap-8 whitespace-nowrap">
-          <a routerLink="/" class="transition-colors text-on-surface font-label-md text-label-md font-semibold no-underline whitespace-nowrap">Overview</a>
+          <button type="button" (click)="scrollToSection('hero')" class="transition-colors text-on-surface font-label-md text-label-md font-semibold no-underline whitespace-nowrap bg-transparent border-0 cursor-pointer p-0">Overview</button>
           <button type="button" (click)="scrollToSection('vignettes')" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer bg-transparent border-0 font-medium whitespace-nowrap">Product</button>
-          <button type="button" (click)="scrollToSection('vignettes')" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer bg-transparent border-0 font-medium whitespace-nowrap">Stories</button>
+          <button type="button" (click)="scrollToSection('ecosystem-stage')" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer bg-transparent border-0 font-medium whitespace-nowrap">Stories</button>
         </nav>
       </div>
 
@@ -43,7 +43,7 @@
       <!-- ========================================================
            Hero Section: Brands. Agencies. Creators. Connected.
            ======================================================== -->
-      <section class="relative w-full overflow-hidden px-4 sm:px-6 lg:px-12 pt-8 pb-16 flex flex-col items-center text-center">
+      <section id="hero" class="relative w-full overflow-hidden px-4 sm:px-6 lg:px-12 pt-8 pb-16 flex flex-col items-center text-center">
         
         <!-- Floating Background Doodle Accents -->
         <svg class="absolute top-12 left-10 w-12 h-12 text-[#FBBC05] opacity-80 animate-pulse pointer-events-none sparkle-float" fill="none" viewBox="0 0 48 48">
@@ -135,7 +135,7 @@
             </g>
           </svg>
           <!-- Character 1: Brand (Google Blue) -->
-          <div class="group absolute left-4 top-24 flex flex-col items-center cursor-pointer transition-transform duration-300 active:scale-110 hover:-translate-y-2" (mouseenter)="setSpotlight('brand')" (mouseleave)="setSpotlight(null)">
+          <div class="group absolute left-4 top-24 flex flex-col items-center cursor-pointer transition-transform duration-300 active:scale-110 hover:-translate-y-2" (click)="toggleSpotlight('brand')" (mouseenter)="setSpotlight('brand')" (mouseleave)="setSpotlight(null)">
             <div class="relative -mb-1 z-10 animate-bounce" style="animation-duration: 2.2s;">
               <div class="w-5 h-5 bg-[#EA4335] rotate-45 rounded-sm flex items-center justify-center shadow-sm">
                 <span class="material-symbols-outlined text-white text-[10px] -rotate-45 font-bold">verified</span>
@@ -154,7 +154,7 @@
             <span class="mt-1 px-2.5 py-0.5 rounded-full text-on-surface font-label-sm text-label-sm shadow-xs transition-colors duration-300 font-medium" [ngClass]="activeSpotlight() === 'brand' ? 'bg-[#4285F4] text-white' : 'bg-surface-container-highest'">Brand</span>
           </div>
           <!-- Character 2: Agency (Google Yellow Pillar) -->
-          <div class="group absolute top-2 left-[39%] -translate-x-1/2 flex flex-col items-center cursor-pointer transition-transform duration-300 active:scale-110 hover:-translate-y-2" (mouseenter)="setSpotlight('agency')" (mouseleave)="setSpotlight(null)">
+          <div class="group absolute top-2 left-[39%] -translate-x-1/2 flex flex-col items-center cursor-pointer transition-transform duration-300 active:scale-110 hover:-translate-y-2" (click)="toggleSpotlight('agency')" (mouseenter)="setSpotlight('agency')" (mouseleave)="setSpotlight(null)">
             <div class="relative -mb-1 z-10">
               <svg class="animate-spin" fill="#34A853" height="20" style="animation-duration: 8s;" viewBox="0 0 24 24" width="20">
                 <polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"></polygon>
@@ -174,7 +174,7 @@
             <span class="mt-1 px-2.5 py-0.5 rounded-full text-on-surface font-label-sm text-label-sm shadow-xs transition-colors duration-300 font-medium" [ngClass]="activeSpotlight() === 'agency' ? 'bg-[#FBBC05] text-[#1B1C1A]' : 'bg-surface-container-highest'">Agency</span>
           </div>
           <!-- Character 3: Creator (Google Green) -->
-          <div class="group absolute right-4 top-24 flex flex-col items-center cursor-pointer transition-transform duration-300 active:scale-110 hover:-translate-y-2" (mouseenter)="setSpotlight('creator')" (mouseleave)="setSpotlight(null)">
+          <div class="group absolute right-4 top-24 flex flex-col items-center cursor-pointer transition-transform duration-300 active:scale-110 hover:-translate-y-2" (click)="toggleSpotlight('creator')" (mouseenter)="setSpotlight('creator')" (mouseleave)="setSpotlight(null)">
             <div class="relative -mb-1 z-10">
               <div class="px-1.5 py-0.5 bg-[#4285F4] rounded-full flex items-center justify-center shadow-xs">
                 <span class="material-symbols-outlined text-white text-xs">photo_camera</span>
@@ -200,7 +200,7 @@
         </div>
 
         <!-- Centerpiece Google-Coded Bespoke SVG Illustration (Desktop) -->
-        <div class="relative w-full max-w-4xl mx-auto py-2 sm:py-4 select-none illustration-stage overflow-hidden hidden md:block">
+        <div id="ecosystem-stage" class="relative w-full max-w-4xl mx-auto py-2 sm:py-4 select-none illustration-stage overflow-hidden hidden md:block">
           <svg class="w-full h-auto drop-shadow-sm transition-transform duration-700 hover:scale-[1.01]" fill="none" viewBox="0 0 920 460" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="blueGlow" x1="0%" x2="100%" y1="0%" y2="100%">
@@ -232,22 +232,22 @@
             <!-- Travelling Pulsing Energy Dots connecting Brands -> Agencies -> Creators -->
             <circle fill="#4285F4" filter="url(#softGlow)" r="5">
               <animateMotion dur="4.2s" repeatCount="indefinite">
-                <mpath href="#pathBlueMain"></mpath>
+                <mpath href="#pathBlueMain" xlink:href="#pathBlueMain"></mpath>
               </animateMotion>
             </circle>
             <circle fill="#34A853" filter="url(#softGlow)" r="4">
               <animateMotion begin="2.1s" dur="4.2s" repeatCount="indefinite">
-                <mpath href="#pathBlueMain"></mpath>
+                <mpath href="#pathBlueMain" xlink:href="#pathBlueMain"></mpath>
               </animateMotion>
             </circle>
             <circle fill="#EA4335" r="4">
               <animateMotion dur="5s" repeatCount="indefinite">
-                <mpath href="#pathCoralTop"></mpath>
+                <mpath href="#pathCoralTop" xlink:href="#pathCoralTop"></mpath>
               </animateMotion>
             </circle>
             <circle fill="#FBBC05" r="4.5">
               <animateMotion dur="4.6s" repeatCount="indefinite">
-                <mpath href="#pathGoldBottom"></mpath>
+                <mpath href="#pathGoldBottom" xlink:href="#pathGoldBottom"></mpath>
               </animateMotion>
             </circle>
 
@@ -363,8 +363,8 @@
                 <circle cx="68" cy="24" fill="#4285F4" r="4"></circle>
               </svg>
             </div>
-            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold whitespace-nowrap">Instant mutual sync</h2>
-            <p class="font-body-md text-body-md text-on-surface-variant whitespace-nowrap">Zero back-and-forth noise.</p>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold">Instant mutual sync</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Zero back-and-forth noise.</p>
           </div>
 
           <!-- Vignette 2: Creator Wand Magic -->
@@ -380,8 +380,8 @@
                 <circle cx="76" cy="66" fill="#EA4335" r="3"></circle>
               </svg>
             </div>
-            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold whitespace-nowrap">Authentic creative flow</h2>
-            <p class="font-body-md text-body-md text-on-surface-variant whitespace-nowrap">Pure creative freedom.</p>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold">Authentic creative flow</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Pure creative freedom.</p>
           </div>
 
           <!-- Vignette 3: Instant Insight Flash -->
@@ -394,8 +394,8 @@
                 <path d="M50 8 V14 M26 24 L32 28 M74 24 L68 28 M20 44 H26 M74 44 H80" stroke="#34A853" stroke-linecap="round" stroke-width="3"></path>
               </svg>
             </div>
-            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold whitespace-nowrap">Clear live alignment</h2>
-            <p class="font-body-md text-body-md text-on-surface-variant whitespace-nowrap">Everyone on target.</p>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface mb-1 font-bold">Clear live alignment</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Everyone on target.</p>
           </div>
 
         </div>
@@ -412,7 +412,7 @@
           </svg>
         </div>
 
-        <h2 class="font-headline-md text-headline-md text-on-surface mb-2 font-bold text-[24px] sm:text-[28px] whitespace-nowrap">
+        <h2 class="font-headline-md text-headline-md text-on-surface mb-2 font-bold text-[24px] sm:text-[28px]">
           Ready to meet your match?
         </h2>
         <p class="font-body-md text-body-md text-on-surface-variant mb-8 max-w-md">
@@ -464,7 +464,7 @@
       </div>
 
       <nav class="flex items-center justify-center gap-6 sm:gap-8 whitespace-nowrap">
-        <a routerLink="/" class="font-body-sm transition-colors text-on-surface no-underline font-medium whitespace-nowrap">Overview</a>
+        <button type="button" (click)="scrollToSection('hero')" class="font-body-sm transition-colors text-on-surface no-underline font-medium whitespace-nowrap bg-transparent border-0 cursor-pointer p-0">Overview</button>
         <button type="button" (click)="showPrivacyModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer p-0 font-medium whitespace-nowrap">Privacy</button>
         <button type="button" (click)="showTermsModal.set(true)" class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 cursor-pointer p-0 font-medium whitespace-nowrap">Terms</button>
       </nav>
@@ -475,8 +475,8 @@
        Privacy Policy Modal
        ======================================================== -->
   @if (showPrivacyModal()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn" (click)="showPrivacyModal.set(false)">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
         <button type="button" (click)="showPrivacyModal.set(false)" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
@@ -497,8 +497,8 @@
        Terms of Service Modal
        ======================================================== -->
   @if (showTermsModal()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn" (click)="showTermsModal.set(false)">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
         <button type="button" (click)="showTermsModal.set(false)" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>

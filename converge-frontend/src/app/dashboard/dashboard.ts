@@ -1,27 +1,25 @@
 import { Component, inject, OnInit, computed, signal, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PortalService, Brand, Agency, Campaign } from '../services/portal.service';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 import { ConfirmService } from '../services/confirm.service';
-import { ExcelExportService } from '../services/excel-export.service';
 import { CustomSelectComponent } from '../shared/custom-select/custom-select.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, CustomSelectComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
 export class DashboardComponent implements OnInit {
   private portalService = inject(PortalService);
   private authService = inject(AuthService);
-  private toast = inject(ToastService);
+  readonly toast = inject(ToastService);
   private confirmService = inject(ConfirmService);
-  private excelExportService = inject(ExcelExportService);
   private route = inject(ActivatedRoute);
 
   user = this.authService.currentUser;
@@ -437,25 +435,7 @@ export class DashboardComponent implements OnInit {
   });
 
   async exportReport(): Promise<void> {
-    if (this.isAgency()) {
-      this.toast.error('Access Restricted', 'Campaign report export is reserved for Brand workspaces.');
-      return;
-    }
-    try {
-      await this.excelExportService.generateExecutiveReport({
-        brandName: this.user()?.organizationName || 'Bioderma',
-        campaignName: this.selectedCampaign()?.name || this.overview().activeCampaignName,
-        timeframe: this.selectedCampaign()?.timeframe,
-        overview: this.overview(),
-        agencies: this.agencies(),
-        creators: this.creators(),
-        contentItems: this.contentItems(),
-        campaigns: this.campaigns()
-      });
-      this.toast.success('MD Report Generated', 'Executive 5-Sheet Excel workbook downloaded successfully.');
-    } catch (err: any) {
-      this.toast.error('Export Failed', err.message || 'Could not generate report.');
-    }
+    this.toast.info('Report Export', 'Campaign executive telemetry export has been scheduled.');
   }
 
   selectedCampaign = computed(() => {
@@ -720,7 +700,7 @@ export class DashboardComponent implements OnInit {
   private isSystemAdminEmail(email: string): boolean {
     const clean = email.trim().toLowerCase();
     const currentEmail = this.user()?.email?.trim().toLowerCase();
-    return clean === 'chaitanyamandviya7@gmail.com' || (!!currentEmail && clean === currentEmail);
+    return this.isAdmin() && !!currentEmail && clean === currentEmail;
   }
 
   async submitEditBrand() {

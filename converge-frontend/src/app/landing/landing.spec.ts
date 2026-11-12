@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { LandingComponent } from './landing';
 
 describe('LandingComponent', () => {
@@ -10,7 +11,7 @@ describe('LandingComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LandingComponent],
-      providers: [provideRouter([])]
+      providers: [provideRouter([]), provideHttpClient()]
     }).compileComponents();
 
     fixture = TestBed.createComponent(LandingComponent);
@@ -22,11 +23,19 @@ describe('LandingComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should toggle FAQ items', () => {
-    expect(component.openFaqIndex()).toBe(0);
-    component.toggleFaq(1);
-    expect(component.openFaqIndex()).toBe(1);
-    component.toggleFaq(1);
-    expect(component.openFaqIndex()).toBe(null);
+  it('should toggle character spotlight', () => {
+    expect(component.activeSpotlight()).toBe(null);
+    component.toggleSpotlight('brand');
+    expect(component.activeSpotlight()).toBe('brand');
+    component.toggleSpotlight('brand');
+    expect(component.activeSpotlight()).toBe(null);
+  });
+
+  it('should dismiss modals on escape key', () => {
+    component.showPrivacyModal.set(true);
+    component.showTermsModal.set(true);
+    component.onEscapeKey();
+    expect(component.showPrivacyModal()).toBe(false);
+    expect(component.showTermsModal()).toBe(false);
   });
 });

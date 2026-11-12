@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -35,6 +35,16 @@ export class LandingComponent implements OnInit {
     this.activeSpotlight.set(character);
   }
 
+  toggleSpotlight(character: 'brand' | 'agency' | 'creator'): void {
+    this.activeSpotlight.update(current => (current === character ? null : character));
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    this.showPrivacyModal.set(false);
+    this.showTermsModal.set(false);
+  }
+
   ngOnInit(): void {
     setTimeout(() => {
       this.isAppBooting.set(false);
@@ -42,6 +52,10 @@ export class LandingComponent implements OnInit {
   }
 
   scrollToSection(id: string): void {
+    if (id === 'hero' || id === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });

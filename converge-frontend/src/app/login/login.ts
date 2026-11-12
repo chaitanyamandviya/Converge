@@ -213,10 +213,15 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  toggleRememberMe(): void {
+    this.rememberMe.update(v => !v);
+  }
+
   @HostListener('document:keydown.escape')
   onEscapeKey(): void {
     this.showGoogleModal.set(false);
     this.showPrivacyModal.set(false);
+    this.showTermsModal.set(false);
     this.showHelpModal.set(false);
     this.brandDropdownOpen.set(false);
   }
@@ -224,16 +229,16 @@ export class LoginComponent implements OnInit {
   private loadSystemGoogleAccounts(): SystemGoogleAccount[] {
     const defaultAccounts: SystemGoogleAccount[] = [
       {
-        name: 'Chaitanya Mandviya',
-        email: 'chaitanyamandviya7@gmail.com',
-        avatarInitials: 'CM',
-        avatarColor: '#37474f'
+        name: 'Admin User',
+        email: 'admin@converge.io',
+        avatarInitials: 'AU',
+        avatarColor: '#1d4ed8'
       },
       {
-        name: 'Chaitanya Mandviya',
-        email: 'chaitanyamandviya1@gmail.com',
-        avatarInitials: 'C',
-        avatarColor: '#0288d1'
+        name: 'Brand Executive',
+        email: 'brand@converge.io',
+        avatarInitials: 'BE',
+        avatarColor: '#059669'
       }
     ];
     try {
@@ -616,6 +621,10 @@ export class LoginComponent implements OnInit {
     }
     if (this.role() === 'AGENCY_MANAGER' && !orgVal) {
       this.showError('Please provide your agency workspace name.');
+      return;
+    }
+    if (!this.agreeTerms()) {
+      this.showError('You must agree to the Terms of Service and Privacy Policy to continue.');
       return;
     }
 

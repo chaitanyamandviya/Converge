@@ -12,6 +12,9 @@ import { ConfirmService } from '../../services/confirm.service';
         <div class="confirm-card" (click)="$event.stopPropagation()">
           <h3 class="confirm-title">{{ dialog.title }}</h3>
           <p class="confirm-message">{{ dialog.message }}</p>
+          @if (dialog.detail) {
+            <p class="confirm-detail">{{ dialog.detail }}</p>
+          }
 
           <div class="confirm-actions">
             <button type="button" class="btn-confirm-cancel" (click)="confirmService.cancel()">
@@ -69,6 +72,18 @@ import { ConfirmService } from '../../services/confirm.service';
       font-size: 13.5px;
       line-height: 1.5;
       color: rgba(27, 49, 102, 0.75);
+    }
+
+    .confirm-detail {
+      margin: 8px 0 0 0;
+      font-size: 12px;
+      line-height: 1.4;
+      color: rgba(27, 49, 102, 0.6);
+      padding: 6px 10px;
+      background: rgba(0, 0, 0, 0.03);
+      border-radius: 6px;
+      font-family: ui-monospace, monospace;
+      word-break: break-all;
     }
 
     .confirm-actions {

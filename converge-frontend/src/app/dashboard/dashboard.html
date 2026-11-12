@@ -62,8 +62,7 @@
           </div>
 
           <!-- Federated Partners -->
-          <a
-            routerLink="/agencies"
+          <div
             class="bg-white rounded-2xl p-4 sm:p-5 border border-[#e6e2da] shadow-2xs hover:shadow-md transition-all flex items-center justify-between gap-3">
             <div class="flex items-center gap-3.5 min-w-0">
               <div class="w-11 h-11 rounded-xl bg-[#fef3c7] text-[#b45309] flex items-center justify-center shrink-0">
@@ -83,11 +82,10 @@
               </span>
               <div class="text-[11px] text-[#64748b] mt-1">Delegated invites</div>
             </div>
-          </a>
+          </div>
 
           <!-- Verified Talent -->
-          <a
-            routerLink="/creators"
+          <div
             class="bg-white rounded-2xl p-4 sm:p-5 border border-[#e6e2da] shadow-2xs hover:shadow-md transition-all flex items-center justify-between gap-3">
             <div class="flex items-center gap-3.5 min-w-0">
               <div class="w-11 h-11 rounded-xl bg-[#dcfce7] text-[#15803d] flex items-center justify-center shrink-0">
@@ -107,7 +105,7 @@
               </span>
               <div class="text-[11px] font-medium text-[#15803d] mt-1">{{ campaigns().length }} active campaigns</div>
             </div>
-          </a>
+          </div>
         </div>
 
         <!-- Middle 2-Column Grid: Convergence Flow Architecture + Proportional Distribution -->
@@ -1024,10 +1022,10 @@
                 <span>New campaign</span>
               </button>
             } @else {
-              <a routerLink="/content-library" class="btn-primary-brand">
+              <button type="button" class="btn-primary-brand" (click)="toast.info('Deliverables Module', 'Deliverables workspace is undergoing scheduled updates.')">
                 <img src="/assets/panels-top-left.svg" alt="" class="btn-icon-white" />
                 <span>Submit deliverables</span>
-              </a>
+              </button>
             }
           </div>
         </div>
@@ -1197,7 +1195,7 @@
           <p class="followup-desc">
             {{ followUpDescription() }}
           </p>
-          <a routerLink="/content-library" class="followup-link">Review content slots →</a>
+          <span class="followup-link text-[#64748b]">Slot allocation active</span>
           <div class="followup-progress-bar">
             <div class="progress-fill" [style.width.%]="coveragePercent()"></div>
           </div>
@@ -1385,7 +1383,7 @@
               <h2 class="card-title">Participating Agencies</h2>
               <p class="card-sub">{{ agencies().length }} agencies connected to your workspace</p>
             </div>
-            <a routerLink="/agencies" class="card-link">Manage agencies ↗</a>
+            <span class="text-xs font-medium text-[#2563eb] bg-[#eef4ff] px-2.5 py-1 rounded-full">Federated Partners</span>
           </div>
 
           @if (agencies().length === 0) {
@@ -1400,9 +1398,9 @@
               </div>
               <h3 class="macos-empty-title">No Partner Agencies Yet</h3>
               <p class="macos-empty-text">Invite creative agencies to manage talent rosters and deliverable submissions.</p>
-              <a routerLink="/agencies" class="macos-empty-cta">
+              <button type="button" (click)="toast.info('Agency Provisioning', 'Agency invitations are managed via Superadmin Brand Workspaces.')" class="macos-empty-cta">
                 <span>Invite Agency</span>
-              </a>
+              </button>
             </div>
           } @else {
             <div class="agency-pills-list">
@@ -1449,7 +1447,7 @@
             <h2 class="card-title">Deliverables Status</h2>
             <p class="card-sub">Real-time tracking of {{ overview().totalContentSlots }} campaign assets</p>
           </div>
-          <a routerLink="/content-library" class="card-link">Manage library ↗</a>
+          <span class="text-xs font-medium text-[#2563eb] bg-[#eef4ff] px-2.5 py-1 rounded-full">Live Tracking</span>
         </div>
 
         <div class="status-bars-container">

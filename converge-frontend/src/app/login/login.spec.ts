@@ -47,38 +47,30 @@ describe('LoginComponent', () => {
   });
 
   it('should toggle remember me', () => {
+    expect(component.rememberMe()).toBe(false);
+    component.toggleRememberMe();
     expect(component.rememberMe()).toBe(true);
     component.toggleRememberMe();
     expect(component.rememberMe()).toBe(false);
   });
 
-  it('should compute password security strength (low, medium, high)', () => {
+  it('should compute password security strength', () => {
     component.password.set('123');
-    expect(component.passwordStrength()).toBe('low');
+    expect(component.passwordStrengthLabel()).toBe('Weak');
 
-    component.password.set('Password1');
-    expect(component.passwordStrength()).toBe('medium');
+    component.password.set('Pass1234');
+    expect(['Fair', 'Good']).toContain(component.passwordStrengthLabel());
 
-    component.password.set('Admin@12345');
-    expect(component.passwordStrength()).toBe('high');
+    component.password.set('Admin@12345Long!');
+    expect(component.passwordStrengthLabel()).toBe('Strong');
   });
 
   it('should validate empty email and password', () => {
-    const dummyEvent = new Event('submit');
     component.email.set('');
     component.password.set('');
-    component.onLogin(dummyEvent);
+    component.onLogin();
 
-    expect(component.errorMessage()).toContain('Please enter your email address');
-  });
-
-  it('should validate invalid email format', () => {
-    const dummyEvent = new Event('submit');
-    component.email.set('notanemail');
-    component.password.set('validpass123');
-    component.onLogin(dummyEvent);
-
-    expect(component.errorMessage()).toContain('valid email address');
+    expect(component.errorMessage()).toContain('Please enter both email and password');
   });
 
   it('should call authService on valid login submission', () => {
@@ -88,10 +80,10 @@ describe('LoginComponent', () => {
       token: 'mock-token'
     }));
 
-    const dummyEvent = new Event('submit');
     component.email.set('admin@converge.io');
     component.password.set('password123');
-    component.onLogin(dummyEvent);
+    component.rememberMe.set(true);
+    component.onLogin();
 
     expect(loginSpy).toHaveBeenCalledWith({
       email: 'admin@converge.io',

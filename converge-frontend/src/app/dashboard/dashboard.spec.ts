@@ -64,6 +64,11 @@ describe('DashboardComponent', () => {
       return of(portalService.agencies());
     };
 
+    portalService.fetchCampaigns = () => of([]);
+    portalService.fetchCreators = () => of([]);
+    portalService.fetchContent = () => of([]);
+    portalService.fetchBrands = () => of([]);
+
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

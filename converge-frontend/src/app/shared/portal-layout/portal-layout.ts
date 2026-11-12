@@ -1,7 +1,10 @@
-import { Component, inject, computed, signal, HostListener, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, computed, signal, HostListener, ViewChild, ElementRef, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 import { PortalService } from '../../services/portal.service';
 import { ConfirmService } from '../../services/confirm.service';
@@ -97,38 +100,6 @@ import { ConfirmService } from '../../services/confirm.service';
                   <span [class]="adminBadgeClass(isBrandsRoute())">{{ brandsCount() }}</span>
                 }
               </a>
-
-              <!-- Agencies -->
-              <a
-                routerLink="/agencies"
-                routerLinkActive="bg-[#eef4ff] !text-[#2563eb] font-semibold border border-[#dbeafe]"
-                (click)="mobileSidebarOpen.set(false)"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] transition-all border border-transparent"
-                [title]="sidebarCollapsed() ? 'Agencies' : ''">
-                <span class="material-symbols-outlined text-[19px] shrink-0">corporate_fare</span>
-                @if (!sidebarCollapsed()) {
-                  <span class="truncate flex-1">Agencies</span>
-                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#f1f5f9] text-[#475569]">
-                    {{ agenciesCount() }}
-                  </span>
-                }
-              </a>
-
-              <!-- Creators -->
-              <a
-                routerLink="/creators"
-                routerLinkActive="bg-[#eef4ff] !text-[#2563eb] font-semibold border border-[#dbeafe]"
-                (click)="mobileSidebarOpen.set(false)"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] transition-all border border-transparent"
-                [title]="sidebarCollapsed() ? 'Creators' : ''">
-                <span class="material-symbols-outlined text-[19px] shrink-0">groups</span>
-                @if (!sidebarCollapsed()) {
-                  <span class="truncate flex-1">Creators</span>
-                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#f1f5f9] text-[#475569]">
-                    {{ creatorsCount() }}
-                  </span>
-                }
-              </a>
             </nav>
           </div>
 
@@ -166,7 +137,7 @@ import { ConfirmService } from '../../services/confirm.service';
                 (click)="logout()"
                 class="w-7 h-7 rounded-lg inline-flex items-center justify-center text-[#64748b] hover:text-[#dc2626] hover:bg-red-50 transition-colors shrink-0"
                 title="Sign out">
-                <span class="material-symbols-outlined text-[17px]">shield</span>
+                <span class="material-symbols-outlined text-[17px]">logout</span>
               </button>
             </div>
           </div>
@@ -240,14 +211,6 @@ import { ConfirmService } from '../../services/confirm.service';
                             <span class="font-semibold">{{ pendingBrandsCount() }} Brand(s)</span> awaiting approval
                           </a>
                         }
-                        @if (pendingAgenciesCount() > 0) {
-                          <a
-                            routerLink="/agencies"
-                            (click)="notificationsOpen.set(false)"
-                            class="block p-2.5 rounded-xl bg-[#f8fafc] border border-[#e2e8f0] text-[#0f172a] hover:bg-[#f1f5f9] transition-colors">
-                            <span class="font-semibold">{{ pendingAgenciesCount() }} Agency(s)</span> pending review
-                          </a>
-                        }
                       </div>
                     }
                   </div>
@@ -312,35 +275,16 @@ import { ConfirmService } from '../../services/confirm.service';
                 <span>Overview</span>
               </a>
 
-              @if (!isAgencyManager()) {
-                <a routerLink="/campaigns" routerLinkActive="active" class="nav-item">
-                  <span class="nav-emoji">📢</span>
-                  <span>Campaigns</span>
-                </a>
-                <a routerLink="/agencies" routerLinkActive="active" class="nav-item">
-                  <span class="nav-emoji">🤝</span>
-                  <span>Agencies</span>
-                </a>
-              }
-
-              <a routerLink="/creators" routerLinkActive="active" class="nav-item">
-                <span class="nav-emoji">✨</span>
-                <span>{{ isAgencyManager() ? 'My Talent Roster' : 'Creators' }}</span>
-              </a>
-            </nav>
-
-            <div class="sidebar-category" style="margin-top: 14px;">ADMIN &amp; AUDIT</div>
-            <nav class="sidebar-nav">
-              <a routerLink="/content-library" routerLinkActive="active" class="nav-item">
-                <span class="nav-emoji">📊</span>
-                <span>Content library</span>
+              <a routerLink="/dashboard" [queryParams]="{ tab: 'brands' }" routerLinkActive="active" class="nav-item">
+                <span class="nav-emoji">🏷️</span>
+                <span>Brands</span>
               </a>
             </nav>
 
             <div class="sidebar-footer">
               <div class="sidebar-stat-chip">
                 <span class="status-indicator-dot"></span>
-                <span>{{ isAgencyManager() ? 'Agency active' : (activeAgenciesCount() + ' agencies active') }}</span>
+                <span>Workspace active</span>
               </div>
             </div>
           </aside>
@@ -654,24 +598,32 @@ export class PortalLayoutComponent {
 
   @ViewChild('adminSearchInput') adminSearchInput?: ElementRef<HTMLInputElement>;
 
+  private destroyRef = inject(DestroyRef);
+  private searchSubject = new Subject<string>();
+
+  constructor() {
+    this.searchSubject.pipe(
+      debounceTime(250),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(query => {
+      this.portal.adminSearchQuery.set(query);
+      if (query.trim() && !this.router.url.includes('tab=brands')) {
+        this.router.navigate(['/dashboard'], { queryParams: { tab: 'brands' } });
+      }
+    });
+  }
+
   user = this.auth.currentUser;
   mobileSidebarOpen = signal(false);
   sidebarCollapsed = signal(false);
   notificationsOpen = signal(false);
 
   brandsCount = computed(() => this.portal.brands().length);
-  agenciesCount = computed(() => this.portal.agencies().length);
-  creatorsCount = computed(() => this.portal.overview().totalCreators || this.portal.creators().length);
-  activeAgenciesCount = computed(() =>
-    this.portal.agencies().filter(a => a.status === 'ACTIVE').length
-  );
   pendingBrandsCount = computed(() =>
     this.portal.brands().filter(b => b.status === 'PENDING_APPROVAL').length
   );
-  pendingAgenciesCount = computed(() =>
-    this.portal.agencies().filter(a => a.status === 'PENDING_APPROVAL').length
-  );
-  pendingApprovalsCount = computed(() => this.pendingBrandsCount() + this.pendingAgenciesCount());
+  pendingApprovalsCount = computed(() => this.pendingBrandsCount());
 
   isAdmin = computed(() => this.user()?.role === 'SYSTEM_ADMIN');
   isAgencyManager = computed(() => this.user()?.role === 'AGENCY_MANAGER');
@@ -694,9 +646,6 @@ export class PortalLayoutComponent {
     const url = this.router.url;
     if (url.includes('tab=brands')) return 'Brands Directory';
     if (url.includes('tab=settings')) return 'Platform Settings';
-    if (url.startsWith('/agencies')) return 'Ecosystem Agencies';
-    if (url.startsWith('/creators')) return 'Verified Creators';
-    if (url.startsWith('/content-library')) return 'Deliverables Audit';
     return 'System Overview';
   }
 
@@ -722,10 +671,7 @@ export class PortalLayoutComponent {
   }
 
   onGlobalSearch(query: string): void {
-    this.portal.adminSearchQuery.set(query);
-    if (query.trim() && !this.router.url.includes('tab=brands') && !this.router.url.startsWith('/agencies') && !this.router.url.startsWith('/creators')) {
-      this.router.navigate(['/dashboard'], { queryParams: { tab: 'brands' } });
-    }
+    this.searchSubject.next(query);
   }
 
   @HostListener('window:keydown', ['$event'])

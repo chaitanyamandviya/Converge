@@ -54,7 +54,7 @@
             <span class="font-label-md text-label-md text-on-surface font-semibold">Status</span>
           }
         </nav>
-        <div class="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors duration-150 px-2 py-1 rounded">
+        <div class="flex items-center gap-1.5 text-on-surface-variant select-none px-2 py-1 rounded">
           <span class="material-symbols-outlined text-[18px]">language</span>
           <span class="font-label-sm text-label-sm">EN</span>
         </div>
@@ -611,7 +611,7 @@
                 [type]="showPassword() ? 'text' : 'password'" 
                 [(ngModel)]="password" 
                 name="password"
-                required 
+                [required]="mode() !== 'forgot'" 
                 placeholder="••••••••••••" 
                 class="input-interactive-field w-full h-11 px-4 pl-10 pr-10 rounded-full bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
               <span class="material-symbols-outlined input-leading-icon absolute left-3.5 top-3 text-[18px] text-outline-variant pointer-events-none transition-all duration-200">lock</span>
@@ -747,6 +747,21 @@
             </div>
           }
 
+          <!-- Remember Me (Login only) -->
+          @if (mode() === 'login') {
+            <div class="pt-1 px-1">
+              <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  [checked]="rememberMe()" 
+                  (change)="toggleRememberMe()"
+                  name="rememberMe"
+                  class="w-4 h-4 rounded text-primary focus:ring-0 accent-primary cursor-pointer">
+                <span class="font-label-sm text-label-sm text-on-surface-variant">Remember me</span>
+              </label>
+            </div>
+          }
+
           <!-- Primary Action CTA Button -->
           <div class="pt-2">
             <button 
@@ -813,8 +828,8 @@
        Google Account Chooser Modal
        ======================================================== -->
   @if (showGoogleModal()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn" (click)="showGoogleModal.set(false)">
+      <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative" (click)="$event.stopPropagation()">
         <button type="button" (click)="showGoogleModal.set(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
@@ -930,8 +945,8 @@
        Help / Support Modal
        ======================================================== -->
   @if (showHelpModal()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn" (click)="showHelpModal.set(false)">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative" (click)="$event.stopPropagation()">
         <button type="button" (click)="showHelpModal.set(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
@@ -958,8 +973,8 @@
 
   <!-- Privacy Policy Modal -->
   @if (showPrivacyModal()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn" (click)="showPrivacyModal.set(false)">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
         <button type="button" (click)="showPrivacyModal.set(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
@@ -974,8 +989,8 @@
 
   <!-- Terms Modal -->
   @if (showTermsModal()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn" (click)="showTermsModal.set(false)">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
         <button type="button" (click)="showTermsModal.set(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 cursor-pointer border-0 bg-transparent">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
