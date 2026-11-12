@@ -267,6 +267,7 @@ public class AuthService {
         String partnerBrandName = null;
 
         if ("BRAND_MANAGER".equalsIgnoreCase(role)) {
+            user.setStatus("ACTIVE"); // Immediate activation - no admin approval required
             BrandEntity existingBrand = brandRepository.findAll().stream()
                     .filter(b -> b.getName() != null && b.getName().trim().equalsIgnoreCase(orgName))
                     .findFirst()
@@ -279,10 +280,11 @@ public class AuthService {
             brand.setWebsiteUrl(websiteUrl);
             brand.setActiveCampaignsCount(0);
             brand.setTotalBudgetDeployed(0.0);
-            brand.setStatus("PENDING_APPROVAL");
+            brand.setStatus("ACTIVE"); // Immediate activation - no admin approval required
             BrandEntity savedBrand = brandRepository.save(brand);
             user.setBrandId(savedBrand.getId());
         } else if ("AGENCY_MANAGER".equalsIgnoreCase(role)) {
+            user.setStatus("PENDING_APPROVAL");
             String initials = orgName.replaceAll("[^a-zA-Z]", "");
             initials = initials.length() >= 2 ? initials.substring(0, 2).toUpperCase() : "AG";
 
@@ -348,7 +350,18 @@ public class AuthService {
                 partnerBrandName
         );
 
-        return new AuthResponse(null, user.getRole(), user.getEmail(), user.getBrandId(), user.getAgencyId(), "PENDING_APPROVAL", orgName, null);
+        String token = null;
+        if ("ACTIVE".equalsIgnoreCase(user.getStatus())) {
+            token = jwtService.generateToken(
+                    user.getEmail(),
+                    user.getRole(),
+                    user.getBrandId(),
+                    user.getAgencyId()
+            );
+        }
+
+        String userStatus = user.getStatus() != null ? user.getStatus() : "ACTIVE";
+        return new AuthResponse(token, user.getRole(), user.getEmail(), user.getBrandId(), user.getAgencyId(), userStatus, orgName, null);
     }
 
     public void forgotPassword(String email, String newPassword) {

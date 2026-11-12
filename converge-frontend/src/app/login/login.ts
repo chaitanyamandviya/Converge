@@ -38,8 +38,8 @@ export class LoginComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);
 
-  // Mode: 'login' | 'signup' | 'forgot'
-  readonly mode = signal<'login' | 'signup' | 'forgot'>('login');
+  // Mode: 'login' | 'signup' | 'forgot' | 'brand_welcome'
+  readonly mode = signal<'login' | 'signup' | 'forgot' | 'brand_welcome'>('login');
 
   readonly email = signal('');
   readonly password = signal('');
@@ -145,6 +145,8 @@ export class LoginComponent implements OnInit {
         this.setMode('signup');
       } else if (params['mode'] === 'forgot') {
         this.setMode('forgot');
+      } else if (params['mode'] === 'welcome' || params['mode'] === 'status') {
+        this.setMode('brand_welcome');
       }
     });
     this.loadBrandsForOnboarding();
@@ -229,7 +231,7 @@ export class LoginComponent implements OnInit {
     return defaultAccounts;
   }
 
-  setMode(newMode: 'login' | 'signup' | 'forgot'): void {
+  setMode(newMode: 'login' | 'signup' | 'forgot' | 'brand_welcome'): void {
     this.mode.set(newMode);
     this.clearMessages();
     this.confirmPassword.set('');
@@ -612,15 +614,32 @@ export class LoginComponent implements OnInit {
       this.role() === 'AGENCY_MANAGER' ? this.selectedBrandId() : undefined,
       this.role() === 'AGENCY_MANAGER' ? this.selectedBrandName() : undefined
     ).subscribe({
-      next: () => {
+      next: (resp) => {
         this.isLoading.set(false);
-        this.toast.success('Account Created', `Welcome to Converge, ${nameVal}!`);
-        this.router.navigate(['/dashboard']);
+        if (this.role() === 'BRAND_MANAGER') {
+          if (resp && resp.token) {
+            this.authService.setAuthenticatedSession(resp, this.rememberMe());
+          }
+          this.toast.success('Workspace Ready', `Welcome to Converge, ${nameVal}!`);
+          this.setMode('brand_welcome');
+        } else {
+          this.toast.success('Account Submitted', `Your agency application has been sent to ${this.selectedBrandName()} for review.`);
+          this.setMode('login');
+        }
       },
       error: (err) => {
         this.isLoading.set(false);
         this.showError(err.message || 'Registration failed. Please check your details.');
       }
     });
+  }
+
+  jumpToWorkspace(): void {
+    this.router.navigate(['/dashboard']);
+  }
+
+  onSignOut(): void {
+    this.authService.logout(false);
+    this.setMode('login');
   }
 }

@@ -190,6 +190,10 @@ export class AuthService {
     });
   }
 
+  setAuthenticatedSession(response: AuthResponse, rememberMe = false): User {
+    return this.handleAuthResponse(response, rememberMe);
+  }
+
   private handleAuthResponse(response: AuthResponse, rememberMe: boolean): User {
     const now = Date.now();
     const user: User = {
