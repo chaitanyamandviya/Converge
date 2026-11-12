@@ -41,7 +41,7 @@ import { ToastService } from '../../services/toast.service';
           @if (toast.message) {
             <span class="w-1 h-1 rounded-full bg-neutral-300 flex-shrink-0"></span>
             <span 
-              class="font-label-sm text-label-sm text-neutral-600 truncate max-w-[200px] sm:max-w-[340px]" 
+              class="font-label-sm text-label-sm text-neutral-600 truncate max-w-[150px] sm:max-w-[340px]" 
               [title]="toast.message">
               {{ toast.message }}
             </span>
@@ -63,23 +63,23 @@ import { ToastService } from '../../services/toast.service';
   styles: [`
     .toast-viewport {
       position: fixed;
-      top: 80px;
-      right: 24px;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 99999;
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
+      flex-direction: column-reverse;
+      align-items: center;
       gap: 10px;
       pointer-events: none;
-      max-width: calc(100vw - 32px);
+      width: max-content;
+      max-width: calc(100vw - 24px);
     }
 
     @media (max-width: 640px) {
       .toast-viewport {
-        top: 72px;
-        right: 16px;
-        left: 16px;
-        align-items: center;
+        bottom: 16px;
+        max-width: calc(100vw - 24px);
       }
     }
 
@@ -97,7 +97,7 @@ import { ToastService } from '../../services/toast.service';
     @keyframes islandPillEntrance {
       0% {
         opacity: 0;
-        transform: translateY(-16px) scale(0.92);
+        transform: translateY(16px) scale(0.92);
       }
       100% {
         opacity: 1;
