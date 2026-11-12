@@ -9,53 +9,53 @@ import { ToastService } from '../../services/toast.service';
   template: `
     <div class="toast-viewport" aria-live="polite" aria-atomic="true">
       @for (toast of toastService.toasts(); track toast.id) {
-        <div class="toast-item" [ngClass]="'toast-' + toast.type" role="alert">
-          <div class="toast-header-row">
-            <div class="toast-app-info">
-              <span class="toast-app-icon">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-              </span>
-              <span class="toast-app-name">CONVERGE</span>
-              <span class="toast-time-dot">•</span>
-              <span class="toast-time-label">now</span>
-            </div>
-            <button type="button" class="toast-close" (click)="toastService.dismiss(toast.id)" aria-label="Close notification">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+        <div 
+          class="toast-island-pill w-fit max-w-[min(540px,calc(100vw-32px))] bg-white/95 backdrop-blur-md text-[#191919] border border-neutral-200/80 rounded-full px-4 py-2 shadow-lg shadow-neutral-900/5 hover:shadow-xl transition-all flex items-center gap-3 select-none"
+          [attr.data-type]="toast.type"
+          role="status">
+
+          <!-- Pulsing Status Glow Dot & Title -->
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+              <span 
+                class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-70"
+                [ngClass]="{
+                  'bg-[#34A853]': toast.type === 'success',
+                  'bg-[#EA4335]': toast.type === 'error',
+                  'bg-[#FBBC05]': toast.type === 'warning',
+                  'bg-[#4285F4]': toast.type === 'info'
+                }"></span>
+              <span 
+                class="relative inline-flex rounded-full h-2.5 w-2.5"
+                [ngClass]="{
+                  'bg-[#34A853] shadow-[0_0_8px_rgba(52,168,83,0.6)]': toast.type === 'success',
+                  'bg-[#EA4335] shadow-[0_0_8px_rgba(234,67,53,0.5)]': toast.type === 'error',
+                  'bg-[#FBBC05] shadow-[0_0_8px_rgba(251,188,5,0.6)]': toast.type === 'warning',
+                  'bg-[#4285F4] shadow-[0_0_8px_rgba(66,133,244,0.5)]': toast.type === 'info'
+                }"></span>
+            </span>
+            <span class="font-label-md text-label-md font-semibold text-[#191919] whitespace-nowrap">{{ toast.title }}</span>
           </div>
 
-          <div class="toast-body">
-            <div class="toast-status-icon">
-              @if (toast.type === 'success') {
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              } @else if (toast.type === 'error') {
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-              } @else {
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0071E3" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
-              }
-            </div>
-            <div class="toast-text-col">
-              <span class="toast-title">{{ toast.title }}</span>
-              @if (toast.message) {
-                <span class="toast-msg">{{ toast.message }}</span>
-              }
-            </div>
-          </div>
+          <!-- Divider & Message Description -->
+          @if (toast.message) {
+            <span class="w-1 h-1 rounded-full bg-neutral-300 flex-shrink-0"></span>
+            <span 
+              class="font-label-sm text-label-sm text-neutral-600 truncate max-w-[200px] sm:max-w-[340px]" 
+              [title]="toast.message">
+              {{ toast.message }}
+            </span>
+          }
+
+          <!-- Micro Close Button -->
+          <button 
+            type="button" 
+            (click)="toastService.dismiss(toast.id)" 
+            class="w-5 h-5 rounded-full bg-neutral-100 hover:bg-neutral-200/90 text-neutral-400 hover:text-neutral-700 transition-colors flex items-center justify-center flex-shrink-0 ml-0.5 cursor-pointer border-0 p-0" 
+            aria-label="Close notification">
+            <span class="material-symbols-outlined text-[12px] leading-none select-none">close</span>
+          </button>
+
         </div>
       }
     </div>
@@ -63,156 +63,46 @@ import { ToastService } from '../../services/toast.service';
   styles: [`
     .toast-viewport {
       position: fixed;
-      top: 18px;
-      right: 20px;
+      top: 80px;
+      right: 24px;
       z-index: 99999;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
       gap: 10px;
-      max-width: 350px;
-      width: min(350px, calc(100vw - 32px));
       pointer-events: none;
+      max-width: calc(100vw - 32px);
     }
 
-    .toast-item {
+    @media (max-width: 640px) {
+      .toast-viewport {
+        top: 72px;
+        right: 16px;
+        left: 16px;
+        align-items: center;
+      }
+    }
+
+    .toast-island-pill {
       pointer-events: auto;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(25px) saturate(180%);
-      -webkit-backdrop-filter: blur(25px) saturate(180%);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 16px;
-      padding: 10px 14px 12px;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-      width: 100%;
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", sans-serif;
-      animation: macosToastSlide 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      animation: islandPillEntrance 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, opacity 0.2s ease;
     }
 
-    .toast-item:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+    .toast-island-pill:hover {
+      transform: translateY(-1.5px) scale(1.015);
+      box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
     }
 
-    @keyframes macosToastSlide {
+    @keyframes islandPillEntrance {
       0% {
         opacity: 0;
-        transform: translateX(36px) scale(0.96);
+        transform: translateY(-16px) scale(0.92);
       }
       100% {
         opacity: 1;
-        transform: translateX(0) scale(1);
+        transform: translateY(0) scale(1);
       }
-    }
-
-    .toast-header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      line-height: 1;
-    }
-
-    .toast-app-info {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .toast-app-icon {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
-      background: #1D1D1F;
-      color: #FFFFFF;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .toast-app-name {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: rgba(0, 0, 0, 0.55);
-    }
-
-    .toast-time-dot {
-      font-size: 8px;
-      color: rgba(0, 0, 0, 0.3);
-    }
-
-    .toast-time-label {
-      font-size: 11px;
-      color: rgba(0, 0, 0, 0.42);
-      font-weight: 400;
-    }
-
-    .toast-close {
-      background: rgba(0, 0, 0, 0.04);
-      border: none;
-      color: rgba(0, 0, 0, 0.45);
-      cursor: pointer;
-      width: 18px;
-      height: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 150ms ease;
-      padding: 0;
-    }
-
-    .toast-close:hover {
-      background: rgba(0, 0, 0, 0.1);
-      color: #1D1D1F;
-    }
-
-    .toast-body {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      margin-top: 2px;
-    }
-
-    .toast-status-icon {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.03);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
-    .toast-text-col {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .toast-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #1D1D1F;
-      line-height: 1.25;
-    }
-
-    .toast-msg {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.65);
-      line-height: 1.35;
-      word-break: break-word;
     }
   `]
 })

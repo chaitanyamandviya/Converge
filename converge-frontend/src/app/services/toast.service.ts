@@ -58,6 +58,10 @@ export class ToastService {
     this.show({ type: 'info', title, message, duration: 4200 });
   }
 
+  warning(title: string, message?: string): void {
+    this.show({ type: 'warning', title, message, duration: 4800 });
+  }
+
   dismiss(id: string): void {
     const timer = this.timers.get(id);
     if (timer) {
