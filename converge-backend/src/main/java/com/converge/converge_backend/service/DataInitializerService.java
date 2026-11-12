@@ -2,6 +2,7 @@ package com.converge.converge_backend.service;
 
 import com.converge.converge_backend.entity.*;
 import com.converge.converge_backend.repository.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,9 @@ public class DataInitializerService implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
     private final InstagramService instagramService;
+
+    @Value("${app.reset-db:false}")
+    private boolean resetDb;
 
     public DataInitializerService(
             UserRepository userRepository,
@@ -47,6 +51,9 @@ public class DataInitializerService implements CommandLineRunner {
     @Override
     public void run(String... args) {
         widenUrlColumnsToText();
+        if (resetDb) {
+            wipeAllTables();
+        }
         purgeDemoDataFromDatabase();
         cleanupSoftDeletedLegacyRecords();
         deduplicateBrandsAndAgencies();
@@ -55,6 +62,23 @@ public class DataInitializerService implements CommandLineRunner {
         seedPrimarySystemAdmin();
         sanitizeSystemAdminIsolation();
         syncExistingContentItems();
+    }
+
+    private void wipeAllTables() {
+        String[] tables = { "content_items", "creators", "campaigns", "agencies", "brands", "users" };
+        for (String table : tables) {
+            try {
+                jdbcTemplate.execute("TRUNCATE TABLE " + table + " RESTART IDENTITY CASCADE");
+            } catch (Exception ignored) {
+                // Fallback to JPA deleteAll below
+            }
+        }
+        contentItemRepository.deleteAll();
+        creatorRepository.deleteAll();
+        campaignRepository.deleteAll();
+        agencyRepository.deleteAll();
+        brandRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     private void syncExistingContentItems() {
@@ -400,7 +424,9 @@ public class DataInitializerService implements CommandLineRunner {
         primaryAdmin.setStatus("ACTIVE");
         primaryAdmin.setBrandId(null);
         primaryAdmin.setAgencyId(null);
-        primaryAdmin.setPassword(passwordEncoder.encode("Admin@12345"));
+        if (primaryAdmin.getId() == null || primaryAdmin.getPassword() == null || primaryAdmin.getPassword().isBlank()) {
+            primaryAdmin.setPassword(passwordEncoder.encode("Admin@12345"));
+        }
         userRepository.save(primaryAdmin);
 
         // Ensure only 1 SYSTEM_ADMIN exists
