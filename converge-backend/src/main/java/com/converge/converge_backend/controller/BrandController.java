@@ -164,7 +164,15 @@ public class BrandController {
         String oldEmail = brand.getPrimaryManagerEmail() != null ? brand.getPrimaryManagerEmail().trim().toLowerCase() : null;
 
         if (payload.getName() != null && !payload.getName().isBlank()) {
-            brand.setName(payload.getName().trim());
+            String trimmedName = payload.getName().trim();
+            boolean nameExists = brandRepository.findAll().stream()
+                    .anyMatch(b -> !b.getId().equals(id)
+                            && !"DELETED".equalsIgnoreCase(b.getStatus())
+                            && b.getName() != null && b.getName().trim().equalsIgnoreCase(trimmedName));
+            if (nameExists) {
+                throw new RuntimeException("A Brand Workspace named '" + trimmedName + "' already exists. Please choose a unique brand name.");
+            }
+            brand.setName(trimmedName);
         }
         if (payload.getPrimaryManagerEmail() != null && !payload.getPrimaryManagerEmail().isBlank()) {
             String newEmail = payload.getPrimaryManagerEmail().trim().toLowerCase();
@@ -394,9 +402,11 @@ public class BrandController {
         if (recipientEmail != null && !recipientEmail.isBlank()) {
             userRepository.findByEmail(recipientEmail.trim().toLowerCase())
                     .ifPresent(user -> {
-                        user.setStatus("ACTIVE");
-                        user.setBrandId(saved.getId());
-                        userRepository.save(user);
+                        if (!"SYSTEM_ADMIN".equalsIgnoreCase(user.getRole())) {
+                            user.setStatus("ACTIVE");
+                            user.setBrandId(saved.getId());
+                            userRepository.save(user);
+                        }
                     });
             emailService.sendApprovalConfirmationEmail(recipientEmail.trim().toLowerCase(), saved.getName(), "BRAND_MANAGER");
         }

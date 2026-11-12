@@ -121,11 +121,27 @@ public class AgencyController {
             throw new RuntimeException("Security Policy: System Administrator email cannot be onboarded as an Agency.");
         }
 
-        // Enforce uniqueness: check if an agency with this contact email already exists
-        boolean emailExists = agencyRepository.findAll().stream()
-                .anyMatch(a -> a.getContactEmail() != null && a.getContactEmail().trim().equalsIgnoreCase(email));
-        if (emailExists) {
-            throw new RuntimeException("An agency with email '" + email + "' is already registered in the system.");
+        // Enforce uniqueness: check if an agency with this name or contact email already exists
+        AgencyEntity existingByName = agencyRepository.findAll().stream()
+                .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(agencyName))
+                .findFirst()
+                .orElse(null);
+        if (existingByName != null) {
+            if (!"DELETED".equalsIgnoreCase(existingByName.getStatus())) {
+                throw new RuntimeException("An agency named '" + agencyName + "' already exists. Please use a unique agency name.");
+            }
+            agencyRepository.delete(existingByName);
+        }
+
+        AgencyEntity existingByEmail = agencyRepository.findAll().stream()
+                .filter(a -> a.getContactEmail() != null && a.getContactEmail().trim().equalsIgnoreCase(email))
+                .findFirst()
+                .orElse(null);
+        if (existingByEmail != null) {
+            if (!"DELETED".equalsIgnoreCase(existingByEmail.getStatus())) {
+                throw new RuntimeException("An agency with email '" + email + "' is already registered in the system.");
+            }
+            agencyRepository.delete(existingByEmail);
         }
 
         // Clean up any stale or orphaned user account with this email
@@ -233,8 +249,16 @@ public class AgencyController {
         String oldName = agency.getName() != null ? agency.getName().trim() : null;
 
         if (payload.get("name") instanceof String name && !name.isBlank()) {
-            agency.setName(name.trim());
-            String initials = name.trim().replaceAll("[^a-zA-Z]", "");
+            String trimmedName = name.trim();
+            boolean nameExists = agencyRepository.findAll().stream()
+                    .anyMatch(a -> !a.getId().equals(id)
+                            && !"DELETED".equalsIgnoreCase(a.getStatus())
+                            && a.getName() != null && a.getName().trim().equalsIgnoreCase(trimmedName));
+            if (nameExists) {
+                throw new RuntimeException("An agency named '" + trimmedName + "' already exists. Please choose a unique agency name.");
+            }
+            agency.setName(trimmedName);
+            String initials = trimmedName.replaceAll("[^a-zA-Z]", "");
             agency.setInitials(initials.length() >= 2 ? initials.substring(0, 2).toUpperCase() : "AG");
         }
         if (payload.get("email") instanceof String email && !email.isBlank()) {
@@ -415,9 +439,11 @@ public class AgencyController {
             String email = agency.getContactEmail().trim().toLowerCase();
             userRepository.findByEmail(email)
                     .ifPresent(user -> {
-                        user.setStatus("ACTIVE");
-                        user.setAgencyId(saved.getId());
-                        userRepository.save(user);
+                        if (!"SYSTEM_ADMIN".equalsIgnoreCase(user.getRole())) {
+                            user.setStatus("ACTIVE");
+                            user.setAgencyId(saved.getId());
+                            userRepository.save(user);
+                        }
                     });
             emailService.sendApprovalConfirmationEmail(email, saved.getName(), "AGENCY_MANAGER");
         }

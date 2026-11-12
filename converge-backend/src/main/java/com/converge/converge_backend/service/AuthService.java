@@ -77,6 +77,12 @@ public class AuthService {
      */
     private void validateActiveWorkspaceForUser(UserEntity user) {
         if ("SYSTEM_ADMIN".equalsIgnoreCase(user.getRole())) {
+            if (user.getBrandId() != null || user.getAgencyId() != null || !"Converge System Admin".equals(user.getOrganizationName())) {
+                user.setBrandId(null);
+                user.setAgencyId(null);
+                user.setOrganizationName("Converge System Admin");
+                userRepository.save(user);
+            }
             return;
         }
 
@@ -235,8 +241,12 @@ public class AuthService {
         }
 
         String role = (request.getRole() != null && !request.getRole().isBlank())
-                ? request.getRole()
+                ? request.getRole().trim().toUpperCase()
                 : "BRAND_MANAGER";
+
+        if (!"BRAND_MANAGER".equals(role) && !"AGENCY_MANAGER".equals(role)) {
+            throw new RuntimeException("Security Policy: Self-registration is only allowed for Brand or Agency accounts.");
+        }
 
         if (request.getOrganizationName() == null || request.getOrganizationName().isBlank()) {
             throw new RuntimeException(
@@ -267,12 +277,19 @@ public class AuthService {
         String partnerBrandName = null;
 
         if ("BRAND_MANAGER".equalsIgnoreCase(role)) {
-            user.setStatus("ACTIVE"); // Immediate activation - no admin approval required
-            BrandEntity existingBrand = brandRepository.findAll().stream()
+            BrandEntity conflictingBrand = brandRepository.findAll().stream()
                     .filter(b -> b.getName() != null && b.getName().trim().equalsIgnoreCase(orgName))
                     .findFirst()
                     .orElse(null);
-            BrandEntity brand = existingBrand != null ? existingBrand : new BrandEntity();
+            if (conflictingBrand != null) {
+                if (!"DELETED".equalsIgnoreCase(conflictingBrand.getStatus())) {
+                    throw new RuntimeException("A Brand named '" + orgName + "' already exists. Please choose a unique brand name.");
+                }
+                brandRepository.delete(conflictingBrand);
+            }
+
+            user.setStatus("ACTIVE"); // Immediate activation - no admin approval required
+            BrandEntity brand = new BrandEntity();
             brand.setName(orgName);
             brand.setContactEmail(email);
             brand.setPrimaryManagerEmail(email);
@@ -283,17 +300,35 @@ public class AuthService {
             brand.setStatus("ACTIVE"); // Immediate activation - no admin approval required
             BrandEntity savedBrand = brandRepository.save(brand);
             user.setBrandId(savedBrand.getId());
+            user.setAgencyId(null);
         } else if ("AGENCY_MANAGER".equalsIgnoreCase(role)) {
+            AgencyEntity nameConflict = agencyRepository.findAll().stream()
+                    .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(orgName))
+                    .findFirst()
+                    .orElse(null);
+            if (nameConflict != null) {
+                if (!"DELETED".equalsIgnoreCase(nameConflict.getStatus())) {
+                    throw new RuntimeException("An Agency named '" + orgName + "' already exists. Please choose a unique agency name.");
+                }
+                agencyRepository.delete(nameConflict);
+            }
+
+            AgencyEntity emailConflict = agencyRepository.findAll().stream()
+                    .filter(a -> a.getContactEmail() != null && a.getContactEmail().trim().equalsIgnoreCase(email))
+                    .findFirst()
+                    .orElse(null);
+            if (emailConflict != null) {
+                if (!"DELETED".equalsIgnoreCase(emailConflict.getStatus())) {
+                    throw new RuntimeException("An Agency with email '" + email + "' is already registered.");
+                }
+                agencyRepository.delete(emailConflict);
+            }
+
             user.setStatus("PENDING_APPROVAL");
             String initials = orgName.replaceAll("[^a-zA-Z]", "");
             initials = initials.length() >= 2 ? initials.substring(0, 2).toUpperCase() : "AG";
 
-            AgencyEntity existingAgency = agencyRepository.findAll().stream()
-                    .filter(a -> a.getContactEmail() != null && a.getContactEmail().trim().equalsIgnoreCase(email))
-                    .findFirst()
-                    .orElse(null);
-
-            AgencyEntity agency = existingAgency != null ? existingAgency : new AgencyEntity(
+            AgencyEntity agency = new AgencyEntity(
                     null,
                     orgName,
                     email,

@@ -49,8 +49,11 @@ public class DataInitializerService implements CommandLineRunner {
         widenUrlColumnsToText();
         purgeDemoDataFromDatabase();
         cleanupSoftDeletedLegacyRecords();
+        deduplicateBrandsAndAgencies();
+        enforceUniqueIndexes();
         purgeOrphanedManagerAccounts();
         seedPrimarySystemAdmin();
+        sanitizeSystemAdminIsolation();
         syncExistingContentItems();
     }
 
@@ -277,6 +280,116 @@ public class DataInitializerService implements CommandLineRunner {
         }
     }
 
+    private void deduplicateBrandsAndAgencies() {
+        // 1. Deduplicate Brands (case-insensitive trimmed name)
+        java.util.Map<String, List<BrandEntity>> brandsByName = new java.util.LinkedHashMap<>();
+        for (BrandEntity b : brandRepository.findAll()) {
+            if (b.getName() == null || b.getName().isBlank()) continue;
+            String key = b.getName().trim().toLowerCase();
+            brandsByName.computeIfAbsent(key, k -> new java.util.ArrayList<>()).add(b);
+        }
+        for (List<BrandEntity> group : brandsByName.values()) {
+            if (group.size() <= 1) continue;
+            group.sort((a, b) -> {
+                boolean aActive = "ACTIVE".equalsIgnoreCase(a.getStatus());
+                boolean bActive = "ACTIVE".equalsIgnoreCase(b.getStatus());
+                if (aActive != bActive) return aActive ? -1 : 1;
+                return Long.compare(a.getId() != null ? a.getId() : 0L, b.getId() != null ? b.getId() : 0L);
+            });
+            BrandEntity keep = group.get(0);
+            for (int i = 1; i < group.size(); i++) {
+                BrandEntity dup = group.get(i);
+                Long dupId = dup.getId();
+                for (UserEntity u : userRepository.findAll()) {
+                    if (!"SYSTEM_ADMIN".equalsIgnoreCase(u.getRole()) && dupId.equals(u.getBrandId())) {
+                        u.setBrandId(keep.getId());
+                        userRepository.save(u);
+                    }
+                }
+                for (AgencyEntity a : agencyRepository.findAll()) {
+                    if (dupId.equals(a.getBrandId())) {
+                        a.setBrandId(keep.getId());
+                        a.setBrandName(keep.getName());
+                        agencyRepository.save(a);
+                    }
+                }
+                brandRepository.delete(dup);
+            }
+        }
+
+        // 2. Deduplicate Agencies (case-insensitive trimmed name)
+        java.util.Map<String, List<AgencyEntity>> agenciesByName = new java.util.LinkedHashMap<>();
+        for (AgencyEntity a : agencyRepository.findAll()) {
+            if (a.getName() == null || a.getName().isBlank()) continue;
+            String key = a.getName().trim().toLowerCase();
+            agenciesByName.computeIfAbsent(key, k -> new java.util.ArrayList<>()).add(a);
+        }
+        for (List<AgencyEntity> group : agenciesByName.values()) {
+            if (group.size() <= 1) continue;
+            group.sort((a, b) -> {
+                boolean aActive = "ACTIVE".equalsIgnoreCase(a.getStatus());
+                boolean bActive = "ACTIVE".equalsIgnoreCase(b.getStatus());
+                if (aActive != bActive) return aActive ? -1 : 1;
+                return Long.compare(a.getId() != null ? a.getId() : 0L, b.getId() != null ? b.getId() : 0L);
+            });
+            AgencyEntity keep = group.get(0);
+            for (int i = 1; i < group.size(); i++) {
+                AgencyEntity dup = group.get(i);
+                Long dupId = dup.getId();
+                for (UserEntity u : userRepository.findAll()) {
+                    if (!"SYSTEM_ADMIN".equalsIgnoreCase(u.getRole()) && dupId.equals(u.getAgencyId())) {
+                        u.setAgencyId(keep.getId());
+                        userRepository.save(u);
+                    }
+                }
+                agencyRepository.delete(dup);
+            }
+        }
+    }
+
+    private void enforceUniqueIndexes() {
+        String[] ddl = {
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_brands_name_lower ON brands (LOWER(TRIM(name)))",
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_agencies_name_lower ON agencies (LOWER(TRIM(name)))"
+        };
+        for (String sql : ddl) {
+            try {
+                jdbcTemplate.execute(sql);
+            } catch (Exception ignored) {
+                // Ignore if index creation fails on non-Postgres or legacy constraint conflict
+            }
+        }
+    }
+
+    private void sanitizeSystemAdminIsolation() {
+        try {
+            jdbcTemplate.execute("UPDATE users SET brand_id = NULL, agency_id = NULL, organization_name = 'Converge System Admin' WHERE UPPER(role) = 'SYSTEM_ADMIN'");
+        } catch (Exception ignored) {
+        }
+        for (UserEntity admin : userRepository.findByRole("SYSTEM_ADMIN")) {
+            admin.setBrandId(null);
+            admin.setAgencyId(null);
+            admin.setOrganizationName("Converge System Admin");
+            admin.setStatus("ACTIVE");
+            userRepository.save(admin);
+
+            String adminEmail = admin.getEmail() != null ? admin.getEmail().trim().toLowerCase() : "";
+            if (!adminEmail.isEmpty()) {
+                for (AgencyEntity a : agencyRepository.findAll()) {
+                    if (a.getContactEmail() != null && adminEmail.equalsIgnoreCase(a.getContactEmail().trim())) {
+                        agencyRepository.delete(a);
+                    }
+                }
+                for (BrandEntity b : brandRepository.findAll()) {
+                    if ((b.getPrimaryManagerEmail() != null && adminEmail.equalsIgnoreCase(b.getPrimaryManagerEmail().trim()))
+                            || (b.getContactEmail() != null && adminEmail.equalsIgnoreCase(b.getContactEmail().trim()))) {
+                        brandRepository.delete(b);
+                    }
+                }
+            }
+        }
+    }
+
     private void seedPrimarySystemAdmin() {
         String primaryAdminEmail = "chaitanyamandviya7@gmail.com";
         UserEntity primaryAdmin = userRepository.findByEmail(primaryAdminEmail).orElseGet(UserEntity::new);
@@ -285,6 +398,8 @@ public class DataInitializerService implements CommandLineRunner {
         primaryAdmin.setOrganizationName("Converge System Admin");
         primaryAdmin.setRole("SYSTEM_ADMIN");
         primaryAdmin.setStatus("ACTIVE");
+        primaryAdmin.setBrandId(null);
+        primaryAdmin.setAgencyId(null);
         primaryAdmin.setPassword(passwordEncoder.encode("Admin@12345"));
         userRepository.save(primaryAdmin);
 
