@@ -652,9 +652,28 @@ export class AuthComponent implements OnInit {
   handleGoogle() {
     this.banner.set(null);
     if (!this.googleClientId) {
-      this.showError('Google Sign-In is still loading or not configured on the server.');
+      this.googleLoading.set(true);
+      this.authService.getConfig().subscribe({
+        next: (cfg) => {
+          this.googleClientId = (cfg?.googleClientId || '').trim();
+          this.googleLoading.set(false);
+          if (!this.googleClientId) {
+            this.showError('Google Sign-In is not configured on the backend server yet. Sign in or create an account with Email below.');
+            return;
+          }
+          this.launchGooglePopup();
+        },
+        error: () => {
+          this.googleLoading.set(false);
+          this.showError('Backend server is still waking up or unreachable. Please wait a few seconds and try again.');
+        }
+      });
       return;
     }
+    this.launchGooglePopup();
+  }
+
+  private launchGooglePopup() {
     if (!this.initGoogleTokenClient()) {
       this.showError('Google Identity Services script is blocked or still loading. Please try again.');
       return;

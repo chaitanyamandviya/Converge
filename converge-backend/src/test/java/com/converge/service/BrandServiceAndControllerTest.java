@@ -347,4 +347,31 @@ class BrandServiceAndControllerTest {
         assertEquals(100000.0, fallbackRoi.get("costQuoted"));
         assertEquals(10.0, fallbackRoi.get("costPerView")); // 100000 / 10000
     }
+
+    @Test
+    void addReelDeliverableRejectsDuplicateShortcodeOrQueryVariant() {
+        var creator = new com.converge.entity.Creator();
+        creator.setId(UUID.randomUUID());
+        creator.setBrandId(UUID.randomUUID());
+        creator.setHandle("@rahulsaharan");
+
+        com.converge.entity.ReelDeliverable existing = new com.converge.entity.ReelDeliverable();
+        existing.setId(UUID.randomUUID());
+        existing.setCreatorId(creator.getId());
+        existing.setShortcode("DffQCZBtDfN");
+        existing.setReelUrl("https://www.instagram.com/reel/DffQCZBtDfN/");
+
+        when(creatorRepository.findById(creator.getId())).thenReturn(Optional.of(creator));
+        when(reelRepository.findByCreatorIdOrderBySyncedAtDesc(creator.getId())).thenReturn(List.of(existing));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> brandService.addReelDeliverable(
+                        creator.getId(),
+                        Map.of("title", "Duplicate", "reelUrl", "https://www.instagram.com/p/DffQCZBtDfN/?igsh=xyz")
+                )
+        );
+        assertTrue(ex.getMessage().contains("already added"));
+        verify(reelRepository, never()).save(any());
+    }
 }

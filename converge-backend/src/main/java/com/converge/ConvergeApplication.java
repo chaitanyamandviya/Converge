@@ -34,30 +34,77 @@ public class ConvergeApplication {
             String resolvedPass = parsed[2];
 
             if (jdbcUrl.startsWith("jdbc:postgresql://")) {
-                HikariConfig cfg = new HikariConfig();
-                cfg.setJdbcUrl(jdbcUrl);
-                if (resolvedUser != null) cfg.setUsername(resolvedUser);
-                if (resolvedPass != null) cfg.setPassword(resolvedPass);
-                cfg.setDriverClassName("org.postgresql.Driver");
-                cfg.setConnectionTimeout(20000);
-                try (HikariDataSource ds = new HikariDataSource(cfg);
-                     Connection ignored = ds.getConnection()) {
+                if (tryConnectPostgres(jdbcUrl, resolvedUser, resolvedPass)) {
                     System.out.println("Connected to Neon PostgreSQL via HikariCP successfully.");
                     System.setProperty("spring.datasource.url", jdbcUrl);
-                    if (resolvedUser != null) System.setProperty("spring.datasource.username", resolvedUser);
-                    if (resolvedPass != null) System.setProperty("spring.datasource.password", resolvedPass);
-                } catch (Exception ex) {
-                    System.err.println("PostgreSQL unavailable (" + ex.getMessage() + "), activating 'local' H2 PostgreSQL-mode profile.");
+                    if (!resolvedUser.isEmpty()) System.setProperty("spring.datasource.username", resolvedUser);
+                    if (!resolvedPass.isEmpty()) System.setProperty("spring.datasource.password", resolvedPass);
+                } else if (!isH2FallbackAllowed()) {
+                    throw new IllegalStateException("Neon PostgreSQL connection failed and H2 fallback is disabled (ALLOW_H2_FALLBACK=false / RENDER). Fix DNS or DATABASE_URL credentials.");
+                } else {
                     app.setAdditionalProfiles("local");
                 }
             } else {
                 app.setAdditionalProfiles("local");
             }
         } else {
+            if (!isH2FallbackAllowed()) {
+                throw new IllegalStateException("DATABASE_URL / DB_URL is missing and H2 fallback is disabled.");
+            }
             app.setAdditionalProfiles("local");
         }
 
         app.run(args);
+    }
+
+    static boolean isH2FallbackAllowed() {
+        String explicit = cleanEnvValue(getEnv("ALLOW_H2_FALLBACK"));
+        if (!explicit.isEmpty()) {
+            return !"false".equalsIgnoreCase(explicit) && !"0".equals(explicit);
+        }
+        return cleanEnvValue(getEnv("RENDER")).isEmpty();
+    }
+
+    private static boolean tryConnectPostgres(String jdbcUrl, String user, String pass) {
+        String activeUrl = jdbcUrl;
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            HikariConfig cfg = new HikariConfig();
+            cfg.setJdbcUrl(activeUrl);
+            if (user != null && !user.isEmpty()) cfg.setUsername(user);
+            if (pass != null && !pass.isEmpty()) cfg.setPassword(pass);
+            cfg.setDriverClassName("org.postgresql.Driver");
+            cfg.setConnectionTimeout(15000);
+            try (HikariDataSource ds = new HikariDataSource(cfg);
+                 Connection ignored = ds.getConnection()) {
+                if (!activeUrl.equals(jdbcUrl)) {
+                    System.setProperty("DATABASE_URL", activeUrl);
+                }
+                return true;
+            } catch (Exception ex) {
+                Throwable root = ex;
+                boolean unknownHost = false;
+                while (root != null) {
+                    if (root instanceof java.net.UnknownHostException) {
+                        unknownHost = true;
+                        break;
+                    }
+                    root = root.getCause();
+                }
+                String msg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+                if (unknownHost) {
+                    System.err.println("Neon PostgreSQL DNS resolution failed (" + msg + "). Set your network DNS to 1.1.1.1 / 8.8.8.8 so Windows can resolve the Neon host; falling back to 'local' H2 only if allowed.");
+                    return false;
+                }
+                if (activeUrl.contains("channel_binding=") && msg.toLowerCase().contains("channel_binding")) {
+                    activeUrl = activeUrl.replaceAll("([?&])channel_binding=[^&]*&?", "$1").replaceAll("[?&]$", "");
+                }
+                System.err.println("Neon PostgreSQL connection attempt " + attempt + " failed (" + msg + ").");
+                if (attempt < 2) {
+                    try { Thread.sleep(1500); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+                }
+            }
+        }
+        return false;
     }
 
     static String[] normalizePostgresConfig(String rawUrl, String user, String pass) {
@@ -125,17 +172,18 @@ public class ConvergeApplication {
     }
 
     public static void applyInstagramEnvAliases(Function<String, String> reader, BiConsumer<String, String> writer) {
-        Map<String, String> directAliases = Map.of(
-                "INSTAGRAM_ACCESS_TOKEN", "instagram.access-token",
-                "INSTAGRAM_BUSINESS_ACCOUNT_ID", "instagram.user-id",
-                "INSTAGRAM_APP_ID", "instagram.app-id",
-                "INSTAGRAM_APP_SECRET", "instagram.app-secret",
-                "INSTAGRAM_REDIRECT_URI", "instagram.redirect-uri",
-                "INSTAGRAM_CREATOR_MARKETPLACE_ENABLED", "instagram.creator-marketplace-enabled",
-                "FRONTEND_URL", "app.frontend-url",
-                "DATABASE_URL", "DB_URL",
-                "DATABASE_USERNAME", "DB_USERNAME",
-                "DATABASE_PASSWORD", "DB_PASSWORD"
+        Map<String, String> directAliases = Map.ofEntries(
+                Map.entry("INSTAGRAM_ACCESS_TOKEN", "instagram.access-token"),
+                Map.entry("INSTAGRAM_BUSINESS_ACCOUNT_ID", "instagram.user-id"),
+                Map.entry("INSTAGRAM_APP_ID", "instagram.app-id"),
+                Map.entry("INSTAGRAM_APP_SECRET", "instagram.app-secret"),
+                Map.entry("INSTAGRAM_REDIRECT_URI", "instagram.redirect-uri"),
+                Map.entry("INSTAGRAM_CREATOR_MARKETPLACE_ENABLED", "instagram.creator-marketplace-enabled"),
+                Map.entry("FRONTEND_URL", "app.frontend-url"),
+                Map.entry("DATABASE_URL", "DB_URL"),
+                Map.entry("DATABASE_USERNAME", "DB_USERNAME"),
+                Map.entry("DATABASE_PASSWORD", "DB_PASSWORD"),
+                Map.entry("GOOGLE_CLIENT_ID", "google.client-id")
         );
         directAliases.forEach((target, source) -> {
             String existing = cleanEnvValue(reader.apply(target));

@@ -1094,12 +1094,18 @@ export class WorkspaceComponent implements OnInit {
     this.inspectedCreator.set(c);
     this.inspectedBundle.set(null);
     this.drawerMedia.set([]);
+    this.refreshCreatorInsights(c);
+  }
+
+  private refreshCreatorInsights(c: Creator) {
     this.api.getCreatorInsights(c.id).subscribe({
       next: (bundle) => {
         this.inspectedBundle.set(bundle);
         this.inspectedCreator.set(bundle.creator);
         this.creatorReels.set(bundle.deliverables);
-        this.drawerMedia.set(bundle.recentMedia || []);
+        if (bundle.recentMedia?.length || this.drawerMedia().length === 0) {
+          this.drawerMedia.set(bundle.recentMedia || []);
+        }
         this.selectBrand(this.selectedBrandId());
       },
       error: () => {
@@ -1168,11 +1174,15 @@ export class WorkspaceComponent implements OnInit {
     if (!ic || !payload.reelUrl.trim()) return;
     this.api.addReelDeliverable(ic.id, payload).subscribe({
       next: (reel) => {
-        this.inspectCreator(ic);
-        this.selectBrand(this.selectedBrandId());
+        const existing = this.creatorReels().filter(r => r.id !== reel.id);
+        this.creatorReels.set([reel, ...existing]);
+        this.refreshCreatorInsights(ic);
         this.showToast(reel.status === 'VERIFIED' ? 'Reel synced from Instagram!' : 'Reel saved (pending Meta API credentials).');
       },
-      error: (err) => this.showToast(err?.error?.error || 'Could not add Reel deliverable.')
+      error: (err) => {
+        this.creatorReels.set([...this.creatorReels()]);
+        this.showToast(err?.error?.error || 'Could not add Reel deliverable.');
+      }
     });
   }
 

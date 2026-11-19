@@ -28,10 +28,10 @@ public class Creator {
 
     private String email;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String avatarUrl;
 
-    @Column(length = 500)
+    @Column(columnDefinition = "TEXT")
     private String profileUrl;
 
     private String igUserId;
@@ -39,7 +39,7 @@ public class Creator {
     private String website;
     private String niche = "Skincare & Beauty";
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String bio;
 
     private String followersDisplay = "—";
@@ -64,10 +64,10 @@ public class Creator {
     private String gender = "";
     private String ageBracket = "";
 
-    @Column(length = 600)
+    @Column(columnDefinition = "TEXT")
     private String creatorTraits = "";
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String previousBrandPartners = "";
 
     private Integer partnershipAdCount = 0;
@@ -90,7 +90,7 @@ public class Creator {
     private String audienceAgeGender = "";
 
     @JsonIgnore
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String igAccessToken;
 
     private Instant igTokenExpiresAt;

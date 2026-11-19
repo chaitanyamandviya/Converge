@@ -26,7 +26,7 @@ public class AuditLog {
 
     private String statusBadge; // Verified / Compliant, Completed, Updated, Initialized
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     private String actor;

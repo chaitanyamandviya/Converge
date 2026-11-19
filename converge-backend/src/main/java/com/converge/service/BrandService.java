@@ -343,11 +343,23 @@ public class BrandService {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
         String reelUrl = payload.getOrDefault("reelUrl", "").trim();
-        if (reelUrl.isEmpty() || InstagramGraphService.extractShortcode(reelUrl) == null) {
+        String shortcode = InstagramGraphService.extractShortcode(reelUrl);
+        if (reelUrl.isEmpty() || shortcode == null) {
             throw new IllegalArgumentException("Enter a valid public Instagram Reel or Post URL (e.g. https://www.instagram.com/reel/...).");
         }
+        String normalizedIncoming = normalizeReelUrl(reelUrl);
+        List<ReelDeliverable> existingReels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
+        for (ReelDeliverable existing : existingReels) {
+            String existingSc = existing.getShortcode() != null && !existing.getShortcode().isBlank()
+                    ? existing.getShortcode()
+                    : InstagramGraphService.extractShortcode(existing.getReelUrl());
+            if ((existingSc != null && existingSc.equalsIgnoreCase(shortcode))
+                    || normalizeReelUrl(existing.getReelUrl()).equalsIgnoreCase(normalizedIncoming)) {
+                throw new IllegalArgumentException("This Reel is already added to " + creator.getHandle() + "'s tracked deliverables.");
+            }
+        }
         if (reelRepository.findByCreatorIdAndReelUrlIgnoreCase(creatorId, reelUrl).isPresent()) {
-            throw new IllegalArgumentException("This Reel URL has already been submitted for " + creator.getHandle() + ".");
+            throw new IllegalArgumentException("This Reel is already added to " + creator.getHandle() + "'s tracked deliverables.");
         }
 
         String title = payload.getOrDefault("title", "Campaign Reel Deliverable").trim();
@@ -359,6 +371,7 @@ public class BrandService {
         reel.setCreatorHandle(creator.getHandle());
         reel.setTitle(title);
         reel.setReelUrl(reelUrl);
+        reel.setShortcode(shortcode);
         Double delCost = parseNullablePositiveDouble(payload.get("costQuoted"));
         if (delCost != null) {
             reel.setCostQuoted(delCost);
@@ -837,6 +850,16 @@ public class BrandService {
         } catch (Exception e) {
             return UUID.randomUUID().toString().replace("-", "");
         }
+    }
+
+    private String normalizeReelUrl(String rawUrl) {
+        if (rawUrl == null) return "";
+        String trimmed = rawUrl.trim();
+        int q = trimmed.indexOf('?');
+        if (q >= 0) trimmed = trimmed.substring(0, q);
+        int hash = trimmed.indexOf('#');
+        if (hash >= 0) trimmed = trimmed.substring(0, hash);
+        return trimmed.replaceAll("/+$", "");
     }
 
     private String csv(String v) {

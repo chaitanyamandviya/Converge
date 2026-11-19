@@ -441,12 +441,15 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
 
           <form (ngSubmit)="submitReelForm()" class="p-3.5 rounded-2xl bg-blue-container/25 border border-primary/20 grid grid-cols-1 gap-2.5 items-center" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-6' : 'sm:grid-cols-5'">
             <input [(ngModel)]="newReelTitle" name="reelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-9.5 px-3.5 rounded-xl bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary"/>
-            <input [(ngModel)]="newReelUrl" name="reelUrl" placeholder="https://www.instagram.com/reel/..." required class="sm:col-span-2 h-9.5 px-3.5 rounded-xl bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary"/>
+            <input [(ngModel)]="newReelUrl" (ngModelChange)="duplicateReelNotice.set('')" name="reelUrl" placeholder="https://www.instagram.com/reel/..." required class="sm:col-span-2 h-9.5 px-3.5 rounded-xl bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary"/>
             @if (roi.costMode === 'PER_DELIVERABLE') {
               <input [(ngModel)]="newReelCost" name="reelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-9.5 px-3.5 rounded-xl bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary"/>
             }
             <button type="submit" class="h-9.5 px-4 rounded-xl bg-primary text-white text-xs font-semibold cursor-pointer hover:bg-primary-container">Verify &amp; Add Reel</button>
           </form>
+          @if (duplicateReelNotice()) {
+            <p class="text-xs font-semibold text-secondary bg-coral-container/35 border border-secondary/20 rounded-xl px-3.5 py-2">{{ duplicateReelNotice() }}</p>
+          }
 
           <!-- Optional On-Demand IG Reel Picker (Shows Only Video/Reels with Official View Counts) -->
           @if (showReelPicker()) {
@@ -466,7 +469,9 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
               } @else {
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   @for (m of igReels; track m.id) {
-                    <div class="p-3 rounded-xl bg-white border border-surface-container-high flex items-center justify-between gap-3 text-xs">
+                    @let alreadyTracked = isMediaAlreadyTracked(m);
+                    <div class="p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition-colors"
+                         [ngClass]="alreadyTracked ? 'bg-mint-container/25 border-[#137333]/25' : 'bg-white border-surface-container-high'">
                       <div class="flex items-center gap-2.5 min-w-0">
                         @if (m.thumbnailUrl) {
                           <img [src]="m.thumbnailUrl" alt="Reel preview" (error)="m.thumbnailUrl = ''" class="w-11 h-11 rounded-lg object-cover shrink-0"/>
@@ -478,7 +483,11 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
                           </p>
                         </div>
                       </div>
-                      <button type="button" (click)="selectMediaForTrack(m)" class="px-2.5 py-1.5 rounded-full bg-blue-container text-primary text-[10px] font-bold hover:bg-primary hover:text-white transition-colors shrink-0 cursor-pointer">+ Track</button>
+                      @if (alreadyTracked) {
+                        <span class="px-2.5 py-1.5 rounded-full bg-mint-container text-[#137333] text-[10px] font-bold shrink-0 select-none">✓ Already Added</span>
+                      } @else {
+                        <button type="button" (click)="selectMediaForTrack(m)" class="px-2.5 py-1.5 rounded-full bg-blue-container text-primary text-[10px] font-bold hover:bg-primary hover:text-white transition-colors shrink-0 cursor-pointer">+ Track</button>
+                      }
                     </div>
                   }
                 </div>
@@ -608,6 +617,8 @@ export class CreatorInsightsViewComponent implements OnChanges {
   pricingMenuOpen = signal(false);
   showReelPicker = signal(false);
   editingDeliverableId = signal<string | null>(null);
+  duplicateReelNotice = signal('');
+  pendingTrackKeys = signal<Set<string>>(new Set());
   chartTab = signal<'views' | 'interactions' | 'mix' | null>(null);
   hoveredSliceId = signal<string | null>(null);
   pinnedSliceId = signal<string | null>(null);
@@ -627,6 +638,10 @@ export class CreatorInsightsViewComponent implements OnChanges {
   };
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['reels']) {
+      this.pendingTrackKeys.set(new Set());
+      this.duplicateReelNotice.set('');
+    }
     if (changes['creator'] && this.creator) {
       this.form = {
         costMode: this.creator.costMode === 'PER_DELIVERABLE' ? 'PER_DELIVERABLE' : 'COLLECTIVE',
@@ -640,6 +655,8 @@ export class CreatorInsightsViewComponent implements OnChanges {
         this.pricingMenuOpen.set(false);
         this.showReelPicker.set(false);
         this.editingDeliverableId.set(null);
+        this.duplicateReelNotice.set('');
+        this.pendingTrackKeys.set(new Set());
         this.chartTab.set(null);
         this.hoveredSliceId.set(null);
         this.pinnedSliceId.set(null);
@@ -921,21 +938,73 @@ export class CreatorInsightsViewComponent implements OnChanges {
   }
 
   selectMediaForTrack(m: any) {
-    if (!m?.permalink) return;
+    if (!m?.permalink || this.isMediaAlreadyTracked(m)) return;
+    const keys = new Set(this.pendingTrackKeys());
+    if (m.id) keys.add(String(m.id));
+    if (m.shortcode) keys.add(String(m.shortcode).toLowerCase());
+    const norm = this.normalizeReelUrl(m.permalink);
+    if (norm) keys.add(norm);
+    this.pendingTrackKeys.set(keys);
+
     const title = m.caption ? String(m.caption).slice(0, 60) : (m.mediaProductType || 'Campaign Reel');
     this.addReel.emit({ title, reelUrl: m.permalink });
   }
 
   submitReelForm() {
-    if (!this.newReelUrl.trim()) return;
+    const cleanUrl = this.newReelUrl.trim();
+    if (!cleanUrl) return;
+    if (this.isUrlAlreadyTracked(cleanUrl)) {
+      this.duplicateReelNotice.set('This Reel is already added to this creator’s tracked deliverables.');
+      return;
+    }
+    this.duplicateReelNotice.set('');
     this.addReel.emit({
       title: this.newReelTitle || 'Verified Campaign Reel',
-      reelUrl: this.newReelUrl,
+      reelUrl: cleanUrl,
       costQuoted: this.newReelCost ? String(this.newReelCost) : undefined
     });
     this.newReelTitle = '';
     this.newReelUrl = '';
     this.newReelCost = '';
+  }
+
+  isMediaAlreadyTracked(m: any): boolean {
+    if (!m) return false;
+    const mId = m.id ? String(m.id) : '';
+    const mSc = (m.shortcode ? String(m.shortcode) : this.extractShortcode(m.permalink)).toLowerCase();
+    const mNorm = this.normalizeReelUrl(m.permalink);
+    const pending = this.pendingTrackKeys();
+    if ((mId && pending.has(mId)) || (mSc && pending.has(mSc)) || (mNorm && pending.has(mNorm))) {
+      return true;
+    }
+    return this.reels.some(r => {
+      if (mId && r.igMediaId && String(r.igMediaId) === mId) return true;
+      const rSc = (r.shortcode || this.extractShortcode(r.reelUrl)).toLowerCase();
+      if (mSc && rSc && rSc === mSc) return true;
+      const rNorm = this.normalizeReelUrl(r.reelUrl);
+      return !!mNorm && !!rNorm && rNorm === mNorm;
+    });
+  }
+
+  isUrlAlreadyTracked(url: string): boolean {
+    const sc = this.extractShortcode(url).toLowerCase();
+    const norm = this.normalizeReelUrl(url);
+    return this.reels.some(r => {
+      const rSc = (r.shortcode || this.extractShortcode(r.reelUrl)).toLowerCase();
+      if (sc && rSc && rSc === sc) return true;
+      return !!norm && this.normalizeReelUrl(r.reelUrl) === norm;
+    });
+  }
+
+  extractShortcode(url?: string | null): string {
+    if (!url) return '';
+    const m = String(url).match(/\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/i);
+    return m ? m[1] : '';
+  }
+
+  normalizeReelUrl(url?: string | null): string {
+    if (!url) return '';
+    return String(url).trim().split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
   }
 
   toggleReelPicker(ic: Creator) {

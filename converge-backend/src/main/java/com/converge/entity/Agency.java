@@ -24,7 +24,7 @@ public class Agency {
     private String monogram;
     private String roleBadge = "Partner Agency";
 
-    @Column(length = 600)
+    @Column(columnDefinition = "TEXT")
     private String scopeDescription;
 
     private String region = "North America";

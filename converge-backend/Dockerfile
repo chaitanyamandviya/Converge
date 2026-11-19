@@ -13,10 +13,9 @@ RUN ./mvnw clean package -DskipTests -B
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-RUN groupadd -r converge && useradd -r -g converge converge
+RUN groupadd -r converge && useradd -r -g converge converge && chown -R converge:converge /app
+COPY --from=builder --chown=converge:converge /app/target/converge-backend-0.0.1-SNAPSHOT.jar app.jar
 USER converge
-
-COPY --from=builder /app/target/converge-backend-0.0.1-SNAPSHOT.jar app.jar
 
 ENV PORT=8080
 EXPOSE 8080

@@ -20,20 +20,20 @@ public class ReelDeliverable {
 
     private String creatorHandle;
 
-    @Column(nullable = false, length = 500)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String title;
 
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String reelUrl;
 
     private String igMediaId;
     private String shortcode;
     private String mediaType;
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String caption;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String thumbnailUrl;
 
     private String duration = "0:45";
