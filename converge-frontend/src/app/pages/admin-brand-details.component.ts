@@ -69,7 +69,7 @@ import { ConfirmModalComponent } from '../components/confirm-modal.component';
                   <div class="flex flex-wrap items-center gap-2 text-ink-secondary text-xs font-semibold">
                     <span class="font-mono bg-surface-container px-2 py-0.5 rounded-md text-ink-primary">{{ b.code }}</span>
                     <span>•</span>
-                    <span>{{ b.tier }}</span>
+                    <span>{{ creators().length }} Associated Creators</span>
                     <span>•</span>
                     <span>{{ agencies().length }} Partner Agencies</span>
                   </div>
@@ -157,28 +157,6 @@ import { ConfirmModalComponent } from '../components/confirm-modal.component';
                 <div class="lg:col-span-5 flex flex-col gap-6">
                   <div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col gap-4">
                     <h2 class="font-headline text-lg font-bold text-ink-primary flex items-center gap-2">
-                      <span class="w-2 h-4 rounded-full bg-primary inline-block"></span>
-                      Workspace Overview
-                    </h2>
-                    <p class="text-sm text-on-surface-variant">{{ b.description || 'No description provided yet.' }}</p>
-                    <div class="flex flex-col gap-2">
-                      <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-container-low text-xs">
-                        <span class="text-ink-secondary">Domain</span>
-                        <span class="font-semibold text-primary">{{ b.domain || '—' }}</span>
-                      </div>
-                      <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-container-low text-xs">
-                        <span class="text-ink-secondary">Brand Slug</span>
-                        <span class="font-semibold text-ink-primary">{{ b.slug }}</span>
-                      </div>
-                      <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-container-low text-xs">
-                        <span class="text-ink-secondary">Region</span>
-                        <span class="font-semibold text-ink-primary">{{ b.region }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-                    <h2 class="font-headline text-lg font-bold text-ink-primary flex items-center gap-2">
                       <span class="w-2 h-4 rounded-full bg-mint-green inline-block"></span>
                       Brand Manager
                     </h2>
@@ -191,6 +169,59 @@ import { ConfirmModalComponent } from '../components/confirm-modal.component';
                         <span class="text-xs text-primary truncate">{{ b.managerEmail }}</span>
                       </div>
                     </div>
+                    @if (b.contactNumber || b.instagramHandle) {
+                      <div class="flex flex-col gap-2">
+                        @if (b.instagramHandle) {
+                          <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-container-low text-xs">
+                            <span class="text-ink-secondary">Instagram</span>
+                            <span class="font-mono font-semibold text-primary">{{ b.instagramHandle }}</span>
+                          </div>
+                        }
+                        @if (b.contactNumber) {
+                          <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-container-low text-xs">
+                            <span class="text-ink-secondary">Contact</span>
+                            <span class="font-semibold text-ink-primary">{{ b.contactNumber }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+                    <div class="flex items-center justify-between gap-2">
+                      <h2 class="font-headline text-lg font-bold text-ink-primary flex items-center gap-2">
+                        <span class="w-2 h-4 rounded-full bg-primary inline-block"></span>
+                        Creators Snapshot
+                      </h2>
+                      <button type="button" (click)="activeTab.set('creators')" class="text-xs font-semibold text-primary hover:underline cursor-pointer">
+                        View All ({{ creators().length }}) →
+                      </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2.5 text-center">
+                      <div class="p-3 rounded-xl bg-surface-container-low">
+                        <span class="text-[11px] text-ink-secondary block">Direct Creators</span>
+                        <span class="font-headline text-lg font-bold text-ink-primary">{{ directCreatorsCount() }}</span>
+                      </div>
+                      <div class="p-3 rounded-xl bg-surface-container-low">
+                        <span class="text-[11px] text-ink-secondary block">Agency-Managed</span>
+                        <span class="font-headline text-lg font-bold text-primary">{{ agencyCreatorsCount() }}</span>
+                      </div>
+                    </div>
+                    @if (creators().length === 0) {
+                      <p class="text-xs text-ink-secondary py-2">No creators added to this brand workspace yet.</p>
+                    } @else {
+                      <div class="flex flex-col gap-2">
+                        @for (c of creators().slice(0, 4); track c.id) {
+                          <div class="p-3 rounded-xl bg-surface-container-low flex items-center justify-between gap-2 text-xs">
+                            <div class="min-w-0">
+                              <p class="font-bold text-ink-primary truncate">{{ c.name }}</p>
+                              <p class="font-mono text-[11px] text-ink-secondary truncate">{{ c.handle }}</p>
+                            </div>
+                            <span class="font-semibold text-ink-primary shrink-0">{{ c.auditedReelsCount }} reel(s)</span>
+                          </div>
+                        }
+                      </div>
+                    }
                   </div>
                 </div>
 
@@ -460,6 +491,9 @@ export class AdminBrandDetailsComponent implements OnInit {
   editName = '';
   editDomain = '';
   editDesc = '';
+
+  directCreatorsCount = computed(() => this.creators().filter(c => c.sourceType === 'DIRECT').length);
+  agencyCreatorsCount = computed(() => this.creators().filter(c => c.sourceType === 'AGENCY').length);
 
   filteredCreators = computed(() => {
     const q = this.creatorSearchSig().toLowerCase();
