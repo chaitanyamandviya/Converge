@@ -1,5 +1,5 @@
 # ==============================================================================
-# Converge Root .gitignore - Prevent Leaking Secrets, Build Artifacts & Caches
+# Converge Root .gitignore - Prevent Leaking Secrets, Build Artifacts & DBs
 # ==============================================================================
 
 # Secrets & Environment Files (CRITICAL)
@@ -10,6 +10,14 @@
 *.local.properties
 application-local.properties
 **/application-local.properties
+
+# Local Embedded H2 Database Files
+converge-backend/data/
+**/data/
+*.db
+*.mv.db
+*.trace.db
+*.lock.db
 
 # Backend (Java / Maven)
 converge-backend/target/
@@ -32,6 +40,7 @@ yarn-error.log*
 
 # IDEs & Editor Configuration
 .idea/
+**/.idea/
 *.iml
 *.iws
 *.ipr

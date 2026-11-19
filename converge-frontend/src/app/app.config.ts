@@ -1,19 +1,15 @@
-import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { registerLocaleData } from '@angular/common';
-import localeIn from '@angular/common/locales/en-IN';
-import { routes } from './app.routes';
-import { authInterceptor } from './interceptors/auth.interceptor';
 
-registerLocaleData(localeIn, 'en-IN');
+import { routes } from './app.routes';
+import { apiBaseInterceptor } from './services/api-base.interceptor';
+import { authInterceptor } from './services/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor])),
-    { provide: LOCALE_ID, useValue: 'en-IN' }
+    provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
+    provideHttpClient(withInterceptors([apiBaseInterceptor, authInterceptor]))
   ]
 };
-

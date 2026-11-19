@@ -1,31 +1,23 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './guards/auth.guard';
+import { LandingComponent } from './pages/landing.component';
+import { AuthComponent } from './pages/auth.component';
+import { LegalComponent } from './pages/legal.component';
+import { AdminOnboardingComponent } from './pages/admin-onboarding.component';
+import { AdminBrandDetailsComponent } from './pages/admin-brand-details.component';
+import { WorkspaceComponent } from './pages/workspace.component';
+import { adminGuard, workspaceGuard } from './services/auth.guard';
 
 export const routes: Routes = [
-  {
-    path: '',
-    loadComponent: () => import('./landing/landing').then(m => m.LandingComponent)
-  },
-  {
-    path: 'login',
-    loadComponent: () => import('./login/login').then(m => m.LoginComponent),
-    canActivate: [guestGuard]
-  },
-  {
-    path: '',
-    loadComponent: () => import('./shared/portal-layout/portal-layout').then(m => m.PortalLayoutComponent),
-    canActivate: [authGuard],
-    children: [
-      {
-        path: 'dashboard',
-        loadComponent: () => import('./dashboard/dashboard').then(m => m.DashboardComponent)
-      },
-      {
-        path: 'overview',
-        redirectTo: 'dashboard',
-        pathMatch: 'full'
-      }
-    ]
-  },
+  { path: '', component: LandingComponent },
+  { path: 'auth', component: AuthComponent },
+  { path: 'login', redirectTo: 'auth', pathMatch: 'full' },
+  { path: 'signup', redirectTo: 'auth', pathMatch: 'full' },
+  { path: 'legal', component: LegalComponent },
+  { path: 'privacy', redirectTo: 'legal', pathMatch: 'full' },
+  { path: 'terms', redirectTo: 'legal', pathMatch: 'full' },
+  { path: 'admin', component: AdminOnboardingComponent, canActivate: [adminGuard] },
+  { path: 'admin/brands', component: AdminOnboardingComponent, canActivate: [adminGuard] },
+  { path: 'admin/brands/:id', component: AdminBrandDetailsComponent, canActivate: [adminGuard] },
+  { path: 'workspace', component: WorkspaceComponent, canActivate: [workspaceGuard] },
   { path: '**', redirectTo: '' }
 ];
