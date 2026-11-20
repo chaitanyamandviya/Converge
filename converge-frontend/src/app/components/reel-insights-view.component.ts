@@ -22,7 +22,7 @@ import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services
               <span class="px-2.5 py-0.5 rounded-full bg-blue-container text-primary text-[11px] font-bold">{{ reel.mediaType || 'REELS' }}</span>
               <span
                 class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                [ngClass]="reel.status === 'VERIFIED' ? 'bg-mint-container text-[#137333]' : (reel.status === 'LIVE_PREVIEW' ? 'bg-blue-container/60 text-primary' : 'bg-marigold-container text-tertiary')">
+                [ngClass]="reel.status === 'VERIFIED' ? 'bg-mint-container text-mint-green' : (reel.status === 'LIVE_PREVIEW' ? 'bg-blue-container/60 text-primary' : 'bg-marigold-container text-tertiary')">
                 {{ reel.status }}
               </span>
               @if (reel.shortcode) {
@@ -39,7 +39,7 @@ import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services
               type="button"
               (click)="trackLiveReel.emit(reel)"
               [disabled]="tracking"
-              class="btn-shimmer h-9 px-4 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-semibold cursor-pointer disabled:opacity-60">
+              class="btn-shimmer h-9 px-4 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold cursor-pointer disabled:opacity-60">
               {{ tracking ? 'Tracking...' : '+ Track as Deliverable' }}
             </button>
           } @else {
@@ -47,33 +47,33 @@ import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services
               type="button"
               (click)="syncReel.emit(reel.id)"
               [disabled]="syncing"
-              class="h-9 px-4 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-semibold cursor-pointer disabled:opacity-60">
+              class="h-9 px-4 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold cursor-pointer disabled:opacity-60">
               {{ syncing ? 'Syncing IG...' : 'Sync Reel IG' }}
             </button>
           }
           <button
             type="button"
             (click)="copyUrl.emit(reel.reelUrl)"
-            class="h-9 px-4 rounded-full bg-surface-container text-ink-primary hover:bg-surface-container-high text-xs font-semibold cursor-pointer">
+            class="h-9 px-4 rounded-full bg-surface-container-lowest border border-surface-container-high text-ink-primary hover:bg-surface-cream text-xs font-semibold cursor-pointer transition-colors">
             Copy URL
           </button>
           <a
             [href]="reel.reelUrl"
             target="_blank"
             rel="noopener"
-            class="h-9 px-4 rounded-full bg-blue-container text-primary hover:bg-primary hover:text-white text-xs font-semibold flex items-center gap-1 transition-colors">
+            class="h-9 px-4 rounded-full bg-blue-container text-primary hover:bg-primary hover:text-on-primary text-xs font-semibold flex items-center gap-1 transition-colors">
             <span>Open on Instagram ↗</span>
           </a>
         </div>
       </div>
 
       <!-- Hero Content Preview & Official Metrics -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div class="bg-surface-container-lowest rounded-3xl p-4 border border-surface-container-high shadow-2xs flex flex-col gap-3">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div class="lg:col-span-4 bg-surface-container-lowest rounded-3xl p-4 border border-surface-container-high shadow-2xs flex flex-col gap-3">
           @if (reel.thumbnailUrl) {
-            <img [src]="reel.thumbnailUrl" [alt]="reel.title" (error)="reel.thumbnailUrl = ''" class="w-full h-72 object-cover rounded-2xl bg-surface-warm"/>
+            <img [src]="reel.thumbnailUrl" [alt]="reel.title" (error)="reel.thumbnailUrl = ''" class="w-full h-72 xl:h-80 object-cover rounded-2xl bg-surface-warm"/>
           } @else {
-            <div class="w-full h-56 rounded-2xl bg-surface-warm flex flex-col items-center justify-center text-ink-secondary text-xs gap-1">
+            <div class="w-full h-56 xl:h-72 rounded-2xl bg-surface-warm flex flex-col items-center justify-center text-ink-secondary text-xs gap-1">
               <span class="font-mono font-bold text-sm text-primary">{{ reel.mediaType || 'REELS' }}</span>
               <span>{{ reel.shortcode || 'Instagram Reel' }}</span>
             </div>
@@ -89,7 +89,7 @@ import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services
         </div>
 
         <!-- Right 2 Columns: Creator Header + Official Performance + Cost ROI -->
-        <div class="lg:col-span-2 space-y-4">
+        <div class="lg:col-span-8 space-y-4">
           <div class="bg-surface-container-lowest rounded-3xl p-5 border border-surface-container-high shadow-2xs space-y-3">
             @if (creator; as c) {
               <div class="flex items-center justify-between gap-3">
@@ -138,10 +138,10 @@ import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services
                 <p class="text-[10px] text-ink-secondary">Audience comments</p>
               </div>
               <div class="p-3.5 rounded-2xl bg-surface-warm/65">
-                <p class="font-headline text-2xl font-bold text-[#137333]">{{ reel.engagementRate > 0 ? reel.engagementRate + '%' : '—' }}</p>
+                <p class="font-headline text-2xl font-bold text-mint-green">{{ reel.engagementRate > 0 ? reel.engagementRate + '%' : '—' }}</p>
                 <p class="text-[11px] font-semibold text-ink-primary mt-0.5">Engagement rate</p>
                 @if (derived.engagementVsCreatorAvgPct !== 0) {
-                  <p class="text-[10px]" [ngClass]="derived.engagementVsCreatorAvgPct >= 0 ? 'text-[#137333]' : 'text-ink-secondary'">
+                  <p class="text-[10px]" [ngClass]="derived.engagementVsCreatorAvgPct >= 0 ? 'text-mint-green' : 'text-ink-secondary'">
                     {{ derived.engagementVsCreatorAvgPct >= 0 ? '+' : '' }}{{ derived.engagementVsCreatorAvgPct }}% vs creator avg
                   </p>
                 } @else {

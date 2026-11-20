@@ -124,6 +124,61 @@ class BrandServiceAndControllerTest {
     }
 
     @Test
+    void provisionBrandRejectsDuplicateBrandNameCaseInsensitive() {
+        var existing = new Brand();
+        existing.setId(UUID.randomUUID());
+        existing.setName("Bioderma");
+        when(brandRepository.findAllByNameIgnoreCase("bioderma")).thenReturn(List.of(existing));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                brandService.provisionBrand(Map.of(
+                        "name", "bioderma",
+                        "managerName", "Other Manager",
+                        "managerEmail", "other@example.com",
+                        "contactNumber", "+91 9876543210"
+                ))
+        );
+        assertTrue(ex.getMessage().contains("already exists"));
+        verify(brandRepository, never()).save(any());
+    }
+
+    @Test
+    void updateBrandUpdatesManagerDetailsAndRejectsDuplicateName() {
+        UUID brandId = UUID.randomUUID();
+        UUID otherId = UUID.randomUUID();
+        var existing = new Brand();
+        existing.setId(brandId);
+        existing.setName("Bioderma");
+        existing.setManagerName("Aman");
+        existing.setManagerEmail("aman@example.com");
+
+        var conflictingBrand = new Brand();
+        conflictingBrand.setId(otherId);
+        conflictingBrand.setName("OZiva");
+
+        when(brandRepository.findById(brandId)).thenReturn(Optional.of(existing));
+        when(brandRepository.findAllByNameIgnoreCase("OZiva")).thenReturn(List.of(conflictingBrand));
+        when(brandRepository.findAllByNameIgnoreCase("Bioderma India")).thenReturn(List.of());
+        when(userRepository.findByEmailIgnoreCase("newmanager@example.com")).thenReturn(Optional.empty());
+        when(brandRepository.save(any(Brand.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThrows(IllegalArgumentException.class, () ->
+                brandService.updateBrand(brandId, Map.of("name", "OZiva"))
+        );
+
+        Brand updated = brandService.updateBrand(brandId, Map.of(
+                "name", "Bioderma India",
+                "managerName", "Riya Kapoor",
+                "managerEmail", "newmanager@example.com",
+                "contactNumber", "+91 9988776655"
+        ));
+        assertEquals("Bioderma India", updated.getName());
+        assertEquals("Riya Kapoor", updated.getManagerName());
+        assertEquals("newmanager@example.com", updated.getManagerEmail());
+        assertEquals("+91 9988776655", updated.getContactNumber());
+    }
+
+    @Test
     void deleteBrandCascadesChildEntities() {
         UUID id = UUID.randomUUID();
         Brand brand = new Brand();

@@ -11,4 +11,5 @@ public interface BrandRepository extends JpaRepository<Brand, UUID> {
     Optional<Brand> findByCode(String code);
     List<Brand> findAllByOrderByCreatedAtDesc();
     List<Brand> findByManagerEmailIgnoreCase(String managerEmail);
+    List<Brand> findAllByNameIgnoreCase(String name);
 }

@@ -1,69 +1,75 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand & Surface Palette (Warm Expressive Editorial) */
-  --color-surface: #fbf9f5;
-  --color-surface-dim: #dbdad6;
-  --color-surface-bright: #fbf9f5;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f5f3ef;
-  --color-surface-container: #efeeea;
-  --color-surface-container-high: #eae8e4;
-  --color-surface-container-highest: #e3dcce;
-  --color-surface-warm: #f7f3ec;
-  --color-surface-cream: #fdfbf7;
-  --color-surface-container-soft: #f2ece1;
-  --color-surface-variant: #e4e2de;
-  --color-on-surface: #1b1c1a;
-  --color-on-surface-variant: #424654;
-  --color-inverse-surface: #30312e;
-  --color-inverse-on-surface: #f2f0ed;
-  --color-outline: #737785;
-  --color-outline-variant: #c3c6d6;
-  --color-surface-tint: #0856cf;
+  /* Brand & Surface Palette (Vishal Krishna Dark Editorial System) */
+  --color-surface: #1c1c1c;
+  --color-surface-dim: #111111;
+  --color-surface-bright: #1c1c1c;
+  --color-surface-container-lowest: #161616;
+  --color-surface-container-low: #222222;
+  --color-surface-container: #282828;
+  --color-surface-container-high: #333333;
+  --color-surface-container-highest: #404040;
+  --color-surface-warm: #242424;
+  --color-surface-cream: #202020;
+  --color-surface-container-soft: #262626;
+  --color-surface-variant: #343434;
+  --color-on-surface: #fff6e8;
+  --color-on-surface-variant: #a7a9be;
+  --color-inverse-surface: #fff6e8;
+  --color-inverse-on-surface: #1c1c1c;
+  --color-outline: #7c7e8c;
+  --color-outline-variant: #3a3a3d;
+  --color-surface-tint: #f54e26;
 
-  --color-primary: #0041a2;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #0b57d0;
-  --color-on-primary-container: #ced9ff;
-  --color-inverse-primary: #b2c5ff;
-  --color-primary-fixed: #dae2ff;
-  --color-primary-fixed-dim: #b2c5ff;
-  --color-on-primary-fixed: #001847;
-  --color-on-primary-fixed-variant: #0040a1;
+  --color-primary: #f54e26;
+  --color-on-primary: #111111;
+  --color-primary-container: #ff643e;
+  --color-on-primary-container: #111111;
+  --color-inverse-primary: #ff9c82;
+  --color-primary-fixed: #381810;
+  --color-primary-fixed-dim: #ff8c6e;
+  --color-on-primary-fixed: #fff6e8;
+  --color-on-primary-fixed-variant: #ffcabd;
 
-  --color-secondary: #b51b15;
+  --color-secondary: #ff5c5c;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #d9372b;
-  --color-on-secondary-container: #fffbff;
-  --color-secondary-fixed: #ffdad5;
-  --color-secondary-fixed-dim: #ffb4a9;
-  --color-on-secondary-fixed: #410001;
-  --color-on-secondary-fixed-variant: #930004;
+  --color-secondary-container: #e5484d;
+  --color-on-secondary-container: #ffffff;
+  --color-secondary-fixed: #301315;
+  --color-secondary-fixed-dim: #fca5a5;
+  --color-on-secondary-fixed: #fecaca;
+  --color-on-secondary-fixed-variant: #fca5a5;
 
-  --color-tertiary: #5d4300;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #7a5a00;
-  --color-on-tertiary-container: #ffd47c;
-  --color-tertiary-fixed: #ffdfa0;
-  --color-tertiary-fixed-dim: #fbbc05;
-  --color-on-tertiary-fixed: #261a00;
-  --color-on-tertiary-fixed-variant: #5c4300;
+  --color-tertiary: #fabf29;
+  --color-on-tertiary: #111111;
+  --color-tertiary-container: #efb60c;
+  --color-on-tertiary-container: #111111;
+  --color-tertiary-fixed: #2e250e;
+  --color-tertiary-fixed-dim: #fabf29;
+  --color-on-tertiary-fixed: #fff6e8;
+  --color-on-tertiary-fixed-variant: #fabf29;
 
-  --color-error: #ba1a1a;
+  --color-error: #ff5c5c;
   --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
+  --color-error-container: rgba(255, 92, 92, 0.16);
+  --color-on-error-container: #fecaca;
 
-  --color-background: #fbf9f5;
-  --color-on-background: #1b1c1a;
-  --color-mint-green: #34a853;
-  --color-ink-primary: #1f1d19;
-  --color-ink-secondary: #575249;
-  --color-blue-container: #d3e3fd;
-  --color-coral-container: #fad2cf;
-  --color-marigold-container: #fef0c3;
-  --color-mint-container: #ceead6;
+  --color-background: #1c1c1c;
+  --color-on-background: #fff6e8;
+  --color-mint-green: #4ade80;
+  --color-vermilion: #f54e26;
+  --color-marigold: #fabf29;
+  --color-emerald: #007656;
+  --color-blush: #ffccde;
+  --color-indigo: #5738af;
+  --color-periwinkle: #d0d5ff;
+  --color-ink-primary: #fff6e8;
+  --color-ink-secondary: #a7a9be;
+  --color-blue-container: rgba(245, 78, 38, 0.16);
+  --color-coral-container: rgba(255, 92, 92, 0.16);
+  --color-marigold-container: rgba(250, 191, 41, 0.15);
+  --color-mint-container: rgba(0, 118, 86, 0.28);
 
   /* Spacing Tokens */
   --spacing-gutter: 1.75rem;
@@ -76,19 +82,21 @@
   --spacing-space-lg: 1.75rem;
   --spacing-space-xl: 3rem;
 
-  /* Typography Families */
-  --font-headline: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-headline-display: "Plus Jakarta Sans", sans-serif;
-  --font-headline-lg: "Plus Jakarta Sans", sans-serif;
-  --font-headline-md: "Plus Jakarta Sans", sans-serif;
-  --font-headline-sm: "Plus Jakarta Sans", sans-serif;
-  --font-body-lg: "Inter", sans-serif;
-  --font-body-md: "Inter", sans-serif;
-  --font-body-sm: "Inter", sans-serif;
-  --font-label-lg: "Inter", sans-serif;
-  --font-label-md: "Inter", sans-serif;
-  --font-label-sm: "Inter", sans-serif;
+  /* Typography Families — Condensed Display (Antonio) + Clean UI Sans (DM Sans) */
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-headline: "Antonio", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-headline-display: "Antonio", sans-serif;
+  --font-headline-lg: "Antonio", sans-serif;
+  --font-headline-md: "Antonio", sans-serif;
+  --font-headline-sm: "Antonio", sans-serif;
+  --font-body-lg: "DM Sans", sans-serif;
+  --font-body-md: "DM Sans", sans-serif;
+  --font-body-sm: "DM Sans", sans-serif;
+  --font-label-lg: "DM Sans", sans-serif;
+  --font-label-md: "DM Sans", sans-serif;
+  --font-label-sm: "DM Sans", sans-serif;
 
   /* Type Scale */
   --text-headline-display: 2.75rem;
@@ -118,34 +126,43 @@
 }
 
 @layer base {
+  html {
+    color-scheme: dark;
+  }
+
   html, body {
     margin: 0;
     padding: 0;
     overscroll-behavior: none;
-    background-color: #fbf9f5;
-    color: #1b1c1a;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #1c1c1c;
+    color: #fff6e8;
+    font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  button, input, select, textarea, svg text {
+    font-family: inherit;
+  }
+
+  select option {
+    background-color: #161616;
+    color: #fff6e8;
   }
 
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
-  input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #fdfbf7 inset !important;
-    box-shadow: 0 0 0 1000px #fdfbf7 inset !important;
-    -webkit-text-fill-color: #1f1d19 !important;
-    border-radius: 9999px;
-    caret-color: #1f1d19;
-    transition: background-color 999999s ease-in-out 0s;
-  }
-
   input:-webkit-autofill:focus,
-  .pill-white input:-webkit-autofill,
-  .pill-white input:-webkit-autofill:hover,
-  .pill-white input:-webkit-autofill:focus,
-  .pill-white input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-    box-shadow: 0 0 0 1000px #ffffff inset !important;
-    -webkit-text-fill-color: #1f1d19 !important;
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px #111111 inset !important;
+    box-shadow: 0 0 0 1000px #111111 inset !important;
+    -webkit-text-fill-color: #fff6e8 !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    caret-color: #fff6e8;
+    transition: background-color 999999s ease-in-out 0s;
   }
 }
 
@@ -155,16 +172,6 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  flex-shrink: 0;
 }
 
 @keyframes orbit-spin {
@@ -323,10 +330,95 @@
   transform: translateY(-2px) rotate(-14deg);
 }
 
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 26s linear infinite;
+}
+
+.animate-marquee-slow {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 42s linear infinite;
+}
+
+.cta-pill-blue,
+.cta-pill-orange {
+  background-color: #f54e26;
+  color: #111111;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.16s ease;
+}
+.cta-pill-blue:hover,
+.cta-pill-orange:hover {
+  background-color: #ff643e;
+}
+.cta-pill-blue:active,
+.cta-pill-orange:active {
+  transform: scale(0.97);
+}
+
+.dark-card {
+  background-color: #242424;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sticker-diecut {
+  border: 2.5px solid #fff6e8;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+}
+
 .card-hover {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease;
 }
 .card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 24px -4px rgba(0, 65, 162, 0.08), 0 2px 8px -2px rgba(0,0,0,0.04);
+  transform: translateY(-2px);
+  border-color: rgba(255, 246, 232, 0.28);
+}
+
+.cursor-spotlight {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  mix-blend-mode: screen;
+  opacity: var(--cursor-opacity, 0);
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    400px circle at var(--cursor-x, 50vw) var(--cursor-y, 50vh),
+    rgba(245, 78, 38, 0.05),
+    rgba(250, 191, 41, 0.015) 40%,
+    transparent 68%
+  );
+}
+
+.doodle-draw-hover {
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  transition: stroke-dashoffset 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.group\/word:hover .doodle-draw-hover,
+.group\/word.is-active .doodle-draw-hover {
+  stroke-dashoffset: 0;
+}
+
+.doodle-pop-hover {
+  opacity: 0;
+  transform: scale(0.65) rotate(-8deg);
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.group\/word:hover .doodle-pop-hover,
+.group\/word.is-active .doodle-pop-hover {
+  opacity: 1;
+  transform: scale(1) rotate(-4deg);
+}
+
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .cursor-spotlight {
+    display: none;
+  }
 }

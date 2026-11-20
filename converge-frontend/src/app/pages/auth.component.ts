@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { AppHeaderComponent } from '../components/app-header.component';
+import { AppFooterComponent } from '../components/app-footer.component';
 
 declare const google: any;
 
@@ -11,104 +13,132 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, AppHeaderComponent, AppFooterComponent],
   template: `
-    <div class="bg-surface font-body text-on-surface min-h-screen flex flex-col selection:bg-blue-container selection:text-ink-primary overflow-x-hidden">
-      <!-- Light Minimal Header -->
-      <header class="shrink-0 w-full z-40 bg-surface/85 backdrop-blur-xl border-b border-surface-container-high/40">
-        <div class="h-[52px] max-w-6xl mx-auto px-5 sm:px-8 flex items-center justify-between gap-4">
-          <a routerLink="/" class="flex items-center gap-2.5 group shrink-0">
-            <img src="/converge-logo.png" alt="Converge" class="w-7 h-7 rounded-full object-contain shrink-0 transition-transform duration-300 group-hover:rotate-12"/>
-            <span class="font-headline text-base sm:text-lg font-bold text-ink-primary tracking-tight group-hover:text-primary transition-colors">Converge</span>
-          </a>
-          <a routerLink="/" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-surface-container-high/80 bg-surface-container-lowest/90 hover:bg-surface-container-low text-ink-secondary hover:text-ink-primary font-medium text-xs shadow-2xs hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap shrink-0 group">
-            <svg class="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M19 12H5"/>
-              <path d="M11 6l-6 6 6 6"/>
-            </svg>
-            <span>Back to Home</span>
+    <div class="bg-[#1c1c1c] font-body text-[#fff6e8] min-h-screen lg:h-screen lg:overflow-hidden flex flex-col selection:bg-[#f54e26]/25 selection:text-[#fff6e8] overflow-x-clip">
+      <!-- Slim Minimal Header matching Landing Page -->
+      <app-header [elevated]="true">
+        <div header-right class="flex items-center gap-5">
+          <a routerLink="/" class="text-sm text-[#a7a9be] hover:text-[#fff6e8] transition-colors inline-flex items-center gap-1.5 group">
+            <span class="transition-transform duration-200 group-hover:-translate-x-0.5">←</span>
+            <span>Back to home</span>
           </a>
         </div>
-      </header>
+      </app-header>
 
-      <!-- Spacious Two-Column Minimal Canvas -->
-      <main class="w-full flex-1 bg-surface relative flex items-center justify-center px-5 sm:px-8 py-2">
-        <!-- Soft Warm Ambient Glows -->
-        <div class="absolute top-6 left-1/4 w-[320px] sm:w-[480px] h-[320px] sm:h-[480px] pointer-events-none rounded-full bg-gradient-to-tr from-blue-container/35 via-marigold-container/20 to-transparent blur-3xl animate-pulse-glow -z-10"></div>
-        <div class="absolute bottom-0 right-1/4 w-[280px] sm:w-[420px] h-[280px] sm:h-[420px] pointer-events-none rounded-full bg-coral-container/25 blur-3xl animate-drift -z-10"></div>
+      <!-- Editorial Neo-Brutalist Auth Stage -->
+      <main class="w-full flex-1 lg:min-h-0 lg:overflow-y-auto bg-[#1c1c1c] relative flex items-center justify-center px-4 sm:px-6 lg:px-10 py-3 sm:py-4 lg:py-3.5">
+        <div class="w-full max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center my-auto">
 
-        <div class="w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
-
-          <!-- Left Column: Calm Editorial Brand Anchor (Desktop) -->
-          <div class="hidden lg:flex lg:col-span-5 flex-col items-start justify-center pr-4 animate-fade-in-up">
-            <!-- Orbital Doodle Ring Emblem -->
-            <div class="relative w-16 h-16 mb-5 flex items-center justify-center">
-              <div class="absolute inset-0 rounded-full border border-dashed border-primary/25 animate-orbit"></div>
-              <div class="absolute inset-1.5 rounded-full border border-dotted border-secondary/25 animate-orbit-reverse"></div>
-              <div class="w-10 h-10 rounded-full bg-surface-container-lowest shadow-sm border border-surface-container-high/60 flex items-center justify-center p-1.5">
-                <img src="/converge-logo.png" alt="Converge" class="w-full h-full object-contain rounded-full"/>
+          <!-- Left Column: Condensed Color-Blocked Statement + VSK Stickers (Desktop) -->
+          <div class="hidden lg:flex lg:col-span-6 flex-col items-start justify-center lg:pr-6 animate-fade-in-up">
+            <!-- Sticker Trio Lockup -->
+            <div class="flex items-center mb-5 select-none">
+              <div class="px-2.5 py-1 bg-[#5738af] text-[#fff6e8] font-headline uppercase font-bold text-lg tracking-[0.02em] -rotate-12 -mr-1.5 z-10 shadow-md">
+                {{ mode() === 'signin' ? 'HEY!' : 'NEW!' }}
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-[#111111] border border-white/15 flex items-center justify-center p-1.5 shadow-lg">
+                <img src="/converge-logo.svg" alt="Converge" class="w-full h-full object-contain"/>
+              </div>
+              <div class="w-9 h-9 rounded-full bg-[#007656] border-2 border-[#1c1c1c] flex items-center justify-center -ml-2 -mt-6 shadow-md">
+                <div class="flex items-center gap-1">
+                  <span class="w-2 h-2.5 rounded-full bg-[#fff6e8] flex items-center justify-end pr-0.5"><span class="w-1 h-1 rounded-full bg-[#111111]"></span></span>
+                  <span class="w-2 h-2.5 rounded-full bg-[#fff6e8] flex items-center justify-end pr-0.5"><span class="w-1 h-1 rounded-full bg-[#111111]"></span></span>
+                </div>
               </div>
             </div>
 
-            <h1 class="font-headline text-4xl font-bold text-ink-primary tracking-tight leading-[1.15]">
-              {{ mode() === 'signin' ? 'Welcome back.' : 'Start with clarity.' }}
-            </h1>
-            <p class="text-base text-ink-secondary mt-2.5 leading-relaxed max-w-sm">
+            <!-- Color-Blocked Condensed Headline -->
+            @if (mode() === 'signin') {
+              <h1 class="font-headline uppercase font-bold text-[3.2rem] xl:text-[4.1rem] leading-[0.96] tracking-[0.01em] text-[#fff6e8]">
+                OPEN YOUR<br/>
+                <span class="text-[#fabf29]">CAMPAIGNS,</span><br/>
+                CHECK LIVE <span class="text-[#ffccde]">REELS,</span><br/>
+                <span class="text-[#f54e26]">SKIP THE DMS.</span>
+              </h1>
+            } @else {
+              <h1 class="font-headline uppercase font-bold text-[3.2rem] xl:text-[4.1rem] leading-[0.96] tracking-[0.01em] text-[#fff6e8]">
+                TRACK EVERY<br/>
+                <span class="text-[#fabf29]">PUBLIC REEL,</span><br/>
+                ZERO CREATOR <span class="text-[#007656]">PASSWORDS,</span><br/>
+                <span class="text-[#f54e26]">START IN 60S.</span>
+              </h1>
+            }
+
+            <p class="text-sm xl:text-base text-[#a7a9be] mt-4 leading-relaxed max-w-md">
               {{ mode() === 'signin'
-                ? 'Sign in to manage verified brand workspaces and live creator deliverables.'
-                : 'Create your Converge account to collaborate with brands and track verified Reels.' }}
+                ? 'Open your brand workspaces to see real Reel views, likes, saves, and clean campaign spreadsheets in one place.'
+                : 'Set up your workspace in under a minute. Paste any public Instagram Reel link and get real post numbers without chasing screenshots.' }}
             </p>
+
+            <!-- VSK Tag Strip -->
+            <div class="mt-5 flex flex-wrap items-center gap-2 select-none">
+              <span class="px-3 py-1 rounded-[4px] bg-[#5738af] text-[#fff6e8] text-xs font-semibold">
+                No Passwords
+              </span>
+              <span class="px-3 py-1 rounded-[4px] bg-[#141414] border border-white/[0.14] text-[#e8e8ee] text-xs font-medium">
+                Live Reel Numbers
+              </span>
+              <span class="px-3 py-1 rounded-[4px] bg-[#141414] border border-white/[0.14] text-[#e8e8ee] text-xs font-medium">
+                1-Click CSV Export
+              </span>
+            </div>
+
+            <!-- Mini Tilted Sticker Callout -->
+            <div class="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#fff6e8] border-2 border-[#111111] shadow-[4px_4px_0px_#f54e26] -rotate-1 select-none">
+              <span class="font-headline uppercase font-bold text-base tracking-[0.02em] text-[#111111]">
+                0 DMS ◆ 100% REAL POST NUMBERS
+              </span>
+            </div>
           </div>
 
-          <!-- Right Column: Light Frosted Editorial Card -->
-          <div class="lg:col-span-7 w-full flex flex-col items-center lg:items-end animate-fade-in-up">
-            <!-- Mobile / Tablet Heading -->
-            <div class="lg:hidden text-center mb-3">
-              <h1 class="font-headline text-2xl sm:text-3xl font-bold text-ink-primary tracking-tight">
-                {{ mode() === 'signin' ? 'Welcome back' : 'Create your account' }}
+          <!-- Right Column: Brutalist Editorial Auth Card -->
+          <div class="lg:col-span-6 w-full flex flex-col items-center lg:items-end animate-fade-in-up">
+            <!-- Mobile / Tablet Condensed Title -->
+            <div class="lg:hidden text-center mb-4">
+              <h1 class="font-headline uppercase text-4xl font-bold text-[#fff6e8] tracking-[0.015em] leading-none">
+                {{ mode() === 'signin' ? 'WELCOME BACK.' : 'START FREE.' }}
               </h1>
+              <p class="text-xs text-[#a7a9be] mt-1.5">
+                {{ mode() === 'signin' ? 'Sign in to open your workspace.' : 'Create your Converge workspace in seconds.' }}
+              </p>
             </div>
 
             <div
-              class="w-full max-w-[464px] bg-surface-container-lowest/90 backdrop-blur-xl rounded-[24px] p-4 sm:p-5 shadow-[0_16px_48px_-12px_rgba(31,29,25,0.06)] border border-surface-container-high/70 transition-all duration-300"
+              class="w-full max-w-[460px] xl:max-w-[488px] bg-[#161616] rounded-[8px] p-4 sm:p-5 border border-white/[0.18] shadow-[6px_6px_0px_#f54e26] transition-all duration-300"
               [class.animate-shake]="shakeForm()">
 
-              <!-- Sliding Pill Switcher -->
-              <div class="w-full relative flex p-1 rounded-full bg-surface-container-low border border-surface-container-high/50 mb-3 select-none" role="tablist">
-                <div
-                  class="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-surface-container-lowest shadow-xs transition-all duration-300"
-                  style="transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);"
-                  [style.left]="mode() === 'signin' ? '4px' : 'calc(50% + 2px)'">
-                </div>
+              <!-- Hairline Mode Switcher (Sign In / Create Account) -->
+              <div class="w-full grid grid-cols-2 gap-1 p-1 rounded-[4px] bg-[#111111] border border-white/[0.14] mb-3.5 select-none" role="tablist">
                 <button
                   type="button"
                   role="tab"
                   [attr.aria-selected]="mode() === 'signin'"
                   (click)="switchMode('signin')"
-                  class="relative z-10 flex-1 py-1.5 text-center rounded-full text-xs font-semibold transition-colors duration-200 cursor-pointer"
-                  [ngClass]="mode() === 'signin' ? 'text-ink-primary' : 'text-ink-secondary hover:text-ink-primary'">
-                  Sign In
+                  class="py-2 text-center rounded-[3px] font-headline uppercase text-lg tracking-[0.03em] font-bold transition-colors duration-150 cursor-pointer"
+                  [ngClass]="mode() === 'signin' ? 'bg-[#fff6e8] text-[#111111]' : 'text-[#a7a9be] hover:text-[#fff6e8]'">
+                  SIGN IN
                 </button>
                 <button
                   type="button"
                   role="tab"
                   [attr.aria-selected]="mode() === 'signup'"
                   (click)="switchMode('signup')"
-                  class="relative z-10 flex-1 py-1.5 text-center rounded-full text-xs font-semibold transition-colors duration-200 cursor-pointer"
-                  [ngClass]="mode() === 'signup' ? 'text-ink-primary' : 'text-ink-secondary hover:text-ink-primary'">
-                  Create Account
+                  class="py-2 text-center rounded-[3px] font-headline uppercase text-lg tracking-[0.03em] font-bold transition-colors duration-150 cursor-pointer"
+                  [ngClass]="mode() === 'signup' ? 'bg-[#fff6e8] text-[#111111]' : 'text-[#a7a9be] hover:text-[#fff6e8]'">
+                  CREATE ACCOUNT
                 </button>
               </div>
 
               @if (!successState()) {
-                <!-- Native Crisp Google SSO Button -->
+                <!-- Google SSO Button -->
                 <button
                   type="button"
                   (click)="handleGoogle()"
                   [disabled]="loading() || googleLoading()"
-                  class="w-full h-9.5 px-5 rounded-full bg-surface-container-lowest hover:bg-surface-cream active:scale-[0.985] text-ink-primary text-xs font-semibold flex items-center justify-center gap-2.5 border border-surface-container-high hover:border-outline-variant shadow-2xs hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all duration-200 cursor-pointer disabled:opacity-60">
+                  class="w-full h-10 px-4 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] active:scale-[0.99] text-[#fff6e8] text-sm font-medium flex items-center justify-center gap-2.5 border border-white/[0.16] hover:border-white/[0.3] focus-visible:outline-none focus-visible:border-[#f54e26] transition-all duration-150 cursor-pointer disabled:opacity-60">
                   @if (googleLoading()) {
-                    <svg class="w-4 h-4 animate-spin text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <svg class="w-4 h-4 animate-spin text-[#f54e26] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                       <path d="M12 3a9 9 0 1 0 9 9"/>
                     </svg>
                     <span>Connecting to Google...</span>
@@ -124,18 +154,18 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                 </button>
 
                 <!-- Hairline Divider -->
-                <div class="relative my-2.5 flex items-center justify-center">
-                  <div class="absolute inset-0 flex items-center"><div class="w-full bg-surface-container-high/70 h-[1px]"></div></div>
-                  <span class="relative px-3 bg-surface-container-lowest text-[11px] font-medium text-ink-secondary">or continue with email</span>
+                <div class="relative my-3 flex items-center justify-center">
+                  <div class="absolute inset-0 flex items-center"><div class="w-full bg-white/[0.12] h-[1px]"></div></div>
+                  <span class="relative px-3 bg-[#161616] text-xs text-[#a7a9be]">or with email</span>
                 </div>
 
-                <!-- Single Unified Alert Banner -->
+                <!-- Alert Banner -->
                 @if (banner(); as msg) {
                   <div
-                    class="mb-2.5 px-3 py-2 rounded-2xl border text-xs font-medium flex items-center justify-between gap-2 animate-pop-in"
+                    class="mb-2.5 px-3 py-2 rounded-[4px] border text-xs font-medium flex items-center justify-between gap-2 animate-pop-in"
                     [ngClass]="msg.type === 'error'
-                      ? 'bg-coral-container/40 border-secondary/20 text-secondary'
-                      : 'bg-mint-container/45 border-mint-green/25 text-[#137333]'">
+                      ? 'bg-[#2c1517] border-[#ff5c5c]/40 text-[#ffb4b4]'
+                      : 'bg-[#0d2820] border-[#007656] text-[#8ef0cc]'">
                     <div class="flex items-center gap-2 min-w-0">
                       @if (msg.type === 'error') {
                         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -151,7 +181,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                       }
                       <span class="leading-snug">{{ msg.text }}</span>
                     </div>
-                    <button type="button" (click)="banner.set(null)" aria-label="Dismiss message" class="shrink-0 opacity-65 hover:opacity-100 p-0.5 rounded-full cursor-pointer">
+                    <button type="button" (click)="banner.set(null)" aria-label="Dismiss message" class="shrink-0 opacity-70 hover:opacity-100 p-0.5 cursor-pointer">
                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M6 6l12 12M18 6L6 18"/>
                       </svg>
@@ -159,25 +189,24 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   </div>
                 }
 
-                <!-- Full-Width Airy Form with Animated Monoline SVG Doodles -->
-                <form (ngSubmit)="submit()" novalidate class="space-y-2">
+                <!-- Sharp Editorial Form -->
+                <form (ngSubmit)="submit()" novalidate class="space-y-2.5">
                   @if (mode() === 'signup') {
                     <div>
-                      <div class="flex items-center justify-between mb-0.5 px-1">
-                        <label for="auth-name" class="text-[11px] font-medium text-ink-primary">Full Name</label>
+                      <div class="flex items-center justify-between mb-1">
+                        <label for="auth-name" class="text-xs font-medium text-[#fff6e8]">Full name</label>
                         @if (nameTouched() && nameError()) {
-                          <span class="text-[11px] text-secondary font-medium">{{ nameError() }}</span>
+                          <span class="text-xs text-[#ff6b6b] font-medium">{{ nameError() }}</span>
                         }
                       </div>
                       <div
-                        class="group flex items-center gap-2.5 h-9 px-3.5 rounded-full bg-surface-cream border transition-all duration-200 focus-within:bg-surface-container-lowest"
+                        class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border transition-colors duration-150"
                         [ngClass]="nameTouched() && nameError()
-                          ? 'border-secondary/50 ring-2 ring-secondary/10'
-                          : (nameValid() ? 'border-mint-green/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15' : 'border-surface-container-high focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15')">
-                        <!-- Animated Monoline Person Doodle -->
-                        <svg class="doodle-svg w-[17px] h-[17px] shrink-0"
-                             [ngClass]="nameTouched() && nameError() ? 'text-secondary' : 'text-ink-secondary group-focus-within:text-primary'"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+                          ? 'border-[#ff5c5c]'
+                          : (nameValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                        <svg class="doodle-svg w-4 h-4 shrink-0"
+                             [ngClass]="nameTouched() && nameError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                           <circle cx="12" cy="8" r="3.8"/>
                           <path d="M5.5 19.5c1-3.4 3.5-5 6.5-5s5.5 1.6 6.5 5"/>
                         </svg>
@@ -190,10 +219,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                           autocomplete="name"
                           placeholder="Alex Morgan"
                           type="text"
-                          class="flex-1 min-w-0 bg-transparent text-ink-primary placeholder:text-ink-secondary/55 text-sm outline-none"/>
+                          class="flex-1 min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm outline-none"/>
                         @if (nameValid()) {
-                          <svg class="w-[17px] h-[17px] text-mint-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-30" fill="#ceead6"/>
+                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
                             <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                           </svg>
                         }
@@ -202,22 +231,21 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   }
 
                   <div>
-                    <div class="flex items-center justify-between mb-0.5 px-1">
-                      <label for="auth-email" class="text-[11px] font-medium text-ink-primary">Email Address</label>
+                    <div class="flex items-center justify-between mb-1">
+                      <label for="auth-email" class="text-xs font-medium text-[#fff6e8]">Email address</label>
                       @if (emailTouched() && emailError()) {
-                        <span class="text-[11px] text-secondary font-medium">{{ emailError() }}</span>
+                        <span class="text-xs text-[#ff6b6b] font-medium">{{ emailError() }}</span>
                       }
                     </div>
                     <div
-                      class="group flex items-center gap-2.5 h-9 px-3.5 rounded-full bg-surface-cream border transition-all duration-200 focus-within:bg-surface-container-lowest"
+                      class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border transition-colors duration-150"
                       [ngClass]="emailTouched() && emailError()
-                        ? 'border-secondary/50 ring-2 ring-secondary/10'
-                        : (emailValid() ? 'border-mint-green/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15' : 'border-surface-container-high focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15')">
-                      <!-- Animated Monoline Envelope Doodle -->
-                      <svg class="doodle-svg w-[17px] h-[17px] shrink-0"
-                           [ngClass]="emailTouched() && emailError() ? 'text-secondary' : 'text-ink-secondary group-focus-within:text-primary'"
-                           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3.5" y="5.5" width="17" height="13" rx="3.5"/>
+                        ? 'border-[#ff5c5c]'
+                        : (emailValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                      <svg class="doodle-svg w-4 h-4 shrink-0"
+                           [ngClass]="emailTouched() && emailError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/>
                         <path d="M5 7.5l7 5.2 7-5.2"/>
                       </svg>
                       <input
@@ -229,10 +257,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                         autocomplete="email"
                         placeholder="name@company.com"
                         type="email"
-                        class="flex-1 min-w-0 bg-transparent text-ink-primary placeholder:text-ink-secondary/55 text-sm outline-none"/>
+                        class="flex-1 min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm outline-none"/>
                       @if (emailValid()) {
-                        <svg class="w-[17px] h-[17px] text-mint-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <circle cx="12" cy="12" r="9" class="opacity-30" fill="#ceead6"/>
+                        <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
                           <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                         </svg>
                       }
@@ -241,35 +269,34 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
                   <!-- Password Field -->
                   <div>
-                    <div class="flex items-center justify-between mb-0.5 px-1">
-                      <label for="auth-password" class="text-[11px] font-medium text-ink-primary">{{ mode() === 'signup' ? 'Create Password' : 'Password' }}</label>
+                    <div class="flex items-center justify-between mb-1">
+                      <label for="auth-password" class="text-xs font-medium text-[#fff6e8]">{{ mode() === 'signup' ? 'Create password' : 'Password' }}</label>
                       @if (passwordTouched() && passwordError()) {
-                        <span class="text-[11px] text-secondary font-medium">{{ passwordError() }}</span>
+                        <span class="text-xs text-[#ff6b6b] font-medium">{{ passwordError() }}</span>
                       } @else if (mode() === 'signup' && password().length > 0) {
                         <div class="flex items-center gap-1.5">
                           <div class="flex items-center gap-0.5">
-                            <span class="w-3 h-1 rounded-full transition-colors duration-200" [ngClass]="passwordStrength().score >= 1 ? passwordStrength().color : 'bg-surface-container-high'"></span>
-                            <span class="w-3 h-1 rounded-full transition-colors duration-200" [ngClass]="passwordStrength().score >= 2 ? passwordStrength().color : 'bg-surface-container-high'"></span>
-                            <span class="w-3 h-1 rounded-full transition-colors duration-200" [ngClass]="passwordStrength().score >= 3 ? passwordStrength().color : 'bg-surface-container-high'"></span>
-                            <span class="w-3 h-1 rounded-full transition-colors duration-200" [ngClass]="passwordStrength().score >= 4 ? passwordStrength().color : 'bg-surface-container-high'"></span>
+                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 1 ? passwordStrength().color : 'bg-white/15'"></span>
+                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 2 ? passwordStrength().color : 'bg-white/15'"></span>
+                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 3 ? passwordStrength().color : 'bg-white/15'"></span>
+                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 4 ? passwordStrength().color : 'bg-white/15'"></span>
                           </div>
-                          <span class="text-[10px] font-semibold" [ngClass]="passwordStrength().textColor">{{ passwordStrength().label }}</span>
+                          <span class="text-[11px] font-semibold" [ngClass]="passwordStrength().textColor">{{ passwordStrength().label }}</span>
                         </div>
                       } @else if (mode() === 'signin') {
-                        <button type="button" (click)="handleForgot()" class="text-[11px] font-semibold text-primary hover:underline cursor-pointer">Forgot password?</button>
+                        <button type="button" (click)="handleForgot()" class="text-xs font-medium text-[#ffccde] hover:text-[#f54e26] transition-colors cursor-pointer">Forgot password?</button>
                       }
                     </div>
                     <div
-                      class="group flex items-center gap-2.5 h-9 px-3.5 rounded-full bg-surface-cream border transition-all duration-200 focus-within:bg-surface-container-lowest"
+                      class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border transition-colors duration-150"
                       [ngClass]="passwordTouched() && passwordError()
-                        ? 'border-secondary/50 ring-2 ring-secondary/10'
-                        : 'border-surface-container-high focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15'">
-                      <!-- Animated Padlock Doodle (shackle lifts when password is visible) -->
-                      <svg class="doodle-svg w-[17px] h-[17px] shrink-0"
-                           [ngClass]="passwordTouched() && passwordError() ? 'text-secondary' : 'text-ink-secondary group-focus-within:text-primary'"
-                           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+                        ? 'border-[#ff5c5c]'
+                        : 'border-white/[0.16] focus-within:border-[#f54e26]'">
+                      <svg class="doodle-svg w-4 h-4 shrink-0"
+                           [ngClass]="passwordTouched() && passwordError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                         <path class="doodle-shackle" [class.doodle-shackle-open]="showPass()" d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/>
-                        <rect x="5.5" y="10.5" width="13" height="9.5" rx="3"/>
+                        <rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/>
                         <circle cx="12" cy="15.2" r="1.2" fill="currentColor"/>
                       </svg>
                       <input
@@ -281,21 +308,20 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                         [autocomplete]="mode() === 'signup' ? 'new-password' : 'current-password'"
                         [placeholder]="mode() === 'signup' ? 'At least 8 characters' : 'Enter your password'"
                         [type]="showPass() ? 'text' : 'password'"
-                        class="flex-1 min-w-0 bg-transparent text-ink-primary placeholder:text-ink-secondary/55 text-sm outline-none"/>
-                      <!-- Animated Hand-Drawn Eye Doodle -->
+                        class="flex-1 min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm outline-none"/>
                       <button
                         type="button"
                         (click)="showPass.set(!showPass())"
                         aria-label="Toggle password visibility"
-                        class="shrink-0 w-7 h-7 rounded-full hover:bg-surface-container-soft flex items-center justify-center text-ink-secondary hover:text-primary active:scale-90 transition-all cursor-pointer">
+                        class="shrink-0 w-7 h-7 rounded-[4px] hover:bg-white/[0.06] flex items-center justify-center text-[#a7a9be] hover:text-[#fff6e8] transition-colors cursor-pointer">
                         @if (showPass()) {
-                          <svg class="w-[17px] h-[17px] doodle-eye-lid animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+                          <svg class="w-4 h-4 doodle-eye-lid animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M2.5 12s3.6-6 9.5-6 9.5 6 9.5 6-3.6 6-9.5 6-9.5-6-9.5-6z"/>
                             <circle cx="12" cy="12" r="2.6" fill="currentColor" class="opacity-85"/>
-                            <circle cx="12.9" cy="11.1" r="0.8" fill="#ffffff" stroke="none"/>
+                            <circle cx="12.9" cy="11.1" r="0.8" fill="#111111" stroke="none"/>
                           </svg>
                         } @else {
-                          <svg class="w-[17px] h-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3.5 11.5c2.2 3 5 4.2 8.5 4.2s6.3-1.2 8.5-4.2"/>
                             <path d="M7 14.5l-1.3 2.3"/>
                             <path d="M12 15.8v2.6"/>
@@ -306,24 +332,23 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                     </div>
                   </div>
 
-                  <!-- Confirm Password (Full Width in Create Account Mode) -->
+                  <!-- Confirm Password -->
                   @if (mode() === 'signup') {
                     <div>
-                      <div class="flex items-center justify-between mb-0.5 px-1">
-                        <label for="auth-confirm" class="text-[11px] font-medium text-ink-primary">Confirm Password</label>
+                      <div class="flex items-center justify-between mb-1">
+                        <label for="auth-confirm" class="text-xs font-medium text-[#fff6e8]">Confirm password</label>
                         @if (confirmTouched() && confirmError()) {
-                          <span class="text-[11px] text-secondary font-medium">{{ confirmError() }}</span>
+                          <span class="text-xs text-[#ff6b6b] font-medium">{{ confirmError() }}</span>
                         }
                       </div>
                       <div
-                        class="group flex items-center gap-2.5 h-9 px-3.5 rounded-full bg-surface-cream border transition-all duration-200 focus-within:bg-surface-container-lowest"
+                        class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border transition-colors duration-150"
                         [ngClass]="confirmTouched() && confirmError()
-                          ? 'border-secondary/50 ring-2 ring-secondary/10'
-                          : (confirmValid() ? 'border-mint-green/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15' : 'border-surface-container-high focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15')">
-                        <!-- Animated Shield Doodle -->
-                        <svg class="doodle-svg w-[17px] h-[17px] shrink-0"
-                             [ngClass]="confirmTouched() && confirmError() ? 'text-secondary' : (confirmValid() ? 'text-mint-green' : 'text-ink-secondary group-focus-within:text-primary')"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+                          ? 'border-[#ff5c5c]'
+                          : (confirmValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                        <svg class="doodle-svg w-4 h-4 shrink-0"
+                             [ngClass]="confirmTouched() && confirmError() ? 'text-[#ff5c5c]' : (confirmValid() ? 'text-[#4ade80]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]')"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M12 3.5l7 2.8v5.2c0 4.6-3 8.1-7 9.5-4-1.4-7-4.9-7-9.5V6.3l7-2.8z"/>
                           @if (confirmValid()) {
                             <path d="M9 12.2l2 2 4.2-4.2" class="doodle-check-path"/>
@@ -338,21 +363,20 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                           autocomplete="new-password"
                           placeholder="Re-enter password"
                           [type]="showConfirm() ? 'text' : 'password'"
-                          class="flex-1 min-w-0 bg-transparent text-ink-primary placeholder:text-ink-secondary/55 text-sm outline-none"/>
-                        <!-- Animated Hand-Drawn Eye Doodle -->
+                          class="flex-1 min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm outline-none"/>
                         <button
                           type="button"
                           (click)="showConfirm.set(!showConfirm())"
                           aria-label="Toggle confirm password visibility"
-                          class="shrink-0 w-7 h-7 rounded-full hover:bg-surface-container-soft flex items-center justify-center text-ink-secondary hover:text-primary active:scale-90 transition-all cursor-pointer">
+                          class="shrink-0 w-7 h-7 rounded-[4px] hover:bg-white/[0.06] flex items-center justify-center text-[#a7a9be] hover:text-[#fff6e8] transition-colors cursor-pointer">
                           @if (showConfirm()) {
-                            <svg class="w-[17px] h-[17px] doodle-eye-lid animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="w-4 h-4 doodle-eye-lid animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                               <path d="M2.5 12s3.6-6 9.5-6 9.5 6 9.5 6-3.6 6-9.5 6-9.5-6-9.5-6z"/>
                               <circle cx="12" cy="12" r="2.6" fill="currentColor" class="opacity-85"/>
-                              <circle cx="12.9" cy="11.1" r="0.8" fill="#ffffff" stroke="none"/>
+                              <circle cx="12.9" cy="11.1" r="0.8" fill="#111111" stroke="none"/>
                             </svg>
                           } @else {
-                            <svg class="w-[17px] h-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                               <path d="M3.5 11.5c2.2 3 5 4.2 8.5 4.2s6.3-1.2 8.5-4.2"/>
                               <path d="M7 14.5l-1.3 2.3"/>
                               <path d="M12 15.8v2.6"/>
@@ -364,69 +388,52 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                     </div>
                   }
 
-                  <!-- Primary Submit CTA -->
+                  <!-- Editorial Submit Button -->
                   <button
                     type="submit"
                     [disabled]="loading()"
-                    class="btn-shimmer w-full h-10 mt-2 rounded-full bg-primary hover:bg-primary-container active:scale-[0.985] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer disabled:opacity-60">
+                    class="w-full h-11 mt-2 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] active:scale-[0.99] text-[#111111] font-headline uppercase tracking-[0.03em] text-xl font-bold flex items-center justify-center gap-2 transition-colors duration-150 group cursor-pointer disabled:opacity-60">
                     @if (loading()) {
-                      <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                      <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
                         <path d="M12 3a9 9 0 1 0 9 9"/>
                       </svg>
-                      <span>{{ mode() === 'signin' ? 'Signing in...' : 'Creating account...' }}</span>
+                      <span>{{ mode() === 'signin' ? 'SIGNING IN...' : 'CREATING ACCOUNT...' }}</span>
                     } @else {
-                      <span>{{ mode() === 'signin' ? 'Sign In' : 'Create Account' }}</span>
-                      <svg class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14"/>
-                        <path d="M13 6l6 6-6 6"/>
-                      </svg>
+                      <span>{{ mode() === 'signin' ? 'SIGN IN ↗' : 'CREATE ACCOUNT ↗' }}</span>
                     }
                   </button>
                 </form>
               } @else {
-                <!-- Account Created Celebration View -->
-                <div class="py-5 text-center flex flex-col items-center animate-pop-in">
-                  <div class="w-12 h-12 rounded-full bg-mint-container text-[#137333] flex items-center justify-center shadow-inner mb-3">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M4 8l8 5 8-5"/>
-                      <rect x="3.5" y="5.5" width="17" height="13" rx="3.5"/>
+                <!-- Account Created View -->
+                <div class="py-6 text-center flex flex-col items-center animate-pop-in">
+                  <div class="w-12 h-12 rounded-xl bg-[#007656] text-[#fff6e8] flex items-center justify-center mb-3">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 6L9 17l-5-5"/>
                     </svg>
                   </div>
-                  <h2 class="font-headline text-xl font-bold text-ink-primary">{{ successTitle() }}</h2>
-                  <p class="text-sm text-ink-secondary mt-1 max-w-xs">{{ successSub() }}</p>
+                  <h2 class="font-headline uppercase text-3xl font-bold text-[#fff6e8] tracking-[0.02em]">{{ successTitle() }}</h2>
+                  <p class="text-sm text-[#a7a9be] mt-2 max-w-xs">{{ successSub() }}</p>
                   <button
                     type="button"
                     (click)="proceedAfterAuth()"
-                    class="btn-shimmer mt-4 h-10 px-6 rounded-full bg-primary text-on-primary text-sm font-semibold hover:bg-primary-container shadow-sm transition-all cursor-pointer flex items-center gap-2 group">
-                    <span>{{ targetRoute() === '/admin' ? 'Continue to Admin Console' : 'Continue to Workspace' }}</span>
-                    <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M5 12h14"/>
-                      <path d="M13 6l6 6-6 6"/>
-                    </svg>
+                    class="mt-5 h-11 px-7 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-xl font-bold transition-colors cursor-pointer">
+                    {{ targetRoute() === '/admin' ? 'OPEN ADMIN CONSOLE ↗' : 'OPEN WORKSPACE ↗' }}
                   </button>
                 </div>
               }
 
               <!-- Legal Line inside Card Footer -->
-              <p class="mt-2.5 text-center text-[11px] text-ink-secondary/80">
+              <p class="mt-3 text-center text-xs text-[#a7a9be]">
                 By continuing, you agree to our
-                <a routerLink="/legal" [queryParams]="{tab: 'terms'}" class="underline hover:text-ink-primary">Terms</a> &amp;
-                <a routerLink="/legal" [queryParams]="{tab: 'privacy'}" class="underline hover:text-ink-primary">Privacy Policy</a>.
+                <a routerLink="/legal" [queryParams]="{tab: 'terms'}" class="underline text-[#fff6e8] hover:text-[#f54e26] transition-colors">Terms</a> &amp;
+                <a routerLink="/legal" [queryParams]="{tab: 'privacy'}" class="underline text-[#fff6e8] hover:text-[#f54e26] transition-colors">Privacy Policy</a>.
               </p>
             </div>
           </div>
         </div>
       </main>
 
-      <footer class="shrink-0 w-full bg-surface-container-low/70 py-2 border-t border-surface-container-high/40">
-        <div class="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-ink-secondary text-xs">
-          <p>© 2026 Converge. All rights reserved.</p>
-          <div class="flex items-center gap-4">
-            <a routerLink="/legal" [queryParams]="{tab: 'privacy'}" class="hover:text-on-surface hover:underline">Privacy Policy</a>
-            <a routerLink="/legal" [queryParams]="{tab: 'terms'}" class="hover:text-on-surface hover:underline">Terms of Service</a>
-          </div>
-        </div>
-      </footer>
+      <app-footer></app-footer>
     </div>
   `
 })
@@ -499,10 +506,10 @@ export class AuthComponent implements OnInit {
     if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++;
     if (/[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(p)) score++;
 
-    if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-secondary', textColor: 'text-secondary' };
-    if (score === 2) return { score: 2, label: 'Fair', color: 'bg-tertiary-fixed-dim', textColor: 'text-tertiary' };
-    if (score === 3) return { score: 3, label: 'Good', color: 'bg-primary', textColor: 'text-primary' };
-    return { score: 4, label: 'Strong', color: 'bg-mint-green', textColor: 'text-mint-green' };
+    if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-[#ff5c5c]', textColor: 'text-[#ff5c5c]' };
+    if (score === 2) return { score: 2, label: 'Fair', color: 'bg-[#fabf29]', textColor: 'text-[#fabf29]' };
+    if (score === 3) return { score: 3, label: 'Good', color: 'bg-[#f54e26]', textColor: 'text-[#f54e26]' };
+    return { score: 4, label: 'Strong', color: 'bg-[#4ade80]', textColor: 'text-[#4ade80]' };
   });
 
   constructor(
@@ -549,7 +556,7 @@ export class AuthComponent implements OnInit {
               this.submitGoogleAccessToken(resp.access_token);
             } else {
               this.googleLoading.set(false);
-              this.showError(resp?.error_description || 'Google Sign-In did not return an authorization token.');
+              this.showError(resp?.error_description || 'Google Sign-In did not complete. Please try again.');
             }
           });
         },
@@ -560,8 +567,7 @@ export class AuthComponent implements OnInit {
             if (err?.type === 'popup_closed') {
               return;
             }
-            const origin = typeof window !== 'undefined' ? window.location.origin : 'https://converge-etp.pages.dev';
-            this.showError(`Google Sign-In window could not open. Allow popups or verify ${origin} in Google OAuth settings.`);
+            this.showError('Google Sign-In window could not open. Please allow popups or sign in with email below.');
           });
         }
       });
@@ -635,8 +641,8 @@ export class AuthComponent implements OnInit {
         this.targetRoute.set(res.user.role === 'SYSTEM_ADMIN' ? '/admin' : '/workspace');
         if (this.mode() === 'signup') {
           this.successState.set(true);
-          this.successTitle.set('Account Created!');
-          this.successSub.set(`Welcome, ${res.user.name}. Your Converge identity is registered and ready.`);
+          this.successTitle.set('ACCOUNT CREATED');
+          this.successSub.set(`Welcome, ${res.user.name}. Your Converge workspace is ready.`);
         } else {
           this.router.navigateByUrl(this.targetRoute());
         }
@@ -644,7 +650,7 @@ export class AuthComponent implements OnInit {
       error: (err) => {
         this.loading.set(false);
         this.triggerShake();
-        this.showError(err?.error?.error || 'Authentication failed. Please check your credentials.');
+        this.showError(err?.error?.error || 'Sign-in failed. Please check your email and password.');
       }
     });
   }
@@ -658,14 +664,14 @@ export class AuthComponent implements OnInit {
           this.googleClientId = (cfg?.googleClientId || '').trim();
           this.googleLoading.set(false);
           if (!this.googleClientId) {
-            this.showError('Google Sign-In is not configured on the backend server yet. Sign in or create an account with Email below.');
+            this.showError('Google Sign-In is not available right now. Please sign in or create an account with Email below.');
             return;
           }
           this.launchGooglePopup();
         },
         error: () => {
           this.googleLoading.set(false);
-          this.showError('Backend server is still waking up or unreachable. Please wait a few seconds and try again.');
+          this.showError('Still connecting — please wait a few seconds and try again.');
         }
       });
       return;
@@ -675,7 +681,7 @@ export class AuthComponent implements OnInit {
 
   private launchGooglePopup() {
     if (!this.initGoogleTokenClient()) {
-      this.showError('Google Identity Services script is blocked or still loading. Please try again.');
+      this.showError('Google Sign-In is still loading or blocked by your browser. Please try again or use email.');
       return;
     }
     this.clearGoogleTimer();
@@ -686,14 +692,13 @@ export class AuthComponent implements OnInit {
         this.ngZone.run(() => {
           if (this.googleLoading() && document.hasFocus()) {
             this.googleLoading.set(false);
-            const origin = typeof window !== 'undefined' ? window.location.origin : 'https://converge-etp.pages.dev';
-            this.showError(`Google Sign-In popup could not open here. Ensure popups are allowed and ${origin} is authorized in Google Cloud Console.`);
+            this.showError('Google Sign-In popup could not open here. Please allow popups or sign in with email.');
           }
         });
       }, 2500);
     } catch {
       this.googleLoading.set(false);
-      this.showError('Google Sign-In could not be started on this origin.');
+      this.showError('Google Sign-In could not be started here. Please sign in with email.');
     }
   }
 
@@ -706,7 +711,7 @@ export class AuthComponent implements OnInit {
       error: (err) => {
         this.googleLoading.set(false);
         this.triggerShake();
-        this.showError(err?.error?.error || 'Google authentication failed.');
+        this.showError(err?.error?.error || 'Google sign-in failed.');
       }
     });
   }
@@ -725,7 +730,7 @@ export class AuthComponent implements OnInit {
     }
     this.authService.forgotPassword(this.email().trim()).subscribe({
       next: (res) => this.showSuccess(res.message),
-      error: () => this.showSuccess('Password reset instructions dispatched if the account exists.')
+      error: () => this.showSuccess('Password reset instructions sent if the account exists.')
     });
   }
 }

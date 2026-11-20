@@ -5,276 +5,267 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService, Agency, AuditLog, Brand, Creator, ReelDeliverable } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { ConfirmModalComponent } from '../components/confirm-modal.component';
+import { AppHeaderComponent } from '../components/app-header.component';
+import { AppFooterComponent } from '../components/app-footer.component';
+import {
+  CountryPickerComponent,
+  enforcePhoneKeydown,
+  findCountryByIso,
+  splitPhoneNumber,
+  validatePhoneDigits
+} from '../components/country-picker.component';
+import { formatAuditSummary, formatAuditTitle } from '../utils/audit-format';
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 @Component({
   selector: 'app-admin-brand-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ConfirmModalComponent, AppHeaderComponent, AppFooterComponent, CountryPickerComponent],
   template: `
-    <div class="bg-background font-body text-on-surface antialiased min-h-screen flex flex-col overflow-x-hidden">
-      <!-- Header -->
-      <header class="shrink-0 w-full z-40 bg-background/90 backdrop-blur-xl border-b border-surface-container-high/40">
-        <div class="h-[52px] w-full px-4 sm:px-8 max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <a routerLink="/admin" class="flex items-center gap-2 shrink-0">
-              <img src="/converge-logo.png" alt="Converge" class="w-7 h-7 rounded-full object-contain shrink-0"/>
-              <span class="font-headline text-base sm:text-lg text-ink-primary font-bold">Converge</span>
-            </a>
-            <div class="h-4 w-px bg-surface-container-highest hidden sm:block"></div>
-            <a routerLink="/admin" class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-low hover:bg-surface-container text-ink-secondary text-xs font-semibold transition-all whitespace-nowrap">
-              <span class="material-symbols-outlined text-[15px]">arrow_back</span>
-              <span>Directory</span>
-            </a>
-            @if (brand(); as b) {
-              <nav class="hidden md:flex items-center gap-1 text-ink-secondary text-sm min-w-0">
-                <span class="material-symbols-outlined text-[14px] text-outline-variant">chevron_right</span>
-                <span class="font-headline text-ink-primary font-semibold truncate">{{ b.name }}</span>
-              </nav>
-            }
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <div class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint-container text-ink-primary text-xs font-semibold">
-              <span class="w-2 h-2 rounded-full bg-mint-green animate-pulse"></span>
-              <span>System Admin</span>
-            </div>
-            <button (click)="showSignOutConfirm.set(true)" class="px-3.5 py-1.5 rounded-full bg-surface-container-soft hover:bg-surface-container-high text-xs font-semibold text-ink-secondary cursor-pointer whitespace-nowrap transition-colors">
-              Sign Out
-            </button>
-          </div>
+    <div class="bg-[#1c1c1c] font-body text-[#fff6e8] antialiased min-h-screen lg:h-screen lg:overflow-hidden flex flex-col overflow-x-clip selection:bg-[#f54e26]/25 selection:text-[#fff6e8]">
+      <!-- Slim Editorial Header -->
+      <app-header [elevated]="true" brandLink="/admin">
+        <div header-right class="flex items-center gap-2.5 shrink-0">
+          <a routerLink="/admin"
+             class="h-8.5 px-3.5 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] border border-white/[0.18] text-xs font-semibold text-[#fff6e8] inline-flex items-center gap-1.5 whitespace-nowrap transition-colors group">
+            <span class="transition-transform group-hover:-translate-x-0.5">←</span>
+            <span>Back</span>
+          </a>
+          <button type="button" (click)="showSignOutConfirm.set(true)"
+                  class="h-8.5 px-4 rounded-[4px] bg-[#fff6e8] hover:bg-[#f54e26] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#f54e26] hover:shadow-[2px_2px_0px_#fff6e8] active:translate-x-[1px] active:translate-y-[1px] inline-flex items-center gap-1.5 font-headline uppercase tracking-[0.04em] text-sm font-bold cursor-pointer whitespace-nowrap transition-all">
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter">
+              <path d="M11 4H5v16h6"/>
+              <path d="M10 12h10"/>
+              <path d="M16 8l4 4-4 4"/>
+            </svg>
+            <span>SIGN OUT</span>
+          </button>
         </div>
-      </header>
+      </app-header>
 
-      <main class="w-full bg-background flex-1">
-        @if (brand(); as b) {
-          <div class="w-full max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-6 flex flex-col gap-5">
-            <!-- Entity Header -->
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div class="flex items-start sm:items-center gap-4">
-                <div class="relative shrink-0">
-                  <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-primary to-primary-container flex items-center justify-center text-white shadow-md">
-                    <span class="font-headline text-3xl sm:text-4xl font-bold">{{ b.name.charAt(0).toUpperCase() }}</span>
-                  </div>
-                  <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-mint-container flex items-center justify-center shadow-sm">
-                    <span class="w-2.5 h-2.5 rounded-full bg-mint-green"></span>
-                  </div>
+      <main class="w-full bg-[#1c1c1c] flex-1 lg:min-h-0 lg:overflow-y-auto">
+        @if (!loaded()) {
+          <div class="py-24 text-center text-sm text-[#a7a9be] flex flex-col items-center gap-3">
+            <svg class="w-6 h-6 animate-spin text-[#f54e26]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
+            <span>Loading brand details...</span>
+          </div>
+        } @else if (brand(); as b) {
+          <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 py-5 lg:py-6 flex flex-col gap-5 animate-fade-in-up">
+            <!-- Sleek Editorial Entity Header (No Chunky Code Box) -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/[0.12]">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="w-12 h-12 rounded-[4px] bg-[#f54e26] flex items-center justify-center text-[#111111] shrink-0">
+                  <span class="font-headline text-2xl font-bold leading-none">{{ b.name.charAt(0).toUpperCase() }}</span>
                 </div>
                 <div class="flex flex-col gap-1 min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="font-headline text-2xl sm:text-4xl text-ink-primary font-bold truncate">{{ b.name }}</h1>
-                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint-container text-[#166534] text-xs font-semibold">
-                      <span class="w-2 h-2 rounded-full bg-mint-green animate-pulse"></span>
-                      <span>{{ b.status }} Brand</span>
-                    </div>
+                  <div class="flex flex-wrap items-center gap-2.5">
+                    <h1 class="font-headline uppercase text-3xl sm:text-4xl text-[#fff6e8] font-bold tracking-[0.015em] leading-none truncate">{{ b.name }}</h1>
+                    @if (b.status === 'DRAFT') {
+                      <span class="px-2 py-0.5 rounded-[3px] bg-[#fabf29] text-[#111111] text-[11px] font-bold uppercase tracking-wide">Draft</span>
+                    }
                   </div>
-                  <div class="flex flex-wrap items-center gap-2 text-ink-secondary text-xs font-semibold">
-                    <span class="font-mono bg-surface-container px-2 py-0.5 rounded-md text-ink-primary">{{ b.code }}</span>
+                  <div class="flex flex-wrap items-center gap-2 text-[#a7a9be] text-xs">
+                    <span class="inline-flex items-center gap-1.5">
+                      <span class="w-1.5 h-1.5 rounded-full" [ngClass]="b.status === 'ACTIVE' ? 'bg-[#4ade80]' : 'bg-[#fabf29]'"></span>
+                      <span class="text-[#fff6e8] font-medium">{{ b.status === 'ACTIVE' ? 'Active workspace' : 'Draft workspace' }}</span>
+                    </span>
                     <span>•</span>
-                    <span>{{ creators().length }} Associated Creators</span>
+                    <span>{{ creators().length }} creators</span>
                     <span>•</span>
-                    <span>{{ agencies().length }} Partner Agencies</span>
+                    <span>{{ agencies().length }} partner agencies</span>
                   </div>
                 </div>
               </div>
 
               <div class="flex flex-wrap items-center gap-2 self-start lg:self-center">
-                <button (click)="openEditModal()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-low hover:bg-surface-container text-ink-primary text-xs font-semibold shadow-sm cursor-pointer">
-                  <span class="material-symbols-outlined text-[17px] text-ink-secondary">edit</span>
+                @if (b.status === 'DRAFT') {
+                  <button type="button" (click)="activateBrand()"
+                          class="inline-flex items-center gap-1.5 h-9 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] text-xs font-bold cursor-pointer transition-colors">
+                    <span>Activate Brand</span>
+                  </button>
+                }
+                <button type="button" (click)="openEditModal()"
+                        class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] border border-white/[0.16] text-[#fff6e8] text-xs font-medium cursor-pointer transition-colors">
                   <span>Edit Brand</span>
                 </button>
-                <button (click)="exportCsv()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-ink-primary hover:bg-on-background text-on-primary text-xs font-semibold shadow-md cursor-pointer">
-                  <span class="material-symbols-outlined text-[17px]">ios_share</span>
-                  <span>Export Report</span>
+                <button type="button" (click)="exportCsv()"
+                        class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] border border-white/[0.16] text-[#fff6e8] text-xs font-medium cursor-pointer transition-colors">
+                  <span>Export CSV</span>
                 </button>
-                <button (click)="showDeleteModal.set(true)" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-coral-container/60 hover:bg-coral-container text-secondary text-xs font-semibold cursor-pointer transition-colors">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4.5 7h15"/>
-                    <path d="M9.5 4.5h5a1 1 0 0 1 1 1V7h-7V5.5a1 1 0 0 1 1-1z"/>
-                    <path d="M6.5 7l1 12a2 2 0 0 0 2 1.8h5a2 2 0 0 0 2-1.8l1-12"/>
-                  </svg>
+                <button type="button" (click)="showDeleteModal.set(true)"
+                        class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-[4px] bg-[#2c1517] hover:bg-[#3c1b1e] border border-[#ff5c5c]/40 text-[#ffb4b4] text-xs font-medium cursor-pointer transition-colors">
                   <span>Delete</span>
                 </button>
               </div>
             </div>
 
-            <!-- 4-Tab Pill Rail -->
-            <div class="flex items-center gap-2 p-1.5 bg-surface-container-low rounded-2xl overflow-x-auto no-scrollbar shadow-sm">
-              <button (click)="activeTab.set('overview')" class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer"
-                      [ngClass]="activeTab() === 'overview' ? 'bg-primary-container text-on-primary shadow-sm' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container'">
-                <span class="material-symbols-outlined text-[18px]">dashboard</span>
-                <span>Overview</span>
+            <!-- Editorial Underline Tab Rail -->
+            <div class="flex items-center gap-6 border-b border-white/[0.12] overflow-x-auto no-scrollbar">
+              <button type="button" (click)="activeTab.set('overview')"
+                      class="pb-2.5 -mb-px border-b-2 font-headline uppercase tracking-[0.03em] text-lg font-bold whitespace-nowrap transition-colors cursor-pointer"
+                      [ngClass]="activeTab() === 'overview' ? 'border-[#f54e26] text-[#fff6e8]' : 'border-transparent text-[#a7a9be] hover:text-[#fff6e8]'">
+                OVERVIEW
               </button>
-              <button (click)="activeTab.set('agencies')" class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer"
-                      [ngClass]="activeTab() === 'agencies' ? 'bg-primary-container text-on-primary shadow-sm' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container'">
-                <span class="material-symbols-outlined text-[18px]">hub</span>
-                <span>Linked Agencies</span>
-                <span class="px-2 py-0.5 rounded-full bg-surface-container-high text-ink-primary text-[11px] font-bold">{{ agencies().length }}</span>
+              <button type="button" (click)="activeTab.set('agencies')"
+                      class="inline-flex items-center gap-2 pb-2.5 -mb-px border-b-2 font-headline uppercase tracking-[0.03em] text-lg font-bold whitespace-nowrap transition-colors cursor-pointer"
+                      [ngClass]="activeTab() === 'agencies' ? 'border-[#f54e26] text-[#fff6e8]' : 'border-transparent text-[#a7a9be] hover:text-[#fff6e8]'">
+                <span>PARTNER AGENCIES</span>
+                <span class="font-body text-xs font-normal text-[#a7a9be]">({{ agencies().length }})</span>
               </button>
-              <button (click)="activeTab.set('creators')" class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer"
-                      [ngClass]="activeTab() === 'creators' ? 'bg-primary-container text-on-primary shadow-sm' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container'">
-                <span class="material-symbols-outlined text-[18px]">group</span>
-                <span>Associated Creators</span>
-                <span class="px-2 py-0.5 rounded-full bg-surface-container-high text-ink-primary text-[11px] font-bold">{{ creators().length }}</span>
+              <button type="button" (click)="activeTab.set('creators')"
+                      class="inline-flex items-center gap-2 pb-2.5 -mb-px border-b-2 font-headline uppercase tracking-[0.03em] text-lg font-bold whitespace-nowrap transition-colors cursor-pointer"
+                      [ngClass]="activeTab() === 'creators' ? 'border-[#f54e26] text-[#fff6e8]' : 'border-transparent text-[#a7a9be] hover:text-[#fff6e8]'">
+                <span>CREATORS</span>
+                <span class="font-body text-xs font-normal text-[#a7a9be]">({{ creators().length }})</span>
               </button>
-              <button (click)="activeTab.set('audit'); loadAuditLogs()" class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer"
-                      [ngClass]="activeTab() === 'audit' ? 'bg-primary-container text-on-primary shadow-sm' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container'">
-                <span class="material-symbols-outlined text-[18px]">fact_check</span>
-                <span>Audit Logs</span>
+              <button type="button" (click)="activeTab.set('audit'); loadAuditLogs()"
+                      class="pb-2.5 -mb-px border-b-2 font-headline uppercase tracking-[0.03em] text-lg font-bold whitespace-nowrap transition-colors cursor-pointer"
+                      [ngClass]="activeTab() === 'audit' ? 'border-[#f54e26] text-[#fff6e8]' : 'border-transparent text-[#a7a9be] hover:text-[#fff6e8]'">
+                ACTIVITY
               </button>
             </div>
 
             <!-- TAB 1: OVERVIEW -->
             @if (activeTab() === 'overview') {
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 shadow-sm">
-                  <span class="text-ink-secondary text-xs font-semibold">Total Reel Audits</span>
-                  <div class="mt-2 flex items-baseline gap-2">
-                    <span class="font-headline text-2xl font-bold text-ink-primary">{{ stats().totalReels }}</span>
-                    <span class="text-[11px] text-mint-green font-semibold">Verified</span>
+              <!-- Unified Swiss Hairline Metric Strip -->
+              <div class="rounded-[4px] bg-[#161616] border border-white/[0.14] grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.1] tabular-nums">
+                <div class="px-5 py-3.5">
+                  <span class="text-[#a7a9be] text-xs font-medium block">Tracked Reels</span>
+                  <div class="mt-1 flex items-baseline gap-2">
+                    <span class="font-headline text-3xl font-bold text-[#fff6e8] leading-none">{{ stats().totalReels }}</span>
+                    <span class="text-xs text-[#4ade80] font-medium">Live</span>
                   </div>
                 </div>
-                <div class="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 shadow-sm">
-                  <span class="text-ink-secondary text-xs font-semibold">Total Verified Reach</span>
-                  <div class="mt-2 flex items-baseline gap-2">
-                    <span class="font-headline text-2xl font-bold text-ink-primary">{{ formatNum(stats().totalReach) }}</span>
-                    <span class="text-[11px] text-ink-secondary">{{ stats().totalCreators }} creators</span>
+                <div class="px-5 py-3.5">
+                  <span class="text-[#a7a9be] text-xs font-medium block">Total Reach</span>
+                  <div class="mt-1 flex items-baseline gap-2">
+                    <span class="font-headline text-3xl font-bold text-[#f54e26] leading-none">{{ formatNum(stats().totalReach) }}</span>
+                    <span class="text-xs text-[#a7a9be]">{{ stats().totalCreators }} creators</span>
                   </div>
                 </div>
-                <div class="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 shadow-sm">
-                  <span class="text-ink-secondary text-xs font-semibold">Avg. Engagement</span>
-                  <div class="mt-2 flex items-baseline gap-2">
-                    <span class="font-headline text-2xl font-bold text-ink-primary">{{ stats().avgEngagement }}%</span>
+                <div class="px-5 py-3.5">
+                  <span class="text-[#a7a9be] text-xs font-medium block">Avg. Engagement</span>
+                  <div class="mt-1">
+                    <span class="font-headline text-3xl font-bold text-[#fabf29] leading-none">{{ stats().avgEngagement }}%</span>
                   </div>
                 </div>
-                <div class="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 shadow-sm">
-                  <span class="text-ink-secondary text-xs font-semibold">Linked Agencies</span>
-                  <div class="mt-2 flex items-baseline gap-2">
-                    <span class="font-headline text-2xl font-bold text-ink-primary">{{ stats().activeAgencies }}</span>
+                <div class="px-5 py-3.5">
+                  <span class="text-[#a7a9be] text-xs font-medium block">Linked Agencies</span>
+                  <div class="mt-1">
+                    <span class="font-headline text-3xl font-bold text-[#fff6e8] leading-none">{{ stats().activeAgencies }}</span>
                   </div>
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <div class="lg:col-span-5 flex flex-col gap-6">
-                  <div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-                    <h2 class="font-headline text-lg font-bold text-ink-primary flex items-center gap-2">
-                      <span class="w-2 h-4 rounded-full bg-mint-green inline-block"></span>
-                      Brand Manager
-                    </h2>
-                    <div class="flex items-center gap-3 p-4 rounded-2xl bg-surface-container-low">
-                      <div class="w-11 h-11 rounded-full bg-blue-container text-primary flex items-center justify-center font-bold shrink-0">
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                <div class="lg:col-span-5 flex flex-col gap-5">
+                  <!-- Brand Manager Panel -->
+                  <div class="bg-[#161616] rounded-[4px] border border-white/[0.14] divide-y divide-white/[0.1]">
+                    <div class="px-5 py-3 flex items-center justify-between gap-2">
+                      <h2 class="font-headline uppercase text-lg font-bold text-[#fff6e8] tracking-[0.02em]">BRAND MANAGER</h2>
+                      <button type="button" (click)="openEditModal()" class="text-xs font-medium text-[#f54e26] hover:underline cursor-pointer">Edit</button>
+                    </div>
+                    <div class="px-5 py-3.5 flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-[4px] bg-[#f54e26] text-[#111111] flex items-center justify-center font-headline font-bold text-base shrink-0">
                         {{ (b.managerName || 'BM').substring(0, 2).toUpperCase() }}
                       </div>
                       <div class="flex flex-col min-w-0">
-                        <span class="font-headline text-sm font-bold text-ink-primary truncate">{{ b.managerName || 'Unassigned' }}</span>
-                        <span class="text-xs text-primary truncate">{{ b.managerEmail }}</span>
+                        <span class="text-sm font-semibold text-[#fff6e8] truncate">{{ b.managerName || 'Unassigned' }}</span>
+                        <span class="text-xs text-[#a7a9be] truncate">{{ b.managerEmail }}</span>
                       </div>
                     </div>
-                    @if (b.contactNumber || b.instagramHandle) {
-                      <div class="flex flex-col gap-2">
-                        @if (b.instagramHandle) {
-                          <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-container-low text-xs">
-                            <span class="text-ink-secondary">Instagram</span>
-                            <span class="font-mono font-semibold text-primary">{{ b.instagramHandle }}</span>
-                          </div>
-                        }
-                        @if (b.contactNumber) {
-                          <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-container-low text-xs">
-                            <span class="text-ink-secondary">Contact</span>
-                            <span class="font-semibold text-ink-primary">{{ b.contactNumber }}</span>
-                          </div>
-                        }
+                    @if (b.contactNumber) {
+                      <div class="px-5 py-2.5 flex items-center justify-between text-xs">
+                        <span class="text-[#a7a9be]">Contact number</span>
+                        <span class="font-medium text-[#fff6e8] tabular-nums">{{ b.contactNumber }}</span>
                       </div>
                     }
                   </div>
 
-                  <div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-                    <div class="flex items-center justify-between gap-2">
-                      <h2 class="font-headline text-lg font-bold text-ink-primary flex items-center gap-2">
-                        <span class="w-2 h-4 rounded-full bg-primary inline-block"></span>
-                        Creators Snapshot
-                      </h2>
-                      <button type="button" (click)="activeTab.set('creators')" class="text-xs font-semibold text-primary hover:underline cursor-pointer">
-                        View All ({{ creators().length }}) →
+                  <!-- Creators Snapshot Panel -->
+                  <div class="bg-[#161616] rounded-[4px] border border-white/[0.14] divide-y divide-white/[0.1]">
+                    <div class="px-5 py-3 flex items-center justify-between gap-2">
+                      <div>
+                        <h2 class="font-headline uppercase text-lg font-bold text-[#fff6e8] tracking-[0.02em] leading-none">CREATORS</h2>
+                        <span class="text-[11px] text-[#a7a9be] mt-0.5 block">{{ directCreatorsCount() }} direct • {{ agencyCreatorsCount() }} agency</span>
+                      </div>
+                      <button type="button" (click)="activeTab.set('creators')" class="text-xs font-medium text-[#f54e26] hover:underline cursor-pointer">
+                        View All ({{ creators().length }}) ↗
                       </button>
                     </div>
-                    <div class="grid grid-cols-2 gap-2.5 text-center">
-                      <div class="p-3 rounded-xl bg-surface-container-low">
-                        <span class="text-[11px] text-ink-secondary block">Direct Creators</span>
-                        <span class="font-headline text-lg font-bold text-ink-primary">{{ directCreatorsCount() }}</span>
-                      </div>
-                      <div class="p-3 rounded-xl bg-surface-container-low">
-                        <span class="text-[11px] text-ink-secondary block">Agency-Managed</span>
-                        <span class="font-headline text-lg font-bold text-primary">{{ agencyCreatorsCount() }}</span>
-                      </div>
-                    </div>
                     @if (creators().length === 0) {
-                      <p class="text-xs text-ink-secondary py-2">No creators added to this brand workspace yet.</p>
+                      <p class="px-5 py-4 text-xs text-[#a7a9be]">No creators added to this brand workspace yet.</p>
                     } @else {
-                      <div class="flex flex-col gap-2">
-                        @for (c of creators().slice(0, 4); track c.id) {
-                          <div class="p-3 rounded-xl bg-surface-container-low flex items-center justify-between gap-2 text-xs">
-                            <div class="min-w-0">
-                              <p class="font-bold text-ink-primary truncate">{{ c.name }}</p>
-                              <p class="font-mono text-[11px] text-ink-secondary truncate">{{ c.handle }}</p>
-                            </div>
-                            <span class="font-semibold text-ink-primary shrink-0">{{ c.auditedReelsCount }} reel(s)</span>
+                      @for (c of creators().slice(0, 4); track c.id) {
+                        <div class="px-5 py-2.5 flex items-center justify-between gap-2 text-xs">
+                          <div class="min-w-0">
+                            <p class="font-medium text-[#fff6e8] truncate">{{ c.name }}</p>
+                            <p class="text-[11px] text-[#a7a9be] truncate">{{ c.handle }}</p>
                           </div>
-                        }
-                      </div>
+                          <span class="text-[#a7a9be] tabular-nums shrink-0">{{ c.auditedReelsCount }} reel(s)</span>
+                        </div>
+                      }
                     }
                   </div>
                 </div>
 
-                <div class="lg:col-span-7 flex flex-col gap-6">
-                  <div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-                    <div class="flex items-center justify-between gap-2">
-                      <h2 class="font-headline text-lg font-bold text-ink-primary">Linked Agencies</h2>
-                      <button (click)="showAgencyModal.set(true)" class="px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold cursor-pointer">
+                <div class="lg:col-span-7 flex flex-col gap-5">
+                  <!-- Partner Agencies Panel -->
+                  <div class="bg-[#161616] rounded-[4px] border border-white/[0.14] divide-y divide-white/[0.1]">
+                    <div class="px-5 py-3 flex items-center justify-between gap-2">
+                      <h2 class="font-headline uppercase text-lg font-bold text-[#fff6e8] tracking-[0.02em]">LINKED AGENCIES</h2>
+                      <button type="button" (click)="showAgencyModal.set(true)"
+                              class="text-xs font-semibold text-[#f54e26] hover:underline cursor-pointer">
                         + Link Agency
                       </button>
                     </div>
                     @if (agencies().length === 0) {
-                      <p class="text-xs text-ink-secondary py-4">No agencies linked to this brand yet.</p>
+                      <p class="px-5 py-4 text-xs text-[#a7a9be]">No agencies linked to this brand yet.</p>
                     } @else {
-                      <div class="flex flex-col gap-2.5">
-                        @for (ag of agencies().slice(0, 3); track ag.id) {
-                          <div class="p-4 rounded-2xl bg-surface-container-low flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3 min-w-0">
-                              <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold shrink-0">{{ ag.monogram }}</div>
-                              <div class="min-w-0">
-                                <div class="font-bold text-sm text-ink-primary truncate">{{ ag.name }}</div>
-                                <span class="text-xs text-ink-secondary">{{ ag.auditedReelsCount }} reels monitored</span>
-                              </div>
+                      @for (ag of agencies().slice(0, 3); track ag.id) {
+                        <div class="px-5 py-3 flex items-center justify-between gap-3">
+                          <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-8 h-8 rounded-[4px] bg-[#5738af] text-[#fff6e8] flex items-center justify-center font-headline font-bold text-sm shrink-0">{{ ag.monogram }}</div>
+                            <div class="min-w-0">
+                              <div class="font-medium text-sm text-[#fff6e8] truncate">{{ ag.name }}</div>
+                              <span class="text-xs text-[#a7a9be]">{{ ag.auditedReelsCount }} reels tracked</span>
                             </div>
-                            <span class="px-2.5 py-1 rounded-full bg-mint-container text-[#166534] text-xs font-medium shrink-0">{{ ag.status }}</span>
                           </div>
-                        }
-                      </div>
+                          <span class="inline-flex items-center gap-1.5 text-xs text-[#4ade80] shrink-0">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#4ade80]"></span>
+                            <span>Connected</span>
+                          </span>
+                        </div>
+                      }
                     }
                   </div>
 
-                  <div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-                    <div class="flex items-center justify-between">
-                      <h2 class="font-headline text-lg font-bold text-ink-primary">Audited Reel Links</h2>
-                      <button (click)="syncNow()" class="text-primary text-xs font-semibold hover:underline cursor-pointer">Sync Live Deliverables</button>
+                  <!-- Tracked Reels Panel -->
+                  <div class="bg-[#161616] rounded-[4px] border border-white/[0.14] divide-y divide-white/[0.1]">
+                    <div class="px-5 py-3 flex items-center justify-between gap-2">
+                      <h2 class="font-headline uppercase text-lg font-bold text-[#fff6e8] tracking-[0.02em]">TRACKED REEL LINKS</h2>
+                      <button type="button" (click)="syncNow()" [disabled]="syncing()" class="text-[#f54e26] text-xs font-medium hover:underline cursor-pointer disabled:opacity-50">
+                        {{ syncing() ? 'Refreshing...' : 'Refresh Reels ↻' }}
+                      </button>
                     </div>
                     @if (recentReels().length === 0) {
-                      <p class="text-xs text-ink-secondary py-4">No reel deliverables verified yet.</p>
+                      <p class="px-5 py-4 text-xs text-[#a7a9be]">No reel links tracked yet.</p>
                     } @else {
-                      <div class="flex flex-col gap-2.5">
-                        @for (r of recentReels(); track r.id) {
-                          <div class="p-4 rounded-2xl bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div class="min-w-0">
-                              <div class="font-bold text-sm text-ink-primary truncate">{{ r.title }}</div>
-                              <div class="text-xs font-mono text-ink-secondary truncate">{{ r.reelUrl }}</div>
-                            </div>
-                            <div class="flex items-center gap-3 shrink-0">
-                              <span class="text-xs font-bold text-ink-primary">{{ formatNum(r.viewsCount) }} views</span>
-                              <span class="px-2.5 py-0.5 rounded-full bg-mint-container text-[#166534] text-xs font-semibold">{{ r.status }}</span>
-                            </div>
+                      @for (r of recentReels(); track r.id) {
+                        <div class="px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div class="min-w-0">
+                            <div class="font-medium text-sm text-[#fff6e8] truncate">{{ r.title }}</div>
+                            <div class="text-xs text-[#a7a9be] truncate">{{ r.reelUrl }}</div>
                           </div>
-                        }
-                      </div>
+                          <div class="flex items-center gap-3 shrink-0 tabular-nums">
+                            <span class="text-xs font-semibold text-[#fff6e8]">{{ formatNum(r.viewsCount) }} views</span>
+                            <span class="text-xs font-medium" [ngClass]="r.status === 'VERIFIED' ? 'text-[#4ade80]' : 'text-[#fabf29]'">
+                              {{ r.status === 'VERIFIED' ? 'Live' : 'Pending' }}
+                            </span>
+                          </div>
+                        </div>
+                      }
                     }
                   </div>
                 </div>
@@ -284,30 +275,31 @@ import { ConfirmModalComponent } from '../components/confirm-modal.component';
             <!-- TAB 2: LINKED AGENCIES -->
             @if (activeTab() === 'agencies') {
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 class="font-headline text-2xl font-bold text-ink-primary">{{ agencies().length }} Authorized Agency Partners</h2>
-                </div>
-                <button (click)="showAgencyModal.set(true)" class="px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-semibold cursor-pointer">+ Link New Agency</button>
+                <h2 class="font-headline uppercase text-2xl font-bold text-[#fff6e8] tracking-[0.02em]">{{ agencies().length }} PARTNER AGENCIES</h2>
+                <button type="button" (click)="showAgencyModal.set(true)"
+                        class="h-9 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer transition-colors">
+                  + LINK AGENCY
+                </button>
               </div>
               @if (agencies().length === 0) {
-                <div class="p-10 rounded-3xl bg-surface-container-lowest text-center border border-dashed border-outline-variant">
-                  <p class="text-sm text-ink-secondary">No agencies linked yet. Click "Link New Agency" to authorize a partner.</p>
+                <div class="p-8 rounded-[4px] bg-[#161616] text-center border border-dashed border-white/[0.18]">
+                  <p class="text-sm text-[#a7a9be]">No agencies linked yet. Click "Link Agency" to add a partner.</p>
                 </div>
               } @else {
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   @for (ag of agencies(); track ag.id) {
-                    <article class="bg-surface-cream rounded-3xl p-6 shadow-sm border border-surface-container-high/50 flex flex-col gap-4">
-                      <div class="flex items-start justify-between gap-3">
+                    <article class="bg-[#161616] rounded-[4px] p-4 border border-white/[0.14] flex flex-col gap-2.5">
+                      <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-3 min-w-0">
-                          <div class="w-12 h-12 rounded-2xl bg-blue-container/70 text-primary flex items-center justify-center font-bold text-base shrink-0">{{ ag.monogram }}</div>
+                          <div class="w-10 h-10 rounded-[4px] bg-[#5738af] text-[#fff6e8] flex items-center justify-center font-headline font-bold text-base shrink-0">{{ ag.monogram }}</div>
                           <div class="min-w-0">
-                            <h3 class="font-headline text-base font-bold text-ink-primary truncate">{{ ag.name }}</h3>
-                            <span class="text-xs text-ink-secondary">{{ ag.handle }}</span>
+                            <h3 class="font-headline uppercase text-lg font-bold text-[#fff6e8] tracking-[0.015em] truncate">{{ ag.name }}</h3>
+                            <span class="text-xs text-[#a7a9be]">{{ ag.handle }}</span>
                           </div>
                         </div>
-                        <span class="px-3 py-1 rounded-full bg-mint-container text-ink-primary text-xs font-semibold shrink-0">{{ ag.status }}</span>
+                        <span class="text-xs font-medium text-[#4ade80] shrink-0">Connected</span>
                       </div>
-                      <div class="p-3 rounded-2xl bg-surface-warm text-xs text-ink-secondary">{{ ag.scopeDescription }}</div>
+                      <p class="text-xs text-[#a7a9be] pt-2 border-t border-white/[0.08]">{{ ag.scopeDescription }}</p>
                     </article>
                   }
                 </div>
@@ -316,43 +308,44 @@ import { ConfirmModalComponent } from '../components/confirm-modal.component';
 
             <!-- TAB 3: ASSOCIATED CREATORS -->
             @if (activeTab() === 'creators') {
-              <div class="p-4 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                <input [(ngModel)]="creatorSearch" (ngModelChange)="creatorSearchSig.set($event)" placeholder="Search creator by name or handle..." class="w-full md:max-w-md h-11 px-4 rounded-xl bg-surface-container-low text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
-                <div class="flex items-center gap-2 flex-wrap">
-                  <button (click)="creatorAgencyFilter.set('all')" class="px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer" [ngClass]="creatorAgencyFilter() === 'all' ? 'bg-primary text-white' : 'bg-surface-container-low text-ink-secondary'">All ({{ creators().length }})</button>
-                  <button (click)="creatorAgencyFilter.set('DIRECT')" class="px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer" [ngClass]="creatorAgencyFilter() === 'DIRECT' ? 'bg-primary text-white' : 'bg-surface-container-low text-ink-secondary'">Direct</button>
-                  <button (click)="creatorAgencyFilter.set('AGENCY')" class="px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer" [ngClass]="creatorAgencyFilter() === 'AGENCY' ? 'bg-primary text-white' : 'bg-surface-container-low text-ink-secondary'">Agency-Managed</button>
+              <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div class="group w-full md:max-w-md flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border border-white/[0.16] focus-within:border-[#f54e26] transition-colors">
+                  <svg class="doodle-svg w-4 h-4 text-[#a7a9be] group-focus-within:text-[#f54e26] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+                  <input [(ngModel)]="creatorSearch" (ngModelChange)="creatorSearchSig.set($event)" placeholder="Search creator by name or handle..." class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none"/>
+                </div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <button type="button" (click)="creatorAgencyFilter.set('all')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors" [ngClass]="creatorAgencyFilter() === 'all' ? 'bg-[#fff6e8] text-[#111111] font-semibold' : 'bg-[#111111] border border-white/[0.14] text-[#a7a9be] hover:text-[#fff6e8]'">All ({{ creators().length }})</button>
+                  <button type="button" (click)="creatorAgencyFilter.set('DIRECT')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors" [ngClass]="creatorAgencyFilter() === 'DIRECT' ? 'bg-[#fff6e8] text-[#111111] font-semibold' : 'bg-[#111111] border border-white/[0.14] text-[#a7a9be] hover:text-[#fff6e8]'">Direct</button>
+                  <button type="button" (click)="creatorAgencyFilter.set('AGENCY')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors" [ngClass]="creatorAgencyFilter() === 'AGENCY' ? 'bg-[#fff6e8] text-[#111111] font-semibold' : 'bg-[#111111] border border-white/[0.14] text-[#a7a9be] hover:text-[#fff6e8]'">Agency-Managed</button>
                 </div>
               </div>
               @if (filteredCreators().length === 0) {
-                <div class="p-10 rounded-3xl bg-surface-container-lowest text-center border border-dashed border-outline-variant">
-                  <p class="text-sm text-ink-secondary">No creators associated with this brand yet.</p>
+                <div class="p-8 rounded-[4px] bg-[#161616] text-center border border-dashed border-white/[0.18]">
+                  <p class="text-sm text-[#a7a9be]">No creators associated with this brand yet.</p>
                 </div>
               } @else {
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                   @for (c of filteredCreators(); track c.id) {
-                    <article class="p-6 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col justify-between gap-4">
-                      <div>
-                        <div class="flex items-start justify-between gap-2">
-                          <div class="min-w-0">
-                            <h3 class="font-headline text-base font-bold text-ink-primary truncate">{{ c.name }}</h3>
-                            <span class="font-mono text-xs text-primary">{{ c.handle }}</span>
-                          </div>
-                          <span class="px-2.5 py-1 rounded-full bg-mint-container text-[#166534] text-[11px] font-semibold shrink-0">Active</span>
+                    <article class="p-4 rounded-[4px] bg-[#161616] border border-white/[0.14] flex flex-col justify-between gap-3">
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                          <h3 class="font-headline uppercase text-lg font-bold text-[#fff6e8] tracking-[0.015em] truncate leading-tight">{{ c.name }}</h3>
+                          <span class="text-xs text-[#f54e26]">{{ c.handle }}</span>
                         </div>
-                        <div class="grid grid-cols-3 gap-2 mt-4">
-                          <div class="p-2 rounded-xl bg-surface-container-low text-center">
-                            <span class="text-[11px] text-ink-secondary block">Reach</span>
-                            <span class="font-bold text-sm text-ink-primary">{{ formatNum(c.reachCount) }}</span>
-                          </div>
-                          <div class="p-2 rounded-xl bg-surface-container-low text-center">
-                            <span class="text-[11px] text-ink-secondary block">Audited</span>
-                            <span class="font-bold text-sm text-primary">{{ c.auditedReelsCount }}</span>
-                          </div>
-                          <div class="p-2 rounded-xl bg-surface-container-low text-center">
-                            <span class="text-[11px] text-ink-secondary block">Eng.</span>
-                            <span class="font-bold text-sm text-mint-green">{{ c.engagementRate }}%</span>
-                          </div>
+                        <span class="text-[11px] text-[#a7a9be] shrink-0">{{ c.sourceType === 'AGENCY' ? 'Agency' : 'Direct' }}</span>
+                      </div>
+                      <div class="grid grid-cols-3 divide-x divide-white/[0.1] rounded-[4px] bg-[#111111] border border-white/[0.1] tabular-nums text-center">
+                        <div class="py-2 px-1">
+                          <span class="text-[10px] text-[#a7a9be] block">Reach</span>
+                          <span class="font-bold text-xs text-[#fff6e8]">{{ formatNum(c.reachCount) }}</span>
+                        </div>
+                        <div class="py-2 px-1">
+                          <span class="text-[10px] text-[#a7a9be] block">Reels</span>
+                          <span class="font-bold text-xs text-[#f54e26]">{{ c.auditedReelsCount }}</span>
+                        </div>
+                        <div class="py-2 px-1">
+                          <span class="text-[10px] text-[#a7a9be] block">Eng.</span>
+                          <span class="font-bold text-xs text-[#4ade80]">{{ c.engagementRate }}%</span>
                         </div>
                       </div>
                     </article>
@@ -361,38 +354,43 @@ import { ConfirmModalComponent } from '../components/confirm-modal.component';
               }
             }
 
-            <!-- TAB 4: AUDIT LOGS -->
+            <!-- TAB 4: SIMPLIFIED ACTIVITY TIMELINE -->
             @if (activeTab() === 'audit') {
-              <div class="p-4 rounded-3xl bg-surface-warm shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                <input [(ngModel)]="auditSearch" (ngModelChange)="loadAuditLogs()" placeholder="Search events by ID or keyword..." class="w-full md:max-w-md h-11 px-5 rounded-full bg-surface-container-lowest text-sm focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"/>
-                <div class="flex items-center flex-wrap gap-2">
-                  <button (click)="auditCategory.set('ALL'); loadAuditLogs()" class="px-4 py-2 rounded-full text-xs font-semibold cursor-pointer" [ngClass]="auditCategory() === 'ALL' ? 'bg-primary text-white' : 'bg-surface-container-soft text-ink-primary'">All Events</button>
-                  <button (click)="auditCategory.set('REEL_AUDIT'); loadAuditLogs()" class="px-4 py-2 rounded-full text-xs font-semibold cursor-pointer" [ngClass]="auditCategory() === 'REEL_AUDIT' ? 'bg-primary text-white' : 'bg-surface-container-soft text-ink-primary'">Reel Audits</button>
-                  <button (click)="auditCategory.set('AGENCY_PERMISSION'); loadAuditLogs()" class="px-4 py-2 rounded-full text-xs font-semibold cursor-pointer" [ngClass]="auditCategory() === 'AGENCY_PERMISSION' ? 'bg-primary text-white' : 'bg-surface-container-soft text-ink-primary'">Agency Permissions</button>
-                  <button (click)="auditCategory.set('CREATOR_LINK'); loadAuditLogs()" class="px-4 py-2 rounded-full text-xs font-semibold cursor-pointer" [ngClass]="auditCategory() === 'CREATOR_LINK' ? 'bg-primary text-white' : 'bg-surface-container-soft text-ink-primary'">Creator Links</button>
+              <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div class="group w-full md:max-w-md flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border border-white/[0.16] focus-within:border-[#f54e26] transition-colors">
+                  <svg class="doodle-svg w-4 h-4 text-[#a7a9be] group-focus-within:text-[#f54e26] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+                  <input [(ngModel)]="auditSearch" (ngModelChange)="loadAuditLogs()" placeholder="Search activity..." class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none"/>
+                </div>
+                <div class="flex items-center flex-wrap gap-1.5">
+                  <button type="button" (click)="auditCategory.set('ALL'); loadAuditLogs()" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors" [ngClass]="auditCategory() === 'ALL' ? 'bg-[#fff6e8] text-[#111111] font-semibold' : 'bg-[#111111] border border-white/[0.14] text-[#a7a9be] hover:text-[#fff6e8]'">All</button>
+                  <button type="button" (click)="auditCategory.set('REEL_AUDIT'); loadAuditLogs()" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors" [ngClass]="auditCategory() === 'REEL_AUDIT' ? 'bg-[#fff6e8] text-[#111111] font-semibold' : 'bg-[#111111] border border-white/[0.14] text-[#a7a9be] hover:text-[#fff6e8]'">Reels</button>
+                  <button type="button" (click)="auditCategory.set('AGENCY_PERMISSION'); loadAuditLogs()" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors" [ngClass]="auditCategory() === 'AGENCY_PERMISSION' ? 'bg-[#fff6e8] text-[#111111] font-semibold' : 'bg-[#111111] border border-white/[0.14] text-[#a7a9be] hover:text-[#fff6e8]'">Agencies</button>
+                  <button type="button" (click)="auditCategory.set('CREATOR_LINK'); loadAuditLogs()" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors" [ngClass]="auditCategory() === 'CREATOR_LINK' ? 'bg-[#fff6e8] text-[#111111] font-semibold' : 'bg-[#111111] border border-white/[0.14] text-[#a7a9be] hover:text-[#fff6e8]'">Creators</button>
                 </div>
               </div>
 
-              <section class="w-full bg-surface-container-lowest rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col gap-4">
-                <div class="flex items-center justify-between">
-                  <h2 class="font-headline text-lg font-bold text-ink-primary">Verified Activity &amp; Audit Ledger</h2>
-                  <span class="font-mono text-xs bg-surface-container px-3 py-1 rounded-full">{{ auditTotal() }} records</span>
+              <section class="w-full bg-[#161616] rounded-[4px] border border-white/[0.14] divide-y divide-white/[0.1]">
+                <div class="px-5 py-3 flex items-center justify-between">
+                  <h2 class="font-headline uppercase text-lg font-bold text-[#fff6e8] tracking-[0.02em]">RECENT ACTIVITY</h2>
+                  <span class="text-xs text-[#a7a9be] tabular-nums">{{ auditTotal() }} events</span>
                 </div>
-                <div class="flex flex-col gap-3">
+                @if (auditLogs().length === 0) {
+                  <p class="px-5 py-8 text-xs text-[#a7a9be] text-center">No activity recorded yet.</p>
+                } @else {
                   @for (log of auditLogs(); track log.id) {
-                    <article class="p-4 rounded-2xl bg-surface-container-soft flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                      <div class="flex flex-col gap-1">
-                        <div class="flex items-center gap-2 flex-wrap">
-                          <h3 class="font-headline text-sm font-bold text-ink-primary">{{ log.title }}</h3>
-                          <span class="px-2.5 py-0.5 rounded-full bg-mint-container text-[#137333] text-[11px] font-semibold">{{ log.statusBadge }}</span>
-                          <span class="font-mono text-ink-secondary text-xs">{{ log.eventCode }}</span>
+                    <article class="px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-white/[0.02] transition-colors">
+                      <div class="flex items-start gap-3 min-w-0">
+                        <span class="w-2 h-2 rounded-full mt-1.5 shrink-0"
+                              [ngClass]="log.category === 'REEL_AUDIT' ? 'bg-[#f54e26]' : (log.category === 'CREATOR_LINK' ? 'bg-[#4ade80]' : (log.category === 'AGENCY_PERMISSION' ? 'bg-[#5738af]' : 'bg-[#fabf29]'))"></span>
+                        <div class="min-w-0">
+                          <h3 class="text-sm font-medium text-[#fff6e8] leading-snug">{{ cleanAuditTitle(log.title) }}</h3>
+                          <p class="text-xs text-[#a7a9be] mt-0.5 leading-relaxed">{{ cleanAuditSummary(log.description) }}</p>
                         </div>
-                        <p class="text-xs sm:text-sm text-on-surface">{{ log.description }}</p>
                       </div>
-                      <span class="text-xs font-semibold text-ink-secondary shrink-0">{{ log.createdAt | date:'short' }}</span>
+                      <span class="text-xs text-[#a7a9be] pl-5 sm:pl-0 shrink-0 tabular-nums">{{ log.createdAt | date:'MMM d, h:mm a' }}</span>
                     </article>
                   }
-                </div>
+                }
               </section>
             }
           </div>
@@ -401,37 +399,100 @@ import { ConfirmModalComponent } from '../components/confirm-modal.component';
 
       <!-- Link Agency Modal -->
       @if (showAgencyModal()) {
-        <div class="fixed inset-0 z-50 bg-ink-primary/30 backdrop-blur-xs flex items-center justify-center p-4" (click)="showAgencyModal.set(false)">
-          <div class="bg-surface-container-lowest rounded-3xl max-w-md w-full p-6 shadow-2xl" (click)="$event.stopPropagation()">
-            <h3 class="font-headline text-base font-bold text-ink-primary mb-4">Link New Partner Agency</h3>
-            <form (ngSubmit)="submitAgency()" class="space-y-3">
-              <input [(ngModel)]="newAgencyName" name="agName" placeholder="Agency Name" required class="w-full h-11 px-4 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
-              <input [(ngModel)]="newAgencyRole" name="agRole" placeholder="Role Badge (e.g. Paid Growth)" class="w-full h-11 px-4 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
-              <input [(ngModel)]="newAgencyEmail" name="agEmail" placeholder="Contact Email" type="email" class="w-full h-11 px-4 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
-              <div class="flex justify-end gap-2 pt-2">
-                <button type="button" (click)="showAgencyModal.set(false)" class="px-4 py-2 rounded-full text-xs font-semibold text-ink-secondary cursor-pointer">Cancel</button>
-                <button type="submit" class="px-5 py-2 rounded-full bg-primary text-white text-xs font-semibold cursor-pointer">Link Agency</button>
+        <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-pop-in" (click)="showAgencyModal.set(false)">
+          <div class="bg-[#161616] rounded-[6px] max-w-md w-full p-6 border border-white/[0.18] shadow-[6px_6px_0px_#f54e26]" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.14] mb-4">
+              <h3 class="font-headline uppercase text-2xl font-bold text-[#fff6e8] tracking-[0.02em]">LINK PARTNER AGENCY</h3>
+              <button type="button" (click)="showAgencyModal.set(false)" class="w-8 h-8 rounded-[4px] hover:bg-white/[0.08] flex items-center justify-center text-[#a7a9be] cursor-pointer">✕</button>
+            </div>
+            <form (ngSubmit)="submitAgency()" class="space-y-3.5">
+              <div>
+                <label class="block text-xs font-medium text-[#fff6e8] mb-1">Agency name</label>
+                <input [(ngModel)]="newAgencyName" name="agName" placeholder="e.g. Studio North" required class="w-full h-10 px-3 rounded-[4px] bg-[#111111] border border-white/[0.16] text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:border-[#f54e26] focus:outline-none"/>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-[#fff6e8] mb-1">Role tag</label>
+                <input [(ngModel)]="newAgencyRole" name="agRole" placeholder="e.g. Paid Growth" class="w-full h-10 px-3 rounded-[4px] bg-[#111111] border border-white/[0.16] text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:border-[#f54e26] focus:outline-none"/>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-[#fff6e8] mb-1">Contact email</label>
+                <input [(ngModel)]="newAgencyEmail" name="agEmail" placeholder="lead@agency.com" type="email" class="w-full h-10 px-3 rounded-[4px] bg-[#111111] border border-white/[0.16] text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:border-[#f54e26] focus:outline-none"/>
+              </div>
+              <div class="flex justify-end gap-2.5 pt-4 border-t border-white/[0.14]">
+                <button type="button" (click)="showAgencyModal.set(false)" class="h-10 px-4 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] border border-white/[0.16] text-xs font-medium text-[#a7a9be] hover:text-[#fff6e8] cursor-pointer transition-colors">Cancel</button>
+                <button type="submit" class="h-10 px-5 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-lg font-bold cursor-pointer transition-colors">LINK AGENCY ↗</button>
               </div>
             </form>
           </div>
         </div>
       }
 
-      <!-- Edit Brand Modal -->
+      <!-- Edit Brand Modal (Brand + Brand Manager Details Only) -->
       @if (showEditModal()) {
-        <div class="fixed inset-0 z-50 bg-ink-primary/30 backdrop-blur-xs flex items-center justify-center p-4" (click)="showEditModal.set(false)">
-          <div class="bg-surface-container-lowest rounded-3xl max-w-md w-full p-6 shadow-2xl" (click)="$event.stopPropagation()">
-            <h3 class="font-headline text-base font-bold text-ink-primary mb-4">Edit Brand Details</h3>
-            <form (ngSubmit)="saveBrandEdit()" class="space-y-3">
-              <input [(ngModel)]="editName" name="editName" placeholder="Brand Name" required class="w-full h-11 px-4 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
-              <input [(ngModel)]="editDomain" name="editDomain" placeholder="Domain" class="w-full h-11 px-4 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
-              <textarea [(ngModel)]="editDesc" name="editDesc" rows="3" placeholder="Description" class="w-full p-3 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
-              <div class="flex justify-end gap-2 pt-2">
-                <button type="button" (click)="showEditModal.set(false)" class="px-4 py-2 rounded-full text-xs font-semibold text-ink-secondary cursor-pointer">Cancel</button>
-                <button type="submit" class="px-5 py-2 rounded-full bg-primary text-white text-xs font-semibold cursor-pointer">Save Changes</button>
+        <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-pop-in" (click)="showEditModal.set(false)">
+          <div class="bg-[#161616] rounded-[6px] max-w-md w-full p-6 border border-white/[0.18] shadow-[6px_6px_0px_#f54e26]" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.14] mb-4">
+              <h3 class="font-headline uppercase text-2xl font-bold text-[#fff6e8] tracking-[0.02em]">EDIT BRAND DETAILS</h3>
+              <button type="button" (click)="showEditModal.set(false)" class="w-8 h-8 rounded-[4px] hover:bg-white/[0.08] flex items-center justify-center text-[#a7a9be] cursor-pointer">✕</button>
+            </div>
+            @if (editError()) {
+              <div class="mb-3.5 px-3 py-2 rounded-[4px] bg-[#2c1517] border border-[#ff5c5c]/40 text-xs text-[#ffb4b4] font-medium">
+                {{ editError() }}
+              </div>
+            }
+            <form (ngSubmit)="saveBrandEdit()" class="space-y-3.5" novalidate>
+              <div>
+                <label for="edit-brand-name" class="block text-xs font-medium text-[#fff6e8] mb-1">Brand name</label>
+                <input id="edit-brand-name" [(ngModel)]="editName" name="editName" placeholder="Brand name" autocomplete="off" required
+                       class="w-full h-10 px-3 rounded-[4px] bg-[#111111] border border-white/[0.16] text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:border-[#f54e26] focus:outline-none"/>
+              </div>
+              <div>
+                <label for="edit-mgr-name" class="block text-xs font-medium text-[#fff6e8] mb-1">Brand manager name</label>
+                <input id="edit-mgr-name" [(ngModel)]="editManagerName" name="editManagerName" placeholder="Manager full name" autocomplete="off" required
+                       class="w-full h-10 px-3 rounded-[4px] bg-[#111111] border border-white/[0.16] text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:border-[#f54e26] focus:outline-none"/>
+              </div>
+              <div>
+                <label for="edit-mgr-email" class="block text-xs font-medium text-[#fff6e8] mb-1">Brand manager email</label>
+                <input id="edit-mgr-email" [(ngModel)]="editManagerEmail" name="editManagerEmail" placeholder="manager@brand.com" autocomplete="off" type="email" required
+                       class="w-full h-10 px-3 rounded-[4px] bg-[#111111] border border-white/[0.16] text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:border-[#f54e26] focus:outline-none"/>
+              </div>
+              <div>
+                <label for="edit-contact" class="block text-xs font-medium text-[#fff6e8] mb-1">Contact number</label>
+                <div class="flex items-center gap-2 pl-2 pr-3 h-10 rounded-[4px] bg-[#111111] border border-white/[0.16] focus-within:border-[#f54e26] transition-colors">
+                  <app-country-picker
+                    [iso]="editPhoneIso()"
+                    (isoChange)="onEditCountryChange($event)">
+                  </app-country-picker>
+                  <input
+                    id="edit-contact"
+                    [value]="editPhoneLocal()"
+                    (input)="onEditPhoneInput($event)"
+                    (keydown)="onEditPhoneKeydown($event)"
+                    [attr.maxlength]="editSelectedCountry().maxDigits"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    name="editContactNumber"
+                    autocomplete="off"
+                    [placeholder]="editSelectedCountry().placeholder"
+                    type="tel"
+                    class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none tabular-nums"/>
+                </div>
+              </div>
+              <div class="flex justify-end gap-2.5 pt-4 border-t border-white/[0.14]">
+                <button type="button" (click)="showEditModal.set(false)" class="h-10 px-4 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] border border-white/[0.16] text-xs font-medium text-[#a7a9be] hover:text-[#fff6e8] cursor-pointer transition-colors">Cancel</button>
+                <button type="submit" [disabled]="savingEdit()" class="h-10 px-5 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-lg font-bold cursor-pointer transition-colors disabled:opacity-60">
+                  {{ savingEdit() ? 'SAVING...' : 'SAVE CHANGES ↗' }}
+                </button>
               </div>
             </form>
           </div>
+        </div>
+      }
+
+      <!-- Toast -->
+      @if (toastMsg()) {
+        <div class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-[4px] bg-[#fff6e8] text-[#111111] border-2 border-[#111111] shadow-[4px_4px_0px_#f54e26] text-xs font-bold animate-pop-in">
+          {{ toastMsg() }}
         </div>
       }
 
@@ -439,7 +500,7 @@ import { ConfirmModalComponent } from '../components/confirm-modal.component';
       <app-confirm-modal
         [open]="showDeleteModal() && !!brand()"
         [title]="'Delete ' + (brand()?.name || 'brand') + '?'"
-        message="This permanently removes the brand workspace, linked agencies, creators, and audit logs."
+        message="This permanently removes the brand workspace, linked agencies, creators, and activity history."
         confirmLabel="Delete Brand"
         busyLabel="Deleting..."
         tone="danger"
@@ -451,18 +512,21 @@ import { ConfirmModalComponent } from '../components/confirm-modal.component';
       <!-- Sign Out Confirmation Modal -->
       <app-confirm-modal
         [open]="showSignOutConfirm()"
-        title="Sign out of Admin Console?"
+        title="Sign out of Admin?"
         message="You will be returned to the sign-in screen."
         confirmLabel="Sign Out"
         tone="primary"
         (confirm)="logout()"
         (cancel)="showSignOutConfirm.set(false)">
       </app-confirm-modal>
+
+      <app-footer></app-footer>
     </div>
   `
 })
 export class AdminBrandDetailsComponent implements OnInit {
   brandId = '';
+  loaded = signal(false);
   brand = signal<Brand | null>(null);
   agencies = signal<Agency[]>([]);
   creators = signal<Creator[]>([]);
@@ -488,9 +552,19 @@ export class AdminBrandDetailsComponent implements OnInit {
   showDeleteModal = signal(false);
   showSignOutConfirm = signal(false);
   deleting = signal(false);
+  savingEdit = signal(false);
+  syncing = signal(false);
+  toastMsg = signal('');
+  editError = signal('');
   editName = '';
-  editDomain = '';
-  editDesc = '';
+  editManagerName = '';
+  editManagerEmail = '';
+  editPhoneIso = signal('IN');
+  editPhoneLocal = signal('');
+  editSelectedCountry = computed(() => findCountryByIso(this.editPhoneIso()));
+
+  cleanAuditTitle = formatAuditTitle;
+  cleanAuditSummary = formatAuditSummary;
 
   directCreatorsCount = computed(() => this.creators().filter(c => c.sourceType === 'DIRECT').length);
   agencyCreatorsCount = computed(() => this.creators().filter(c => c.sourceType === 'AGENCY').length);
@@ -519,27 +593,56 @@ export class AdminBrandDetailsComponent implements OnInit {
     });
   }
 
+  private showToast(msg: string) {
+    this.toastMsg.set(msg);
+    setTimeout(() => {
+      if (this.toastMsg() === msg) this.toastMsg.set('');
+    }, 3200);
+  }
+
   loadOverview() {
-    this.api.getBrandOverview(this.brandId).subscribe(res => {
-      this.brand.set(res.brand);
-      this.agencies.set(res.agencies);
-      this.creators.set(res.creators);
-      this.recentReels.set(res.recentReels);
-      this.stats.set(res.stats);
+    this.api.getBrandOverview(this.brandId).subscribe({
+      next: (res) => {
+        this.brand.set(res.brand);
+        this.agencies.set(res.agencies);
+        this.creators.set(res.creators);
+        this.recentReels.set(res.recentReels);
+        this.stats.set(res.stats);
+        this.loaded.set(true);
+      },
+      error: (err) => {
+        this.loaded.set(true);
+        this.showToast(err?.error?.error || 'Could not load brand details.');
+      }
     });
   }
 
   loadAuditLogs() {
-    this.api.listAuditLogs(this.brandId, this.auditCategory(), this.auditSearch).subscribe(res => {
-      this.auditLogs.set(res.items);
-      this.auditTotal.set(res.total);
+    this.api.listAuditLogs(this.brandId, this.auditCategory(), this.auditSearch).subscribe({
+      next: (res) => {
+        this.auditLogs.set(res.items);
+        this.auditTotal.set(res.total);
+      },
+      error: (err) => {
+        this.showToast(err?.error?.error || 'Could not load activity history.');
+      }
     });
   }
 
   syncNow() {
-    this.api.syncBrandDeliverables(this.brandId).subscribe(() => {
-      this.loadOverview();
-      if (this.activeTab() === 'audit') this.loadAuditLogs();
+    if (this.syncing()) return;
+    this.syncing.set(true);
+    this.api.syncBrandDeliverables(this.brandId).subscribe({
+      next: () => {
+        this.syncing.set(false);
+        this.loadOverview();
+        if (this.activeTab() === 'audit') this.loadAuditLogs();
+        this.showToast('Reel numbers refreshed.');
+      },
+      error: (err) => {
+        this.syncing.set(false);
+        this.showToast(err?.error?.error || 'Could not refresh Reel numbers.');
+      }
     });
   }
 
@@ -549,42 +652,124 @@ export class AdminBrandDetailsComponent implements OnInit {
       name: this.newAgencyName,
       roleBadge: this.newAgencyRole,
       contactEmail: this.newAgencyEmail
-    }).subscribe(() => {
-      this.showAgencyModal.set(false);
-      this.newAgencyName = '';
-      this.newAgencyEmail = '';
-      this.loadOverview();
+    }).subscribe({
+      next: () => {
+        this.showAgencyModal.set(false);
+        this.newAgencyName = '';
+        this.newAgencyEmail = '';
+        this.loadOverview();
+        this.showToast('Partner agency linked.');
+      },
+      error: (err) => {
+        this.showToast(err?.error?.error || 'Could not link partner agency.');
+      }
+    });
+  }
+
+  activateBrand() {
+    this.api.updateBrand(this.brandId, { status: 'ACTIVE' }).subscribe({
+      next: () => {
+        this.loadOverview();
+        if (this.activeTab() === 'audit') this.loadAuditLogs();
+        this.showToast('Brand activated.');
+      },
+      error: (err) => {
+        this.showToast(err?.error?.error || 'Could not activate brand.');
+      }
     });
   }
 
   openEditModal() {
     const b = this.brand();
     if (!b) return;
-    this.editName = b.name;
-    this.editDomain = b.domain || '';
-    this.editDesc = b.description || '';
+    this.editError.set('');
+    this.editName = b.name || '';
+    this.editManagerName = b.managerName || '';
+    this.editManagerEmail = b.managerEmail || '';
+    const parsed = splitPhoneNumber(b.contactNumber);
+    this.editPhoneIso.set(parsed.iso);
+    this.editPhoneLocal.set(parsed.local);
     this.showEditModal.set(true);
   }
 
+  onEditCountryChange(iso: string) {
+    this.editPhoneIso.set(iso);
+    const max = this.editSelectedCountry().maxDigits;
+    this.editPhoneLocal.set(this.editPhoneLocal().replace(/\D/g, '').slice(0, max));
+  }
+
+  onEditPhoneKeydown(event: KeyboardEvent) {
+    enforcePhoneKeydown(event, this.editPhoneLocal(), this.editSelectedCountry().maxDigits);
+  }
+
+  onEditPhoneInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const max = this.editSelectedCountry().maxDigits;
+    const digitsOnly = input.value.replace(/\D/g, '').slice(0, max);
+    if (input.value !== digitsOnly) input.value = digitsOnly;
+    this.editPhoneLocal.set(digitsOnly);
+  }
+
   saveBrandEdit() {
+    this.editError.set('');
+    const name = this.editName.trim();
+    const managerName = this.editManagerName.trim();
+    const managerEmail = this.editManagerEmail.trim();
+    const phoneDigits = this.editPhoneLocal().replace(/\D/g, '');
+    const phoneErr = validatePhoneDigits(this.editPhoneIso(), phoneDigits, false);
+
+    if (name.length < 2) {
+      this.editError.set('Brand name must be at least 2 characters.');
+      return;
+    }
+    if (managerName.length < 2) {
+      this.editError.set('Brand manager name must be at least 2 characters.');
+      return;
+    }
+    if (!EMAIL_REGEX.test(managerEmail)) {
+      this.editError.set('Enter a valid Brand manager email.');
+      return;
+    }
+    if (phoneErr) {
+      this.editError.set(`Contact number: ${phoneErr}.`);
+      return;
+    }
+
+    const formattedPhone = phoneDigits ? `${this.editSelectedCountry().dial} ${phoneDigits}` : '';
+    this.savingEdit.set(true);
     this.api.updateBrand(this.brandId, {
-      name: this.editName,
-      domain: this.editDomain,
-      description: this.editDesc
-    }).subscribe(() => {
-      this.showEditModal.set(false);
-      this.loadOverview();
+      name,
+      managerName,
+      managerEmail,
+      contactNumber: formattedPhone
+    }).subscribe({
+      next: () => {
+        this.savingEdit.set(false);
+        this.showEditModal.set(false);
+        this.loadOverview();
+        if (this.activeTab() === 'audit') this.loadAuditLogs();
+        this.showToast('Brand details updated.');
+      },
+      error: (err) => {
+        this.savingEdit.set(false);
+        this.editError.set(err?.error?.error || 'Could not save brand details.');
+      }
     });
   }
 
   exportCsv() {
-    this.api.exportBrandCsv(this.brandId).subscribe(blob => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${this.brand()?.slug || 'brand'}-report.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+    this.api.exportBrandCsv(this.brandId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.brand()?.slug || 'brand'}-report.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.showToast(err?.error?.error || 'Could not export CSV report.');
+      }
     });
   }
 
@@ -601,9 +786,10 @@ export class AdminBrandDetailsComponent implements OnInit {
         this.deleting.set(false);
         this.router.navigateByUrl('/admin');
       },
-      error: () => {
+      error: (err) => {
         this.deleting.set(false);
         this.showDeleteModal.set(false);
+        this.showToast(err?.error?.error || 'Could not delete brand.');
       }
     });
   }

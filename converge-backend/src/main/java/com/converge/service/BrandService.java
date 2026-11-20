@@ -102,6 +102,9 @@ public class BrandService {
         if (name.length() < 2) {
             throw new IllegalArgumentException("Brand organization name must be at least 2 characters.");
         }
+        if (!brandRepository.findAllByNameIgnoreCase(name).isEmpty()) {
+            throw new IllegalArgumentException("A brand named \"" + name + "\" already exists.");
+        }
 
         String managerName = payload.getOrDefault("managerName", "").trim();
         if (managerName.length() < 2) {
@@ -147,10 +150,11 @@ public class BrandService {
 
         Brand saved = brandRepository.save(brand);
 
-        recordAudit(saved.getId(), "SYSTEM", "Genesis Workspace Provisioning",
+        recordAudit(saved.getId(), "SYSTEM",
+                status.equals("DRAFT") ? "Brand Saved as Draft" : "Brand Created",
                 status.equals("DRAFT") ? "Draft" : "Active",
-                "Brand workspace " + saved.getCode() + " provisioned and assigned directly to " + managerEmail + ".",
-                "System Admin (Brand Provisioning Scope Only)", "Genesis Record");
+                "Workspace created for " + saved.getName() + " and assigned to " + managerName + " (" + managerEmail + ").",
+                "Admin", "Brand Setup");
 
         if (!status.equals("DRAFT") && !managerEmail.isEmpty()) {
             emailService.sendBrandWelcomeEmail(managerEmail, managerName, name);
@@ -176,12 +180,41 @@ public class BrandService {
     @Transactional
     public Brand updateBrand(UUID brandId, Map<String, String> payload) {
         Brand brand = getBrand(brandId);
+        if (payload.containsKey("name")) {
+            String nextName = payload.get("name").trim();
+            if (nextName.length() < 2) {
+                throw new IllegalArgumentException("Brand organization name must be at least 2 characters.");
+            }
+            boolean duplicate = brandRepository.findAllByNameIgnoreCase(nextName).stream()
+                    .anyMatch(other -> !other.getId().equals(brandId));
+            if (duplicate) {
+                throw new IllegalArgumentException("A brand named \"" + nextName + "\" already exists.");
+            }
+            brand.setName(nextName);
+        }
+        if (payload.containsKey("managerName")) {
+            String nextManager = payload.get("managerName").trim();
+            if (nextManager.length() < 2) {
+                throw new IllegalArgumentException("Brand manager name must be at least 2 characters.");
+            }
+            brand.setManagerName(nextManager);
+        }
         if (payload.containsKey("managerEmail")) {
             String updatedEmail = payload.get("managerEmail").trim().toLowerCase();
             validateManagerEmail(updatedEmail);
             brand.setManagerEmail(updatedEmail);
+            brand.setManagerId(userRepository.findByEmailIgnoreCase(updatedEmail).map(User::getId).orElse(null));
         }
-        if (payload.containsKey("name")) brand.setName(payload.get("name"));
+        if (payload.containsKey("contactNumber")) {
+            String contactNumber = payload.get("contactNumber").trim();
+            if (!contactNumber.isEmpty()) {
+                String compactPhone = contactNumber.replaceAll("[\\s\\-()]", "");
+                if (!compactPhone.matches("^\\+?[0-9]{7,15}$")) {
+                    throw new IllegalArgumentException("Please enter a valid phone number (7 to 15 digits).");
+                }
+            }
+            brand.setContactNumber(contactNumber);
+        }
         if (payload.containsKey("domain")) brand.setDomain(payload.get("domain"));
         if (payload.containsKey("region")) brand.setRegion(payload.get("region"));
         if (payload.containsKey("tier")) brand.setTier(payload.get("tier"));
@@ -191,9 +224,9 @@ public class BrandService {
         brand.setUpdatedAt(Instant.now());
         Brand saved = brandRepository.save(brand);
 
-        recordAudit(brandId, "SYSTEM", "Brand Workspace Updated", "Updated",
-                "Brand profile metadata updated for " + saved.getName() + ".",
-                "System Admin", "Profile Governance");
+        recordAudit(brandId, "SYSTEM", "Brand Details Updated", "Updated",
+                "Updated brand profile and manager details for " + saved.getName() + ".",
+                "Admin", "Brand Details");
         return saved;
     }
 
@@ -233,9 +266,9 @@ public class BrandService {
         Agency saved = agencyRepository.save(agency);
 
         recordAudit(brandId, "AGENCY_PERMISSION", "Partner Agency Linked", "Completed",
-                "Linked " + saved.getName() + " (" + saved.getRoleBadge() + ") to " + brand.getName() + ".",
-                brand.getManagerName() != null ? brand.getManagerName() : "Brand Owner",
-                "Dual-Token Handshake");
+                saved.getName() + " added as a partner agency for " + brand.getName() + ".",
+                brand.getManagerName() != null ? brand.getManagerName() : "Brand Manager",
+                "Partner Agency");
         return saved;
     }
 
@@ -326,11 +359,11 @@ public class BrandService {
 
         Creator saved = creatorRepository.save(creator);
 
-        recordAudit(brandId, "CREATOR_LINK", "Direct Creator Associated", "Completed",
-                saved.getName() + " (" + saved.getHandle() + ") added to workspace"
-                        + (igSynced ? " with live Meta profile metrics (" + saved.getFollowersDisplay() + " followers)." : "."),
+        recordAudit(brandId, "CREATOR_LINK", "Creator Added", "Completed",
+                saved.getName() + " (" + saved.getHandle() + ") added to " + brand.getName()
+                        + (igSynced ? " (" + saved.getFollowersDisplay() + " followers)." : "."),
                 brand.getManagerName() != null ? brand.getManagerName() : "Brand Manager",
-                igSynced ? "Meta Business Discovery" : "Direct Roster");
+                "Creator Roster");
         return saved;
     }
 
@@ -384,13 +417,12 @@ public class BrandService {
 
         long displayReach = saved.getReachCount() > 0 ? saved.getReachCount() : saved.getViewsCount();
         recordAudit(creator.getBrandId(), "REEL_AUDIT",
-                "VERIFIED".equals(saved.getStatus()) ? "Instagram Reel Verified" : "Reel Queued for Meta Sync",
-                "VERIFIED".equals(saved.getStatus()) ? "Verified" : "Pending Meta API",
+                "VERIFIED".equals(saved.getStatus()) ? "Reel Verified" : "Reel Saved",
+                "VERIFIED".equals(saved.getStatus()) ? "Verified" : "Saved",
                 "VERIFIED".equals(saved.getStatus())
-                        ? "Verified Reel (" + title + ") for " + creator.getHandle() + " via " + saved.getMetricsSource()
-                        + " (" + displayReach + " reach/views, " + saved.getLikesCount() + " likes)."
-                        : "Saved Reel (" + title + ") for " + creator.getHandle() + " (" + saved.getMetricsSource() + ").",
-                "Instagram Engine", saved.getMetricsSource());
+                        ? "\"" + title + "\" for " + creator.getHandle() + " (" + displayReach + " views, " + saved.getLikesCount() + " likes)."
+                        : "Added \"" + title + "\" for " + creator.getHandle() + ".",
+                "Brand Manager", "Reels");
 
         return saved;
     }
@@ -524,9 +556,9 @@ public class BrandService {
         instagramGraphService.evaluateCreatorQualification(creator);
         Creator saved = creatorRepository.save(creator);
 
-        recordAudit(creator.getBrandId(), "CREATOR_LINK", "Creator Profile & Rate Updated", "Updated",
-                "Updated non-metric CRM / commercial metadata for " + creator.getHandle() + ".",
-                "Workspace Manager", saved.getInsightsSource());
+        recordAudit(creator.getBrandId(), "CREATOR_LINK", "Creator Details Updated", "Updated",
+                "Updated profile and rate details for " + creator.getHandle() + ".",
+                "Workspace Manager", "Creator Profile");
 
         List<ReelDeliverable> reels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
         List<Map<String, Object>> recentMedia = loadRecentMediaSafe(saved);
@@ -547,10 +579,10 @@ public class BrandService {
         reelRepository.saveAll(reels);
         Creator updated = rollUpCreatorMetrics(creator);
 
-        recordAudit(creator.getBrandId(), "REEL_AUDIT", "Creator Instagram Sync",
-                verifiedCount > 0 || profileUpdated ? "Synced" : "Pending Meta API",
-                "Refreshed " + creator.getHandle() + " (" + verifiedCount + "/" + reels.size() + " deliverables verified).",
-                "Instagram Engine", instagramGraphService.isBusinessDiscoveryConfigured() ? "Meta Graph API" : "Pending Credentials");
+        recordAudit(creator.getBrandId(), "REEL_AUDIT", "Creator Stats Refreshed",
+                verifiedCount > 0 || profileUpdated ? "Synced" : "Updated",
+                "Refreshed " + creator.getHandle() + " (" + verifiedCount + " of " + reels.size() + " reels updated).",
+                "Workspace Manager", "Creator Sync");
 
         List<Map<String, Object>> recentMedia = loadRecentMediaSafe(updated);
         Map<String, Object> out = enrichCreatorSummary(updated, reels, recentMedia);
@@ -633,9 +665,9 @@ public class BrandService {
         creator.setLastSyncedAt(Instant.now());
         Creator saved = creatorRepository.save(creator);
 
-        recordAudit(creator.getBrandId(), "CREATOR_LINK", "Instagram OAuth Connected", "Connected",
-                "Creator " + creator.getHandle() + " connected official Instagram Insights access.",
-                creator.getName(), "Instagram OAuth");
+        recordAudit(creator.getBrandId(), "CREATOR_LINK", "Creator Account Connected", "Connected",
+                creator.getHandle() + " connected their creator profile.",
+                creator.getName(), "Creator Account");
         return saved;
     }
 
@@ -673,10 +705,10 @@ public class BrandService {
         boolean configured = instagramGraphService.isBusinessDiscoveryConfigured()
                 || creators.stream().anyMatch(Creator::isIgConnected);
 
-        recordAudit(brandId, "REEL_AUDIT", "Live API Deliverables Sync",
-                configured ? "Verified" : "Pending Meta API",
-                verifiedCount + " verified, " + pendingCount + " pending across " + creators.size() + " creators.",
-                "Instagram Engine", configured ? "Meta Graph API" : "Credentials Needed");
+        recordAudit(brandId, "REEL_AUDIT", "Reels Refreshed",
+                "Refreshed",
+                "Updated " + verifiedCount + " verified reel(s) across " + creators.size() + " creator(s).",
+                "Workspace Manager", "Reels");
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("syncedCount", reels.size());

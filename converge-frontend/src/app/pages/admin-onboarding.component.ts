@@ -1,133 +1,87 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ApiService, Brand } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { ConfirmModalComponent } from '../components/confirm-modal.component';
+import { AppHeaderComponent } from '../components/app-header.component';
+import { AppFooterComponent } from '../components/app-footer.component';
+import {
+  CountryPickerComponent,
+  enforcePhoneKeydown,
+  findCountryByIso,
+  validatePhoneDigits
+} from '../components/country-picker.component';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const IG_REGEX = /^@?[a-zA-Z0-9._]{1,30}$/;
-
-interface CountryOption {
-  iso: string;
-  dial: string;
-  label: string;
-  minDigits: number;
-  maxDigits: number;
-  placeholder: string;
-}
-
-const COUNTRY_CODES: CountryOption[] = [
-  { iso: 'IN', dial: '+91', label: 'IN +91', minDigits: 10, maxDigits: 10, placeholder: '98765 43210' },
-  { iso: 'US', dial: '+1', label: 'US +1', minDigits: 10, maxDigits: 10, placeholder: '(555) 000-0000' },
-  { iso: 'UK', dial: '+44', label: 'UK +44', minDigits: 10, maxDigits: 11, placeholder: '7700 900077' },
-  { iso: 'AE', dial: '+971', label: 'AE +971', minDigits: 9, maxDigits: 9, placeholder: '50 123 4567' },
-  { iso: 'SG', dial: '+65', label: 'SG +65', minDigits: 8, maxDigits: 8, placeholder: '8123 4567' },
-  { iso: 'AU', dial: '+61', label: 'AU +61', minDigits: 9, maxDigits: 9, placeholder: '412 345 678' },
-  { iso: 'CA', dial: '+1', label: 'CA +1', minDigits: 10, maxDigits: 10, placeholder: '(416) 555-0199' },
-  { iso: 'DE', dial: '+49', label: 'DE +49', minDigits: 10, maxDigits: 12, placeholder: '151 23456789' },
-  { iso: 'FR', dial: '+33', label: 'FR +33', minDigits: 9, maxDigits: 9, placeholder: '6 12 34 56 78' },
-  { iso: 'JP', dial: '+81', label: 'JP +81', minDigits: 10, maxDigits: 10, placeholder: '90 1234 5678' }
-];
 
 @Component({
   selector: 'app-admin-onboarding',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent, AppHeaderComponent, AppFooterComponent, CountryPickerComponent],
   template: `
-    <div class="bg-background font-body text-ink-primary antialiased min-h-screen flex flex-col overflow-x-hidden selection:bg-blue-container selection:text-ink-primary">
-      <!-- Header -->
-      <header class="shrink-0 w-full z-40 bg-surface-bright/90 backdrop-blur-xl border-b border-surface-container-high/40">
-        <div class="h-[52px] w-full px-4 sm:px-8 max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <a routerLink="/admin" class="flex items-center gap-2 shrink-0 group">
-              <img src="/converge-logo.png" alt="Converge" class="w-7 h-7 rounded-full object-contain shrink-0 transition-transform duration-300 group-hover:rotate-12"/>
-              <span class="font-headline text-base sm:text-lg font-bold text-ink-primary tracking-tight group-hover:text-primary transition-colors">Converge</span>
-            </a>
-            <span class="hidden sm:inline-flex px-2.5 py-0.5 rounded-full bg-surface-container-soft text-ink-secondary text-[11px] font-semibold">Admin Console</span>
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <div class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint-container text-ink-primary text-xs font-semibold">
-              <span class="w-2 h-2 rounded-full bg-mint-green animate-pulse"></span>
-              <span>System Admin</span>
-            </div>
-            <button (click)="showSignOutConfirm.set(true)" class="px-3.5 py-1.5 rounded-full bg-surface-container-soft hover:bg-surface-container-high active:scale-95 text-xs font-semibold text-ink-secondary cursor-pointer whitespace-nowrap transition-all">
-              Sign Out
-            </button>
-          </div>
+    <div class="bg-[#1c1c1c] font-body text-[#fff6e8] antialiased min-h-screen lg:h-screen lg:overflow-hidden flex flex-col overflow-x-clip selection:bg-[#f54e26]/25 selection:text-[#fff6e8]">
+      <!-- Fixed Top Header -->
+      <app-header [elevated]="true" brandLink="/admin">
+        <div header-right class="flex items-center gap-3 shrink-0">
+          <button type="button" (click)="showSignOutConfirm.set(true)"
+                  class="h-8.5 px-4 rounded-[4px] bg-[#fff6e8] hover:bg-[#f54e26] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#f54e26] hover:shadow-[2px_2px_0px_#fff6e8] active:translate-x-[1px] active:translate-y-[1px] inline-flex items-center gap-1.5 font-headline uppercase tracking-[0.04em] text-sm font-bold cursor-pointer whitespace-nowrap transition-all">
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter">
+              <path d="M11 4H5v16h6"/>
+              <path d="M10 12h10"/>
+              <path d="M16 8l4 4-4 4"/>
+            </svg>
+            <span>SIGN OUT</span>
+          </button>
         </div>
-      </header>
+      </app-header>
 
-      <main class="w-full bg-background flex-1 relative overflow-hidden">
-        <!-- Soft Ambient Floating Blobs & Orbitals -->
-        <div class="absolute -top-12 left-1/4 w-[420px] h-[420px] pointer-events-none rounded-full bg-gradient-to-tr from-blue-container/30 via-marigold-container/20 to-transparent blur-3xl animate-pulse-glow -z-0"></div>
-        <div class="absolute bottom-0 right-1/5 w-[360px] h-[360px] pointer-events-none rounded-full bg-coral-container/20 blur-3xl animate-drift -z-0"></div>
-        <div aria-hidden="true" class="hidden md:block absolute -top-4 right-6 w-52 h-52 pointer-events-none opacity-30 mix-blend-multiply select-none">
-          <svg class="w-full h-full animate-orbit" viewBox="0 0 400 400">
-            <circle cx="200" cy="200" fill="none" opacity="0.45" r="160" stroke="#0b57d0" stroke-dasharray="8 12" stroke-width="1.5"></circle>
-            <circle cx="200" cy="200" fill="none" r="110" stroke="#d9372b" stroke-dasharray="120 60" stroke-width="2.5"></circle>
-            <circle cx="200" cy="200" fill="none" r="60" stroke="#fbbc05" stroke-dasharray="40 20" stroke-width="3"></circle>
-          </svg>
-        </div>
-
-        <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-8 py-3.5 lg:py-4">
-          <!-- Compact Top Title + Stats Row -->
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3.5 animate-fade-in-up">
+      <main class="w-full bg-[#1c1c1c] flex-1 lg:min-h-0 lg:overflow-y-auto">
+        <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 py-5 lg:py-6">
+          <!-- Page Title + Even Stats Strip -->
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 mb-5 border-b border-white/[0.14] animate-fade-in-up">
             <div class="min-w-0">
-              <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-surface-container-soft text-ink-primary border border-surface-container-high/60 mb-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-mint-green animate-pulse"></span>
-                <span class="text-[10px] uppercase tracking-wider font-semibold text-ink-secondary">System Admin • Brand Provisioning</span>
-              </div>
-              <h1 class="font-headline text-2xl sm:text-[26px] font-bold text-ink-primary tracking-tight leading-tight">Brand Registry &amp; Onboarding</h1>
-              <p class="mt-0.5 text-xs sm:text-sm text-ink-secondary">Provision brand workspaces and assign brand managers for direct access.</p>
+              <h1 class="font-headline uppercase text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-[#fff6e8] tracking-[0.01em] leading-none">
+                BRAND REGISTRY <span class="text-[#f54e26]">&amp; ONBOARDING</span>
+              </h1>
+              <p class="mt-2 text-sm text-[#a7a9be]">
+                Set up brand workspaces and assign brand managers.
+              </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-1.5 self-start md:self-center p-1 bg-surface-container-soft/80 rounded-full border border-surface-container-high/50 shrink-0 shadow-2xs">
-              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest shadow-2xs text-xs">
-                <span class="h-2 w-2 rounded-full bg-primary"></span>
-                <span class="font-bold text-ink-primary">{{ activeCount() }}</span>
-                <span class="text-ink-secondary">Active</span>
+            <div class="grid grid-cols-3 divide-x divide-white/[0.14] rounded-[4px] bg-[#161616] border border-white/[0.14] w-full md:w-auto shrink-0 tabular-nums">
+              <div class="px-4 py-2">
+                <span class="block text-[11px] text-[#a7a9be]">Active</span>
+                <span class="font-headline text-2xl font-bold text-[#4ade80] leading-none">{{ activeCount() }}</span>
               </div>
-              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-marigold-container/70 text-xs">
-                <span class="h-2 w-2 rounded-full bg-tertiary-fixed-dim"></span>
-                <span class="font-bold text-tertiary">{{ draftCount() }}</span>
-                <span class="text-ink-secondary">Drafts</span>
+              <div class="px-4 py-2">
+                <span class="block text-[11px] text-[#a7a9be]">Drafts</span>
+                <span class="font-headline text-2xl font-bold text-[#fabf29] leading-none">{{ draftCount() }}</span>
               </div>
-              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint-container/70 text-xs">
-                <span class="h-2 w-2 rounded-full bg-mint-green"></span>
-                <span class="font-bold text-[#137333]">{{ brands().length }}</span>
-                <span class="text-ink-secondary">Total</span>
+              <div class="px-4 py-2">
+                <span class="block text-[11px] text-[#a7a9be]">Total</span>
+                <span class="font-headline text-2xl font-bold text-[#fff6e8] leading-none">{{ brands().length }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Split Grid -->
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-fade-in-up">
-            <!-- Left Column: Brand Provisioning Form -->
+          <!-- Aligned Two-Column Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start lg:items-stretch animate-fade-in-up">
+            <!-- Left Column: Brand Onboarding Form -->
             <section
-              class="lg:col-span-7 flex flex-col bg-surface-container-lowest/95 backdrop-blur-xl rounded-[24px] shadow-[0_12px_36px_-12px_rgba(31,29,25,0.06)] p-4 sm:p-5 relative overflow-hidden border border-surface-container-high transition-all duration-300"
+              class="lg:col-span-7 flex flex-col bg-[#161616] rounded-[6px] border border-white/[0.16] p-5 relative transition-all duration-300"
               [class.animate-shake]="shakeForm()">
-              <div class="flex items-center justify-between gap-2 mb-2.5">
-                <div class="flex items-center gap-2">
-                  <!-- Animated Building Doodle -->
-                  <svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="4" y="5" width="12" height="15" rx="2.5"/>
-                    <path d="M8 9h4M8 13h4"/>
-                    <path d="M16 11h4v9h-4"/>
-                    <path d="M18 4v3M16.5 5.5h3"/>
-                  </svg>
-                  <h2 class="font-headline text-base sm:text-lg font-bold text-ink-primary">Brand Provisioning Form</h2>
-                </div>
-                <span class="px-2.5 py-0.5 rounded-full bg-mint-container/80 text-[#137333] text-[11px] font-semibold">Direct Handshake</span>
+              <div class="flex items-center justify-between gap-3 pb-3.5 mb-4 border-b border-white/[0.12]">
+                <h2 class="font-headline uppercase text-2xl font-bold text-[#fff6e8] tracking-[0.02em] leading-none">NEW BRAND WORKSPACE</h2>
               </div>
 
               @if (banner(); as msg) {
                 <div
-                  class="mb-2.5 px-3 py-1.5 rounded-2xl border text-xs font-medium flex items-center justify-between gap-2 animate-pop-in"
+                  class="mb-4 px-3.5 py-2.5 rounded-[4px] border text-xs font-medium flex items-center justify-between gap-2 animate-pop-in"
                   [ngClass]="msg.type === 'error'
-                    ? 'bg-coral-container/45 border-secondary/20 text-secondary'
-                    : 'bg-mint-container/50 border-mint-green/25 text-[#137333]'">
+                    ? 'bg-[#2c1517] border-[#ff5c5c]/40 text-[#ffb4b4]'
+                    : 'bg-[#0d2820] border-[#007656] text-[#8ef0cc]'">
                   <div class="flex items-center gap-2 min-w-0">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                       @if (msg.type === 'error') {
@@ -147,27 +101,26 @@ const COUNTRY_CODES: CountryOption[] = [
                 </div>
               }
 
-              <form (ngSubmit)="submitBrand('ACTIVE')" novalidate class="flex flex-col gap-2.5">
-                <div class="flex flex-col gap-2.5 p-3.5 sm:p-4 rounded-2xl bg-surface-cream border border-surface-container-high/60">
+              <form (ngSubmit)="submitBrand('ACTIVE')" novalidate class="flex-1 flex flex-col justify-between gap-4">
+                <div class="flex flex-col gap-4">
                   <!-- Row 1: Brand Org + Manager Name -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex items-center justify-between px-1">
-                        <label for="brand-org" class="text-[11px] text-ink-primary font-semibold">Brand Organization Name</label>
-                        @if (brandTouched() && brandError()) {
-                          <span class="text-[10px] text-secondary font-semibold">{{ brandError() }}</span>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex items-center justify-between h-4">
+                        <label for="brand-org" class="text-xs text-[#fff6e8] font-medium">Brand organization name</label>
+                        @if ((brandTouched() || brandDuplicate()) && brandError()) {
+                          <span class="text-xs text-[#ff6b6b] font-medium">{{ brandError() }}</span>
                         }
                       </div>
                       <div
-                        class="group pill-white flex items-center gap-2.5 px-3.5 h-9.5 rounded-full bg-surface-container-lowest border transition-all duration-200"
-                        [ngClass]="brandTouched() && brandError()
-                          ? 'border-secondary/55 ring-2 ring-secondary/10'
-                          : (brandValid() ? 'border-mint-green/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15' : 'border-surface-container-high/80 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15')">
-                        <!-- Monoline Building Doodle -->
+                        class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                        [ngClass]="(brandTouched() || brandDuplicate()) && brandError()
+                          ? 'border-[#ff5c5c]'
+                          : (brandValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
                         <svg class="doodle-svg w-4 h-4 shrink-0"
-                             [ngClass]="brandTouched() && brandError() ? 'text-secondary' : 'text-primary'"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
-                          <rect x="4" y="4.5" width="16" height="15" rx="3"/>
+                             [ngClass]="(brandTouched() || brandDuplicate()) && brandError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="4" y="4.5" width="16" height="15" rx="2.5"/>
                           <path d="M9 9h2M13 9h2M9 13h2M13 13h2M10 19.5v-3h4v3"/>
                         </svg>
                         <input
@@ -176,35 +129,34 @@ const COUNTRY_CODES: CountryOption[] = [
                           (ngModelChange)="onSimpleChange(brandName, $event)"
                           (blur)="brandTouched.set(true)"
                           name="brandName"
-                          autocomplete="organization"
+                          autocomplete="off"
                           placeholder="e.g. Acme Skincare"
                           type="text"
-                          class="w-full min-w-0 bg-transparent text-sm text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none"/>
+                          class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none"/>
                         @if (brandValid()) {
-                          <svg class="w-4 h-4 text-mint-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-30" fill="#ceead6"/>
+                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
                             <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                           </svg>
                         }
                       </div>
                     </div>
 
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex items-center justify-between px-1">
-                        <label for="manager-name" class="text-[11px] text-ink-primary font-semibold">Brand Manager Name</label>
+                    <div class="flex flex-col gap-1">
+                      <div class="flex items-center justify-between h-4">
+                        <label for="manager-name" class="text-xs text-[#fff6e8] font-medium">Brand manager name</label>
                         @if (managerNameTouched() && managerNameError()) {
-                          <span class="text-[10px] text-secondary font-semibold">{{ managerNameError() }}</span>
+                          <span class="text-xs text-[#ff6b6b] font-medium">{{ managerNameError() }}</span>
                         }
                       </div>
                       <div
-                        class="group pill-white flex items-center gap-2.5 px-3.5 h-9.5 rounded-full bg-surface-container-lowest border transition-all duration-200"
+                        class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-[#111111] border transition-colors duration-150"
                         [ngClass]="managerNameTouched() && managerNameError()
-                          ? 'border-secondary/55 ring-2 ring-secondary/10'
-                          : (managerNameValid() ? 'border-mint-green/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15' : 'border-surface-container-high/80 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15')">
-                        <!-- Monoline Person Doodle -->
+                          ? 'border-[#ff5c5c]'
+                          : (managerNameValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
                         <svg class="doodle-svg w-4 h-4 shrink-0"
-                             [ngClass]="managerNameTouched() && managerNameError() ? 'text-secondary' : 'text-tertiary group-focus-within:text-primary'"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+                             [ngClass]="managerNameTouched() && managerNameError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                           <circle cx="12" cy="8.5" r="3.6"/>
                           <path d="M5.5 19.5c1-3.2 3.3-4.8 6.5-4.8s5.5 1.6 6.5 4.8"/>
                         </svg>
@@ -217,10 +169,10 @@ const COUNTRY_CODES: CountryOption[] = [
                           autocomplete="off"
                           placeholder="Manager full name"
                           type="text"
-                          class="w-full min-w-0 bg-transparent text-sm text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none"/>
+                          class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none"/>
                         @if (managerNameValid()) {
-                          <svg class="w-4 h-4 text-mint-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-30" fill="#ceead6"/>
+                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
                             <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                           </svg>
                         }
@@ -228,151 +180,80 @@ const COUNTRY_CODES: CountryOption[] = [
                     </div>
                   </div>
 
-                  <!-- Row 2: Brand Manager Email -->
-                  <div class="flex flex-col gap-0.5">
-                    <div class="flex items-center justify-between flex-wrap gap-1 px-1">
-                      <label for="manager-email" class="text-[11px] text-ink-primary font-semibold">Brand Manager Email</label>
-                      @if ((emailTouched() || emailIsAdmin()) && emailError()) {
-                        <span class="text-[10px] text-secondary font-semibold">{{ emailError() }}</span>
-                      } @else {
-                        <span class="text-ink-secondary text-[10px] flex items-center gap-1">
-                          <span class="w-1.5 h-1.5 rounded-full bg-mint-green"></span>Registered Account Lookup
-                        </span>
-                      }
-                    </div>
-                    <div
-                      class="group pill-white flex items-center gap-2.5 px-3.5 h-9.5 rounded-full bg-surface-container-lowest border transition-all duration-200"
-                      [ngClass]="(emailTouched() || emailIsAdmin()) && emailError()
-                        ? 'border-secondary/55 ring-2 ring-secondary/10'
-                        : (emailValid() ? 'border-mint-green/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15' : 'border-surface-container-high/80 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15')">
-                      <!-- Animated Monoline Envelope Doodle -->
-                      <svg class="doodle-svg w-4 h-4 shrink-0"
-                           [ngClass]="(emailTouched() || emailIsAdmin()) && emailError() ? 'text-secondary' : 'text-primary'"
-                           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3.5" y="5.5" width="17" height="13" rx="3.5"/>
-                        <path d="M5 7.5l7 5.2 7-5.2"/>
-                      </svg>
-                      <input
-                        id="manager-email"
-                        [ngModel]="managerEmail()"
-                        (ngModelChange)="onManagerEmailChange($event)"
-                        (blur)="emailTouched.set(true)"
-                        name="brandManagerEmailInput"
-                        autocomplete="off"
-                        placeholder="manager@brand.com"
-                        type="email"
-                        class="w-full min-w-0 bg-transparent text-sm text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none"/>
-                      @if (emailValid()) {
-                        <svg class="w-4 h-4 text-mint-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <circle cx="12" cy="12" r="9" class="opacity-30" fill="#ceead6"/>
-                          <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
-                        </svg>
-                      }
-                    </div>
-                    @if (matchedUser(); as user) {
-                      <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-surface-container-lowest border border-mint-green/40 mt-0.5 animate-pop-in">
-                        <div class="flex items-center gap-2 min-w-0">
-                          <span class="w-6 h-6 rounded-full bg-blue-container text-primary flex items-center justify-center font-bold text-[10px] shrink-0">
-                            {{ user.name.substring(0, 2).toUpperCase() }}
-                          </span>
-                          <p class="text-[11px] text-ink-primary font-semibold truncate">{{ user.name }} <span class="font-mono font-normal text-ink-secondary">({{ user.email }})</span></p>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full bg-mint-container text-[#137333] text-[10px] font-semibold">Linked Identity</span>
-                      </div>
-                    }
-                  </div>
-
-                  <!-- Row 3: Contact Number (with Country Code Dropdown) + Instagram Handle -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex items-center justify-between px-1">
-                        <label for="brand-contact" class="text-[11px] text-ink-primary font-semibold">Contact Number</label>
-                        @if (phoneTouched() && phoneError()) {
-                          <span class="text-[10px] text-secondary font-semibold">{{ phoneError() }}</span>
+                  <!-- Row 2: Brand Manager Email + Strict Digits-Only Contact Number -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex items-center justify-between h-4">
+                        <label for="manager-email" class="text-xs text-[#fff6e8] font-medium">Brand manager email</label>
+                        @if ((emailTouched() || emailIsAdmin()) && emailError()) {
+                          <span class="text-xs text-[#ff6b6b] font-medium">{{ emailError() }}</span>
                         }
                       </div>
                       <div
-                        class="group pill-white flex items-center gap-2 pl-2 pr-3 h-9.5 rounded-full bg-surface-container-lowest border transition-all duration-200"
-                        [ngClass]="phoneTouched() && phoneError()
-                          ? 'border-secondary/55 ring-2 ring-secondary/10'
-                          : (phoneValid() ? 'border-mint-green/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15' : 'border-surface-container-high/80 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15')">
-                        <!-- Country Code Selector -->
-                        <div class="relative shrink-0 flex items-center">
-                          <select
-                            [ngModel]="countryIso()"
-                            (ngModelChange)="onCountryChange($event)"
-                            name="countryIso"
-                            aria-label="Country dialing code"
-                            class="appearance-none h-7 pl-2.5 pr-5 rounded-full bg-surface-container-soft/85 hover:bg-surface-container text-[11px] font-semibold text-ink-primary outline-none cursor-pointer transition-colors">
-                            @for (c of countries; track c.iso) {
-                              <option [value]="c.iso">{{ c.label }}</option>
-                            }
-                          </select>
-                          <svg class="w-3 h-3 text-ink-secondary pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M6 9l6 6 6-6"/>
-                          </svg>
-                        </div>
-
-                        <!-- Monoline Phone Doodle -->
-                        <svg class="doodle-svg w-3.5 h-3.5 shrink-0"
-                             [ngClass]="phoneTouched() && phoneError() ? 'text-secondary' : 'text-ink-secondary group-focus-within:text-primary'"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M6.5 4.5h3l1.5 4-2 1.5a11 11 0 0 0 5 5l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A14.5 14.5 0 0 1 4.5 6.7a2 2 0 0 1 2-2.2z"/>
+                        class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                        [ngClass]="(emailTouched() || emailIsAdmin()) && emailError()
+                          ? 'border-[#ff5c5c]'
+                          : (emailValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                        <svg class="doodle-svg w-4 h-4 shrink-0"
+                             [ngClass]="(emailTouched() || emailIsAdmin()) && emailError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/>
+                          <path d="M5 7.5l7 5.2 7-5.2"/>
                         </svg>
+                        <input
+                          id="manager-email"
+                          [ngModel]="managerEmail()"
+                          (ngModelChange)="onManagerEmailChange($event)"
+                          (blur)="emailTouched.set(true)"
+                          name="brandManagerEmailInput"
+                          autocomplete="off"
+                          placeholder="manager@brand.com"
+                          type="email"
+                          class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none"/>
+                        @if (emailValid()) {
+                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
+                            <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
+                          </svg>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                      <div class="flex items-center justify-between h-4">
+                        <label for="brand-contact" class="text-xs text-[#fff6e8] font-medium">Contact number</label>
+                        @if (phoneTouched() && phoneError()) {
+                          <span class="text-xs text-[#ff6b6b] font-medium">{{ phoneError() }}</span>
+                        }
+                      </div>
+                      <div
+                        class="group flex items-center gap-2 pl-2 pr-3 h-10 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                        [ngClass]="phoneTouched() && phoneError()
+                          ? 'border-[#ff5c5c]'
+                          : (phoneValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                        <app-country-picker
+                          [iso]="countryIso()"
+                          (isoChange)="onCountryChange($event)">
+                        </app-country-picker>
 
                         <input
                           id="brand-contact"
-                          [ngModel]="phoneLocal()"
-                          (ngModelChange)="onSimpleChange(phoneLocal, $event)"
+                          [value]="phoneLocal()"
+                          (input)="onPhoneInput($event)"
+                          (keydown)="onPhoneKeydown($event)"
                           (blur)="phoneTouched.set(true)"
+                          [attr.maxlength]="selectedCountry().maxDigits"
+                          inputmode="numeric"
+                          pattern="[0-9]*"
                           name="contactNumber"
                           autocomplete="off"
                           [placeholder]="selectedCountry().placeholder"
                           type="tel"
-                          class="w-full min-w-0 bg-transparent text-sm text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none"/>
+                          class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none tabular-nums"/>
 
                         @if (phoneValid()) {
-                          <svg class="w-4 h-4 text-mint-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-30" fill="#ceead6"/>
-                            <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
-                          </svg>
-                        }
-                      </div>
-                    </div>
-
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex items-center justify-between px-1">
-                        <label for="brand-handle" class="text-[11px] text-ink-primary font-semibold">Instagram Handle <span class="text-ink-secondary font-normal">(Optional)</span></label>
-                        @if (igTouched() && igError()) {
-                          <span class="text-[10px] text-secondary font-semibold">{{ igError() }}</span>
-                        }
-                      </div>
-                      <div
-                        class="group pill-white flex items-center gap-2.5 px-3.5 h-9.5 rounded-full bg-surface-container-lowest border transition-all duration-200"
-                        [ngClass]="igTouched() && igError()
-                          ? 'border-secondary/55 ring-2 ring-secondary/10'
-                          : (igValid() ? 'border-mint-green/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15' : 'border-surface-container-high/80 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15')">
-                        <!-- Monoline Camera Doodle -->
-                        <svg class="doodle-svg w-4 h-4 shrink-0"
-                             [ngClass]="igTouched() && igError() ? 'text-secondary' : 'text-secondary'"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
-                          <rect x="4" y="4" width="16" height="16" rx="4.5"/>
-                          <circle cx="12" cy="12" r="3.5"/>
-                          <circle cx="16.8" cy="7.2" r="0.8" fill="currentColor" stroke="none"/>
-                        </svg>
-                        <input
-                          id="brand-handle"
-                          [ngModel]="instagramHandle()"
-                          (ngModelChange)="onSimpleChange(instagramHandle, $event)"
-                          (blur)="igTouched.set(true)"
-                          name="instagramHandle"
-                          autocomplete="off"
-                          placeholder="@brand_handle"
-                          type="text"
-                          class="w-full min-w-0 bg-transparent text-sm text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none"/>
-                        @if (igValid()) {
-                          <svg class="w-4 h-4 text-mint-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-30" fill="#ceead6"/>
+                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
                             <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                           </svg>
                         }
@@ -381,30 +262,18 @@ const COUNTRY_CODES: CountryOption[] = [
                   </div>
                 </div>
 
-                <!-- Compact Direct Access Note -->
-                <div class="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-surface-warm border border-surface-container-high/60 text-ink-secondary text-[11px] leading-snug">
-                  <svg class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 10.5v5.5"/>
-                    <circle cx="12" cy="8" r="0.6" fill="currentColor"/>
-                  </svg>
-                  <span>Direct access: <strong>{{ managerName() || 'the Brand Manager' }}</strong> can sign in with {{ !emailError() && managerEmail().trim() ? managerEmail().trim() : 'a manager email' }} to open the workspace immediately.</span>
-                </div>
-
-                <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-0.5">
-                  <button type="button" (click)="submitBrand('DRAFT')" [disabled]="submitting()" class="h-9.5 px-5 rounded-full bg-surface-container-soft hover:bg-surface-container-high active:scale-95 text-ink-secondary text-xs font-semibold border border-surface-container-high/50 cursor-pointer transition-all">
-                    Save Draft
+                <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-white/[0.12]">
+                  <button type="button" (click)="submitBrand('DRAFT')" [disabled]="submitting()"
+                          class="h-10 px-5 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] text-[#a7a9be] hover:text-[#fff6e8] text-xs font-semibold border border-white/[0.16] cursor-pointer transition-colors">
+                    Save as Draft
                   </button>
-                  <button type="submit" [disabled]="submitting()" class="btn-shimmer h-9.5 flex items-center justify-center gap-1.5 px-6 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs sm:text-sm font-semibold shadow-sm hover:shadow-md transition-all active:scale-95 group cursor-pointer disabled:opacity-60">
+                  <button type="submit" [disabled]="submitting()"
+                          class="h-10 flex items-center justify-center gap-2 px-6 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-lg font-bold transition-colors cursor-pointer disabled:opacity-60">
                     @if (submitting()) {
-                      <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
-                      <span>Provisioning...</span>
+                      <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
+                      <span>CREATING...</span>
                     } @else {
-                      <span>Onboard Brand</span>
-                      <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14"/>
-                        <path d="M13 6l6 6-6 6"/>
-                      </svg>
+                      <span>ONBOARD BRAND ↗</span>
                     }
                   </button>
                 </div>
@@ -412,115 +281,79 @@ const COUNTRY_CODES: CountryOption[] = [
 
               <!-- Success Overlay -->
               @if (provisionedBrand(); as pb) {
-                <div class="absolute inset-0 bg-surface-container-lowest/95 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center z-30 animate-pop-in">
-                  <div class="w-14 h-14 rounded-full bg-mint-container flex items-center justify-center text-[#137333] mb-3 shadow-sm">
-                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="12" r="9"/>
-                      <path d="M8.5 12.5l2.5 2.5 4.5-5" class="doodle-check-path"/>
-                    </svg>
-                  </div>
-                  <span class="text-xs font-bold uppercase tracking-wider text-mint-green">Brand Workspace Ready</span>
-                  <h3 class="font-headline text-2xl font-bold text-ink-primary mt-1">{{ pb.name }} is Live!</h3>
-                  <p class="text-sm text-ink-secondary max-w-md mt-1.5">
-                    <strong class="text-ink-primary">{{ pb.managerName }} ({{ pb.managerEmail }})</strong> can now sign in with this email to access the workspace directly.
-                  </p>
-                  <div class="mt-5 flex items-center justify-center gap-2.5">
-                    <button type="button" (click)="openBrand(pb.id)" class="h-9.5 px-5 rounded-full bg-surface-container-soft hover:bg-surface-container text-ink-primary text-xs font-semibold cursor-pointer transition-colors">View Brand</button>
-                    <button type="button" (click)="provisionedBrand.set(null)" class="h-9.5 px-6 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold shadow-sm cursor-pointer transition-all">Done</button>
+                <div class="absolute inset-0 rounded-[6px] bg-[#161616]/95 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center z-30 animate-pop-in">
+                  @if (pb.status === 'DRAFT') {
+                    <div class="w-12 h-12 rounded-[6px] bg-[#fabf29] flex items-center justify-center text-[#111111] mb-3">
+                      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v15.5l-6.5-4-6.5 4V5A1.5 1.5 0 0 1 7 3.5z"/>
+                      </svg>
+                    </div>
+                    <h3 class="font-headline uppercase text-3xl font-bold text-[#fff6e8] tracking-[0.02em]">{{ pb.name }} SAVED AS DRAFT</h3>
+                    <p class="text-sm text-[#a7a9be] max-w-md mt-2">
+                      Saved for <strong class="text-[#fff6e8]">{{ pb.managerName }} ({{ pb.managerEmail }})</strong>. Open Brand Details to activate when ready.
+                    </p>
+                  } @else {
+                    <div class="w-12 h-12 rounded-[6px] bg-[#007656] flex items-center justify-center text-[#fff6e8] mb-3">
+                      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 6L9 17l-5-5"/>
+                      </svg>
+                    </div>
+                    <h3 class="font-headline uppercase text-3xl font-bold text-[#fff6e8] tracking-[0.02em]">{{ pb.name }} IS LIVE</h3>
+                    <p class="text-sm text-[#a7a9be] max-w-md mt-2">
+                      <strong class="text-[#fff6e8]">{{ pb.managerName }} ({{ pb.managerEmail }})</strong> can now sign in with this email.
+                    </p>
+                  }
+                  <div class="mt-6 flex items-center justify-center gap-3">
+                    <button type="button" (click)="openBrand(pb.id)" class="h-10 px-5 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] border border-white/[0.16] text-[#fff6e8] text-xs font-semibold cursor-pointer transition-colors">Open Brand Details</button>
+                    <button type="button" (click)="provisionedBrand.set(null)" class="h-10 px-6 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-lg font-bold cursor-pointer transition-colors">DONE</button>
                   </div>
                 </div>
               }
             </section>
 
-            <!-- Right Column: Active Directory -->
-            <section class="lg:col-span-5 flex flex-col gap-3">
-              <div class="flex flex-col gap-2.5 bg-surface-container-lowest/95 backdrop-blur-xl p-4 rounded-[24px] shadow-[0_12px_36px_-12px_rgba(31,29,25,0.06)] border border-surface-container-high">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4l2 2.5h6A2.5 2.5 0 0 1 20.5 10v7A2.5 2.5 0 0 1 18 19.5H6A2.5 2.5 0 0 1 3.5 17V7.5z"/>
-                    </svg>
-                    <span class="font-headline text-base font-bold text-ink-primary">Active Directory</span>
-                  </div>
-                  <span class="px-2.5 py-0.5 rounded-full bg-surface-container-soft text-ink-secondary text-[11px] font-medium">{{ brands().length }} Enrolled</span>
-                </div>
+            <!-- Right Column: Unified Brand Directory Panel -->
+            <section class="lg:col-span-5 flex flex-col bg-[#161616] rounded-[6px] border border-white/[0.16] p-5">
+              <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-white/[0.12]">
+                <h2 class="font-headline uppercase text-2xl font-bold text-[#fff6e8] tracking-[0.02em] leading-none">BRAND DIRECTORY</h2>
+              </div>
 
-                <div class="group flex items-center gap-2.5 px-3.5 h-9.5 rounded-full bg-surface-container-soft focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary/20 border border-surface-container-high/50 transition-all">
-                  <svg class="doodle-svg w-4 h-4 text-ink-secondary group-focus-within:text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+              <div class="mb-3.5">
+                <div class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-[#111111] border border-white/[0.16] focus-within:border-[#f54e26] transition-colors">
+                  <svg class="doodle-svg w-4 h-4 text-[#a7a9be] group-focus-within:text-[#f54e26] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="6.5"/>
                     <path d="M16 16l4 4"/>
                   </svg>
-                  <input [(ngModel)]="searchQuery" (ngModelChange)="searchSignal.set($event)" placeholder="Filter by brand name or manager..." type="text" class="w-full min-w-0 bg-transparent text-ink-primary text-xs focus:outline-none"/>
-                </div>
-
-                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                  <button (click)="statusFilter.set('ALL')" class="px-3 py-1 rounded-full text-xs cursor-pointer whitespace-nowrap transition-colors" [ngClass]="statusFilter() === 'ALL' ? 'bg-blue-container text-primary font-semibold' : 'bg-surface-container-soft text-ink-secondary hover:bg-surface-container'">
-                    All ({{ brands().length }})
-                  </button>
-                  <button (click)="statusFilter.set('ACTIVE')" class="px-3 py-1 rounded-full text-xs cursor-pointer whitespace-nowrap transition-colors" [ngClass]="statusFilter() === 'ACTIVE' ? 'bg-blue-container text-primary font-semibold' : 'bg-surface-container-soft text-ink-secondary hover:bg-surface-container'">
-                    Active ({{ activeCount() }})
-                  </button>
-                  <button (click)="statusFilter.set('DRAFT')" class="px-3 py-1 rounded-full text-xs cursor-pointer whitespace-nowrap transition-colors" [ngClass]="statusFilter() === 'DRAFT' ? 'bg-blue-container text-primary font-semibold' : 'bg-surface-container-soft text-ink-secondary hover:bg-surface-container'">
-                    Drafts ({{ draftCount() }})
-                  </button>
+                  <input [(ngModel)]="searchQuery" (ngModelChange)="searchSignal.set($event)" placeholder="Filter by brand or manager..." type="text" class="w-full min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm focus:outline-none"/>
                 </div>
               </div>
 
               @if (filteredBrands().length === 0) {
-                <div class="p-6 rounded-[24px] bg-surface-container-lowest border border-dashed border-outline-variant text-center flex flex-col items-center">
-                  <svg class="w-8 h-8 text-ink-secondary/60 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="4" y="5" width="16" height="14" rx="3"/>
-                    <path d="M8 10h8M8 14h5"/>
-                  </svg>
-                  <h3 class="font-headline text-sm font-bold text-ink-primary">No Brands Enrolled Yet</h3>
-                  <p class="text-xs text-ink-secondary mt-1">Use the Brand Provisioning Form to onboard a brand workspace.</p>
+                <div class="p-8 rounded-[4px] bg-[#111111] border border-dashed border-white/[0.18] text-center flex flex-col items-center">
+                  <h3 class="font-headline uppercase text-lg font-bold text-[#fff6e8]">NO BRANDS FOUND</h3>
+                  <p class="text-xs text-[#a7a9be] mt-1">Create a brand using the form on the left.</p>
                 </div>
               } @else {
-                <div class="flex flex-col gap-2 lg:max-h-[305px] lg:overflow-y-auto p-1 -m-1">
+                <div class="rounded-[4px] bg-[#111111] border border-white/[0.14] overflow-hidden max-h-[320px] lg:max-h-[calc(100vh-315px)] overflow-y-auto">
                   @for (b of filteredBrands(); track b.id) {
                     <div
                       (click)="openBrand(b.id)"
-                      class="group flex items-center justify-between p-3.5 rounded-2xl bg-surface-container-lowest hover:bg-surface-warm/60 transition-colors shadow-xs border border-surface-container-high/50 outline-none focus:outline-none cursor-pointer">
+                      class="group flex items-center justify-between px-3.5 py-3 border-b last:border-b-0 border-white/[0.1] hover:bg-white/[0.03] transition-colors cursor-pointer">
                       <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-10 h-10 rounded-2xl bg-blue-container text-primary font-headline flex items-center justify-center font-bold shrink-0">
+                        <div class="w-9 h-9 rounded-[4px] bg-[#f54e26] text-[#111111] font-headline text-lg font-bold flex items-center justify-center shrink-0">
                           {{ b.name.charAt(0).toUpperCase() }}
                         </div>
                         <div class="min-w-0">
-                          <div class="flex items-center gap-1.5">
-                            <h3 class="font-headline text-sm font-bold text-ink-primary truncate group-hover:text-primary transition-colors">{{ b.name }}</h3>
-                            @if (b.status === 'ACTIVE') {
-                              <svg class="w-3.5 h-3.5 text-primary shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2l2.4 2.4 3.4-.3 1 3.3 2.8 1.9-1.1 3.2 1.1 3.2-2.8 1.9-1 3.3-3.4-.3L12 22l-2.4-2.4-3.4.3-1-3.3-2.8-1.9 1.1-3.2-1.1-3.2 2.8-1.9 1-3.3 3.4.3L12 2z"/>
-                              </svg>
-                            }
-                          </div>
-                          <p class="text-xs text-ink-secondary truncate">{{ b.managerName }} • {{ b.managerEmail }}</p>
+                          <h3 class="font-headline uppercase text-lg font-bold text-[#fff6e8] tracking-[0.015em] truncate group-hover:text-[#f54e26] transition-colors leading-tight">{{ b.name }}</h3>
+                          <p class="text-xs text-[#a7a9be] truncate mt-0.5">{{ b.managerName }} • {{ b.managerEmail }}</p>
                         </div>
                       </div>
-                      <div class="flex items-center gap-1.5 shrink-0 ml-2">
-                        <span
-                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
-                          [ngClass]="b.status === 'ACTIVE' ? 'bg-mint-container text-ink-primary' : (b.status === 'DRAFT' ? 'bg-blue-container text-primary' : 'bg-marigold-container text-tertiary')">
-                          <span class="w-1.5 h-1.5 rounded-full" [ngClass]="b.status === 'ACTIVE' ? 'bg-mint-green' : (b.status === 'DRAFT' ? 'bg-primary' : 'bg-tertiary-fixed-dim')"></span>
-                          {{ b.status }}
-                        </span>
-                        <button
-                          type="button"
-                          (click)="$event.stopPropagation(); brandToDelete.set(b)"
-                          [attr.aria-label]="'Delete brand ' + b.name"
-                          title="Delete brand"
-                          class="w-7 h-7 rounded-full flex items-center justify-center text-ink-secondary/70 hover:text-secondary hover:bg-coral-container/40 active:scale-90 transition-all cursor-pointer">
-                          <!-- Monoline Trash Doodle -->
-                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4.5 7h15"/>
-                            <path d="M9.5 4.5h5a1 1 0 0 1 1 1V7h-7V5.5a1 1 0 0 1 1-1z"/>
-                            <path d="M6.5 7l1 12a2 2 0 0 0 2 1.8h5a2 2 0 0 0 2-1.8l1-12"/>
-                            <path d="M10 11v5M14 11v5"/>
-                          </svg>
-                        </button>
-                        <svg class="w-4 h-4 text-ink-secondary group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M9 6l6 6-6 6"/>
-                        </svg>
+                      <div class="flex items-center gap-2 shrink-0 ml-2">
+                        @if (b.status === 'DRAFT') {
+                          <span class="px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-[#fabf29] text-[#111111]">
+                            DRAFT
+                          </span>
+                        }
+                        <span class="font-headline text-base text-[#a7a9be] group-hover:text-[#f54e26] transition-colors">↗</span>
                       </div>
                     </div>
                   }
@@ -531,37 +364,23 @@ const COUNTRY_CODES: CountryOption[] = [
         </div>
       </main>
 
-      <!-- Delete Brand Confirmation Modal -->
-      <app-confirm-modal
-        [open]="!!brandToDelete()"
-        [title]="'Delete ' + (brandToDelete()?.name || 'brand') + '?'"
-        [message]="'This permanently deletes the brand workspace (' + (brandToDelete()?.code || '') + ') along with its linked agencies, creators, and audit logs.'"
-        confirmLabel="Delete Brand"
-        busyLabel="Deleting..."
-        tone="danger"
-        [busy]="deleting()"
-        (confirm)="brandToDelete() && executeDeleteBrand(brandToDelete()!)"
-        (cancel)="!deleting() && brandToDelete.set(null)">
-      </app-confirm-modal>
-
       <!-- Sign Out Confirmation Modal -->
       <app-confirm-modal
         [open]="showSignOutConfirm()"
-        title="Sign out of Admin Console?"
+        title="Sign out of Admin?"
         message="You will be returned to the sign-in screen."
         confirmLabel="Sign Out"
         tone="primary"
         (confirm)="logout()"
         (cancel)="showSignOutConfirm.set(false)">
       </app-confirm-modal>
+
+      <app-footer></app-footer>
     </div>
   `
 })
 export class AdminOnboardingComponent implements OnInit {
-  readonly countries = COUNTRY_CODES;
-
   brands = signal<Brand[]>([]);
-  statusFilter = signal<string>('ALL');
   searchSignal = signal<string>('');
   searchQuery = '';
 
@@ -570,37 +389,36 @@ export class AdminOnboardingComponent implements OnInit {
   managerEmail = signal('');
   countryIso = signal('IN');
   phoneLocal = signal('');
-  instagramHandle = signal('');
 
   brandTouched = signal(false);
   managerNameTouched = signal(false);
   emailTouched = signal(false);
   phoneTouched = signal(false);
-  igTouched = signal(false);
 
   private managerNameManual = false;
-  matchedUser = signal<any | null>(null);
   submitting = signal(false);
-  deleting = signal(false);
   shakeForm = signal(false);
   banner = signal<{ type: 'error' | 'success'; text: string } | null>(null);
   provisionedBrand = signal<Brand | null>(null);
-  brandToDelete = signal<Brand | null>(null);
   showSignOutConfirm = signal(false);
 
   private currentAdminEmail = computed(() => (this.auth.currentUser()?.email || '').trim().toLowerCase());
 
-  selectedCountry = computed(
-    () => this.countries.find(c => c.iso === this.countryIso()) || this.countries[0]
-  );
+  selectedCountry = computed(() => findCountryByIso(this.countryIso()));
+
+  brandDuplicate = computed(() => {
+    const v = this.brandName().trim().toLowerCase();
+    return v.length >= 2 && this.brands().some(b => b.name.trim().toLowerCase() === v);
+  });
 
   brandError = computed(() => {
     const v = this.brandName().trim();
     if (!v) return 'Required';
     if (v.length < 2) return 'Min 2 chars';
+    if (this.brandDuplicate()) return 'Already exists';
     return '';
   });
-  brandValid = computed(() => this.brandName().trim().length >= 2);
+  brandValid = computed(() => this.brandName().trim().length >= 2 && !this.brandDuplicate());
 
   managerNameError = computed(() => {
     const v = this.managerName().trim();
@@ -612,7 +430,7 @@ export class AdminOnboardingComponent implements OnInit {
 
   emailIsAdmin = computed(() => {
     const v = this.managerEmail().trim().toLowerCase();
-    return (!!this.currentAdminEmail() && v === this.currentAdminEmail()) || this.matchedUser()?.role === 'SYSTEM_ADMIN';
+    return !!this.currentAdminEmail() && v === this.currentAdminEmail();
   });
 
   emailError = computed(() => {
@@ -627,43 +445,19 @@ export class AdminOnboardingComponent implements OnInit {
     return EMAIL_REGEX.test(v) && !this.emailError();
   });
 
-  phoneError = computed(() => {
-    const raw = this.phoneLocal().trim();
-    if (!raw) return 'Required';
-    if (!/^[0-9\s\-()]+$/.test(raw)) return 'Digits only';
-    const digits = raw.replace(/\D/g, '');
-    const c = this.selectedCountry();
-    if (c.minDigits === c.maxDigits && digits.length !== c.minDigits) {
-      return `Enter ${c.minDigits} digits`;
-    }
-    if (digits.length < c.minDigits || digits.length > c.maxDigits) {
-      return `${c.minDigits}–${c.maxDigits} digits`;
-    }
-    return '';
-  });
-  phoneValid = computed(() => this.phoneLocal().trim().length > 0 && !this.phoneError());
-
-  igError = computed(() => {
-    const v = this.instagramHandle().trim();
-    if (!v) return '';
-    if (!IG_REGEX.test(v)) return 'Invalid handle';
-    return '';
-  });
-  igValid = computed(() => {
-    const v = this.instagramHandle().trim();
-    return v.length > 0 && IG_REGEX.test(v);
-  });
+  phoneError = computed(() => validatePhoneDigits(this.countryIso(), this.phoneLocal(), true));
+  phoneValid = computed(() => this.phoneLocal().length > 0 && !this.phoneError());
 
   activeCount = computed(() => this.brands().filter(b => b.status === 'ACTIVE').length);
   draftCount = computed(() => this.brands().filter(b => b.status === 'DRAFT').length);
   filteredBrands = computed(() => {
-    const q = this.searchSignal().toLowerCase();
-    const s = this.statusFilter();
-    return this.brands().filter(b => {
-      const matchStatus = s === 'ALL' || b.status === s;
-      const matchQuery = !q || b.name.toLowerCase().includes(q) || (b.managerName || '').toLowerCase().includes(q) || (b.managerEmail || '').toLowerCase().includes(q);
-      return matchStatus && matchQuery;
-    });
+    const q = this.searchSignal().trim().toLowerCase();
+    return this.brands().filter(b =>
+      !q ||
+      b.name.toLowerCase().includes(q) ||
+      (b.managerName || '').toLowerCase().includes(q) ||
+      (b.managerEmail || '').toLowerCase().includes(q)
+    );
   });
 
   constructor(
@@ -700,8 +494,28 @@ export class AdminOnboardingComponent implements OnInit {
 
   onCountryChange(iso: string) {
     this.countryIso.set(iso);
-    if (this.phoneLocal().trim()) {
+    const max = this.selectedCountry().maxDigits;
+    const trimmed = this.phoneLocal().replace(/\D/g, '').slice(0, max);
+    this.phoneLocal.set(trimmed);
+    if (trimmed) {
       this.phoneTouched.set(true);
+    }
+  }
+
+  onPhoneKeydown(event: KeyboardEvent) {
+    enforcePhoneKeydown(event, this.phoneLocal(), this.selectedCountry().maxDigits);
+  }
+
+  onPhoneInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const max = this.selectedCountry().maxDigits;
+    const digitsOnly = input.value.replace(/\D/g, '').slice(0, max);
+    if (input.value !== digitsOnly) {
+      input.value = digitsOnly;
+    }
+    this.phoneLocal.set(digitsOnly);
+    if (this.banner()?.type === 'error') {
+      this.banner.set(null);
     }
   }
 
@@ -710,21 +524,6 @@ export class AdminOnboardingComponent implements OnInit {
     if (this.banner()?.type === 'error') {
       this.banner.set(null);
     }
-    const clean = email.trim();
-    if (!clean || clean.length < 3 || this.emailIsAdmin()) {
-      this.matchedUser.set(null);
-      return;
-    }
-    this.api.searchUsersByEmail(clean).subscribe({
-      next: (users) => {
-        const found = users.length > 0 ? users[0] : null;
-        this.matchedUser.set(found);
-        if (found && (!this.managerName().trim() || !this.managerNameManual)) {
-          this.managerName.set(found.name);
-        }
-      },
-      error: () => this.matchedUser.set(null)
-    });
   }
 
   private triggerShake() {
@@ -738,25 +537,26 @@ export class AdminOnboardingComponent implements OnInit {
     this.brandTouched.set(true);
     this.managerNameTouched.set(true);
     this.emailTouched.set(true);
-    this.igTouched.set(true);
 
     if (status === 'ACTIVE') {
       this.phoneTouched.set(true);
     }
 
     const phoneInvalid = (status === 'ACTIVE' && !!this.phoneError()) || (this.phoneLocal().trim().length > 0 && !!this.phoneError());
-    if (this.brandError() || this.managerNameError() || this.emailError() || phoneInvalid || this.igError()) {
+    if (this.brandError() || this.managerNameError() || this.emailError() || phoneInvalid) {
       this.triggerShake();
       this.banner.set({
         type: 'error',
-        text: this.emailIsAdmin()
-          ? 'System Admin email cannot be assigned as a Brand Manager.'
-          : 'Please fix the highlighted fields before continuing.'
+        text: this.brandDuplicate()
+          ? 'A brand with this name already exists.'
+          : (this.emailIsAdmin()
+            ? 'Admin email cannot be assigned as a Brand Manager.'
+            : 'Please fix the highlighted fields before continuing.')
       });
       return;
     }
 
-    const rawPhone = this.phoneLocal().trim();
+    const rawPhone = this.phoneLocal().replace(/\D/g, '');
     const formattedPhone = rawPhone ? `${this.selectedCountry().dial} ${rawPhone}` : '';
 
     this.submitting.set(true);
@@ -765,7 +565,6 @@ export class AdminOnboardingComponent implements OnInit {
       managerName: this.managerName().trim(),
       managerEmail: this.managerEmail().trim(),
       contactNumber: formattedPhone,
-      instagramHandle: this.instagramHandle().trim(),
       status
     }).subscribe({
       next: (created) => {
@@ -775,37 +574,17 @@ export class AdminOnboardingComponent implements OnInit {
         this.managerName.set('');
         this.managerEmail.set('');
         this.phoneLocal.set('');
-        this.instagramHandle.set('');
         this.managerNameManual = false;
         this.brandTouched.set(false);
         this.managerNameTouched.set(false);
         this.emailTouched.set(false);
         this.phoneTouched.set(false);
-        this.igTouched.set(false);
-        this.matchedUser.set(null);
         this.loadBrands();
       },
       error: (err) => {
         this.submitting.set(false);
         this.triggerShake();
-        this.banner.set({ type: 'error', text: err?.error?.error || 'Failed to provision brand.' });
-      }
-    });
-  }
-
-  executeDeleteBrand(brand: Brand) {
-    this.deleting.set(true);
-    this.api.deleteBrand(brand.id).subscribe({
-      next: () => {
-        this.deleting.set(false);
-        this.brandToDelete.set(null);
-        this.banner.set({ type: 'success', text: `Deleted "${brand.name}" and its workspace records.` });
-        this.loadBrands();
-      },
-      error: (err) => {
-        this.deleting.set(false);
-        this.brandToDelete.set(null);
-        this.banner.set({ type: 'error', text: err?.error?.error || 'Failed to delete brand.' });
+        this.banner.set({ type: 'error', text: err?.error?.error || 'Could not create brand workspace.' });
       }
     });
   }

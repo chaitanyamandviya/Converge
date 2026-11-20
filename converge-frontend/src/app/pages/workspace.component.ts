@@ -1,87 +1,90 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService, Agency, AuditLog, Brand, Creator, CreatorInsightsBundle, DeliverableInsightsBundle, InstagramStatus, ReelDeliverable } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { ConfirmModalComponent } from '../components/confirm-modal.component';
 import { CreatorInsightsViewComponent } from '../components/creator-insights-view.component';
 import { ReelInsightsViewComponent } from '../components/reel-insights-view.component';
+import { AppHeaderComponent } from '../components/app-header.component';
+import { AppFooterComponent } from '../components/app-footer.component';
+import { formatAuditSummary, formatAuditTitle } from '../utils/audit-format';
 
 @Component({
   selector: 'app-workspace',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ConfirmModalComponent, CreatorInsightsViewComponent, ReelInsightsViewComponent],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent, CreatorInsightsViewComponent, ReelInsightsViewComponent, AppHeaderComponent, AppFooterComponent],
   template: `
-    <div class="bg-background text-ink-primary font-body antialiased min-h-screen flex flex-col overflow-x-hidden selection:bg-blue-container selection:text-ink-primary">
-      <!-- Header -->
-      <header class="shrink-0 w-full z-40 bg-background/90 backdrop-blur-xl border-b border-surface-container-high/50">
-        <div class="h-[52px] max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <a routerLink="/" class="flex items-center gap-2 cursor-pointer shrink-0 group">
-              <img src="/converge-logo.png" alt="Converge" class="w-7 h-7 rounded-full object-contain shrink-0 transition-transform duration-300 group-hover:rotate-12"/>
-              <span class="font-headline text-base sm:text-lg font-bold tracking-tight text-ink-primary group-hover:text-primary transition-colors">Converge</span>
-            </a>
-            @if (currentBrand(); as b) {
-              <span class="text-ink-secondary/40 text-sm hidden sm:inline">/</span>
-              @if (brands().length > 1) {
-                @if (brandMenuOpen()) {
-                  <div (click)="brandMenuOpen.set(false)" class="fixed inset-0 z-30"></div>
-                }
-                <div class="relative">
-                  <button type="button" (click)="brandMenuOpen.set(!brandMenuOpen())"
-                          class="inline-flex items-center gap-1.5 bg-surface-container-soft hover:bg-surface-container-high text-ink-primary text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer max-w-[190px] relative z-40">
-                    <span class="truncate">{{ b.name }}</span>
-                    <svg class="w-3.5 h-3.5 text-ink-secondary shrink-0 transition-transform" [class.rotate-180]="brandMenuOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                  @if (brandMenuOpen()) {
-                    <div class="absolute left-0 mt-2 w-60 rounded-2xl bg-surface-container-lowest border border-surface-container-high shadow-lg p-1.5 z-50 space-y-0.5 max-h-72 overflow-y-auto">
-                      @for (item of brands(); track item.id) {
-                        <button type="button" (click)="switchBrand(item.id); brandMenuOpen.set(false)"
-                                class="w-full text-left px-3 py-2 rounded-xl text-xs transition-colors flex items-center justify-between gap-2 cursor-pointer"
-                                [ngClass]="selectedBrandId() === item.id ? 'bg-blue-container/60 text-primary font-semibold' : 'text-ink-primary hover:bg-surface-warm font-medium'">
-                          <span class="truncate">{{ item.name }}</span>
-                          @if (selectedBrandId() === item.id) {
-                            <span class="text-primary font-bold shrink-0">✓</span>
-                          }
-                        </button>
-                      }
-                    </div>
-                  }
-                </div>
-              } @else {
-                <span class="text-ink-secondary text-xs font-semibold truncate hidden sm:inline">{{ b.name }}</span>
+    <div class="bg-background text-ink-primary font-body antialiased min-h-screen flex flex-col overflow-x-clip selection:bg-blue-container selection:text-ink-primary">
+      <!-- Slim Unified Header -->
+      <app-header brandLink="/workspace">
+        <div header-left class="flex items-center gap-2 min-w-0">
+          @if (currentBrand(); as b) {
+            <span class="text-ink-secondary/40 text-sm hidden sm:inline">/</span>
+            @if (brands().length > 1) {
+              @if (brandMenuOpen()) {
+                <div (click)="brandMenuOpen.set(false)" class="fixed inset-0 z-30"></div>
               }
+              <div class="relative">
+                <button type="button" (click)="brandMenuOpen.set(!brandMenuOpen())"
+                        class="inline-flex items-center gap-1.5 h-7.5 bg-surface-container-soft hover:bg-surface-container-high text-ink-primary text-xs font-semibold px-3 rounded-full transition-colors cursor-pointer max-w-[190px] relative z-40">
+                  <span class="truncate">{{ b.name }}</span>
+                  <svg class="w-3.5 h-3.5 text-ink-secondary shrink-0 transition-transform" [class.rotate-180]="brandMenuOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                @if (brandMenuOpen()) {
+                  <div class="absolute left-0 mt-2 w-60 rounded-2xl bg-surface-container-lowest border border-surface-container-high shadow-lg p-1.5 z-50 space-y-0.5 max-h-72 overflow-y-auto">
+                    @for (item of brands(); track item.id) {
+                      <button type="button" (click)="switchBrand(item.id); brandMenuOpen.set(false)"
+                              class="w-full text-left px-3 py-2 rounded-xl text-xs transition-colors flex items-center justify-between gap-2 cursor-pointer"
+                              [ngClass]="selectedBrandId() === item.id ? 'bg-blue-container/60 text-primary font-semibold' : 'text-ink-primary hover:bg-surface-warm font-medium'">
+                        <span class="truncate">{{ item.name }}</span>
+                        @if (selectedBrandId() === item.id) {
+                          <span class="text-primary font-bold shrink-0">✓</span>
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <span class="text-ink-secondary text-xs font-semibold truncate hidden sm:inline">{{ b.name }}</span>
             }
-          </div>
-
-          <div class="flex items-center gap-2 shrink-0">
-            @if (currentBrand()) {
-              <button (click)="triggerSync()" [disabled]="syncing()" class="h-8.5 px-3 sm:px-3.5 rounded-full bg-surface-container text-ink-primary text-xs font-semibold hover:bg-surface-container-high transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap disabled:opacity-60">
-                <svg class="w-3.5 h-3.5 shrink-0" [class.animate-spin]="syncing()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                  <path d="M3 3v5h5"/>
-                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-                  <path d="M16 16h5v5"/>
-                </svg>
-                <span class="hidden sm:inline">{{ syncing() ? 'Syncing IG...' : 'Sync All IG' }}</span>
-              </button>
-            }
-            <div class="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-soft text-xs font-semibold text-ink-secondary">
-              <span class="w-2 h-2 rounded-full bg-mint-green"></span>
-              <span class="truncate max-w-[120px]">{{ auth.currentUser()?.name || 'Brand Manager' }}</span>
-            </div>
-            <button (click)="showSignOutConfirm.set(true)" class="h-8.5 px-3.5 rounded-full bg-surface-container-soft hover:bg-surface-container-high text-xs font-semibold text-ink-secondary cursor-pointer whitespace-nowrap transition-colors">
-              Sign Out
-            </button>
-          </div>
+          }
         </div>
-      </header>
 
-      <main class="relative flex-1 pt-4 sm:pt-6 pb-10 max-w-7xl mx-auto px-4 sm:px-6 w-full">
-        <!-- Warm Ambient Blobs -->
-        <div class="fixed top-12 left-1/4 w-[420px] h-[420px] pointer-events-none rounded-full bg-gradient-to-tr from-blue-container/25 via-marigold-container/15 to-transparent blur-3xl -z-10"></div>
-        <div class="fixed bottom-0 right-1/4 w-[360px] h-[360px] pointer-events-none rounded-full bg-coral-container/15 blur-3xl -z-10"></div>
+        <div header-right class="flex items-center gap-2 shrink-0">
+          @if (currentBrand()) {
+            <button type="button" (click)="triggerSync()" [disabled]="syncing()" class="h-8 px-3 rounded-full bg-surface-container text-ink-primary text-xs font-semibold hover:bg-surface-container-high active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap disabled:opacity-60">
+              <svg class="w-3.5 h-3.5 shrink-0" [class.animate-spin]="syncing()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                <path d="M16 16h5v5"/>
+              </svg>
+              <span class="hidden sm:inline">{{ syncing() ? 'Syncing IG...' : 'Sync All IG' }}</span>
+            </button>
+          }
+          <div class="hidden md:flex items-center gap-1.5 h-7 px-3 rounded-full bg-mint-container/75 text-xs font-semibold text-mint-green">
+            <span class="w-1.5 h-1.5 rounded-full bg-mint-green"></span>
+            <span class="truncate max-w-[120px]">{{ auth.currentUser()?.name || 'Brand Manager' }}</span>
+          </div>
+          <button type="button" (click)="showSignOutConfirm.set(true)"
+                  class="h-8.5 px-4 rounded-[4px] bg-[#fff6e8] hover:bg-[#f54e26] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#f54e26] hover:shadow-[2px_2px_0px_#fff6e8] active:translate-x-[1px] active:translate-y-[1px] inline-flex items-center gap-1.5 font-headline uppercase tracking-[0.04em] text-sm font-bold cursor-pointer whitespace-nowrap transition-all">
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter">
+              <path d="M11 4H5v16h6"/>
+              <path d="M10 12h10"/>
+              <path d="M16 8l4 4-4 4"/>
+            </svg>
+            <span>SIGN OUT</span>
+          </button>
+        </div>
+      </app-header>
+
+      <main class="relative flex-1 pt-5 pb-10 max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 w-full">
+        <!-- Subtle Neutral Ambient Glows -->
+        <div class="fixed top-12 left-1/4 w-[420px] h-[420px] pointer-events-none rounded-full bg-gradient-to-tr from-blue-container/20 via-surface-container/25 to-transparent blur-3xl -z-10"></div>
+        <div class="fixed bottom-0 right-1/4 w-[360px] h-[360px] pointer-events-none rounded-full bg-blue-container/15 blur-3xl -z-10"></div>
 
         @if (!loaded()) {
           <div class="py-24 text-center text-sm text-ink-secondary flex flex-col items-center gap-3">
@@ -91,8 +94,8 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
         } @else if (brands().length === 0) {
           <!-- Clean Waiting State -->
           <div class="max-w-lg mx-auto my-6 sm:my-10 p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-surface-container-high shadow-sm text-center space-y-4 animate-fade-in-up">
-            <div class="w-16 h-16 mx-auto rounded-full bg-blue-container/60 flex items-center justify-center p-2">
-              <img src="/converge-logo.png" alt="Converge" class="w-full h-full object-contain rounded-full"/>
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-[#111111] border border-white/15 flex items-center justify-center p-2.5">
+              <img src="/converge-logo.svg" alt="Converge" class="w-full h-full object-contain"/>
             </div>
             <div>
               <span class="px-3 py-1 rounded-full bg-surface-container-soft text-ink-secondary text-xs font-semibold">No Brand Assigned Yet</span>
@@ -101,7 +104,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                 Signed in as <strong class="text-ink-primary">{{ auth.currentUser()?.email }}</strong>. Ask your Converge System Admin to add this email when provisioning a brand—your workspace will appear here automatically.
               </p>
             </div>
-            <button type="button" (click)="loadBrands()" class="h-10 px-6 rounded-full bg-primary hover:bg-primary-container text-white text-xs sm:text-sm font-semibold shadow-sm cursor-pointer transition-all active:scale-95">
+            <button type="button" (click)="loadBrands()" class="h-10 px-6 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs sm:text-sm font-semibold shadow-sm cursor-pointer transition-all active:scale-95">
               Refresh Workspace
             </button>
           </div>
@@ -152,9 +155,9 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                 @if (igStatus(); as ig) {
                   <span
                     class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                    [ngClass]="ig.configured ? 'bg-mint-container text-[#137333]' : 'bg-marigold-container/75 text-tertiary'">
+                    [ngClass]="ig.configured ? 'bg-mint-container text-mint-green' : 'bg-marigold-container/75 text-tertiary'">
                     <span class="w-1.5 h-1.5 rounded-full" [ngClass]="ig.configured ? 'bg-mint-green' : 'bg-tertiary-fixed-dim'"></span>
-                    {{ ig.configured ? 'Meta Graph API Connected' : 'Meta Keys Needed in .env' }}
+                    {{ ig.configured ? 'Instagram Connected' : 'Instagram Setup Pending' }}
                   </span>
                 }
               </div>
@@ -162,7 +165,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
               <p class="text-ink-secondary text-xs sm:text-sm mt-1">{{ viewSubtitle() }}</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-              <button (click)="activeTab.set('instagram')" class="h-9.5 px-4 rounded-full bg-blue-container text-primary text-xs font-semibold hover:bg-primary hover:text-white transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer">
+              <button (click)="activeTab.set('instagram')" class="h-9.5 px-4 rounded-full bg-blue-container text-primary text-xs font-semibold hover:bg-primary hover:text-on-primary transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer">
                 <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="4" y="4" width="16" height="16" rx="4.5"/>
                   <circle cx="12" cy="12" r="3.5"/>
@@ -188,35 +191,37 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
           </div>
 
           <!-- Sub-Nav Tabs -->
-          <nav class="flex items-center gap-1.5 pt-3.5 pb-4 border-b border-surface-variant/40 mb-5 overflow-x-auto no-scrollbar">
-            <button (click)="activeTab.set('creators')" class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
-                    [ngClass]="activeTab() === 'creators' ? 'bg-blue-container text-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-warm'">
-              <span>Creators Roster</span>
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold" [ngClass]="activeTab() === 'creators' ? 'bg-primary text-on-primary' : 'bg-surface-container text-ink-secondary'">{{ creators().length }}</span>
-            </button>
-            <button (click)="activeTab.set('instagram')" class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-                    [ngClass]="activeTab() === 'instagram' ? 'bg-blue-container text-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-warm'">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="4" y="4" width="16" height="16" rx="4.5"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <span>Instagram Lookup</span>
-            </button>
-            <button (click)="activeTab.set('overview')" class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-                    [ngClass]="activeTab() === 'overview' ? 'bg-blue-container text-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-warm'">
-              <span>Overview</span>
-            </button>
-            <button (click)="activeTab.set('agencies')" class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
-                    [ngClass]="activeTab() === 'agencies' ? 'bg-blue-container text-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-warm'">
-              <span>Linked Agencies</span>
-              <span class="px-2 py-0.5 rounded-full bg-surface-container text-ink-secondary text-[11px] font-bold">{{ agencies().length }}</span>
-            </button>
-            <button (click)="activeTab.set('audit'); loadAuditLogs()" class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-                    [ngClass]="activeTab() === 'audit' ? 'bg-blue-container text-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-warm'">
-              <span>Audit Logs</span>
-              <span class="w-1.5 h-1.5 rounded-full bg-mint-green"></span>
-            </button>
-          </nav>
+          <div class="pt-4 pb-5">
+            <nav class="inline-flex items-center gap-1 p-1 bg-surface-container-low border border-surface-container-high/70 rounded-full max-w-full overflow-x-auto no-scrollbar">
+              <button type="button" (click)="activeTab.set('creators')" class="h-8 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      [ngClass]="activeTab() === 'creators' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container/60'">
+                <span>Creators Roster</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold" [ngClass]="activeTab() === 'creators' ? 'bg-black/20 text-on-primary' : 'bg-surface-container-high text-ink-primary'">{{ creators().length }}</span>
+              </button>
+              <button type="button" (click)="activeTab.set('instagram')" class="h-8 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      [ngClass]="activeTab() === 'instagram' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container/60'">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="4" width="16" height="16" rx="4.5"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span>Instagram Lookup</span>
+              </button>
+              <button type="button" (click)="activeTab.set('overview')" class="h-8 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      [ngClass]="activeTab() === 'overview' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container/60'">
+                <span>Overview</span>
+              </button>
+              <button type="button" (click)="activeTab.set('agencies')" class="h-8 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      [ngClass]="activeTab() === 'agencies' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container/60'">
+                <span>Linked Agencies</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold" [ngClass]="activeTab() === 'agencies' ? 'bg-black/20 text-on-primary' : 'bg-surface-container-high text-ink-primary'">{{ agencies().length }}</span>
+              </button>
+              <button type="button" (click)="activeTab.set('audit'); loadAuditLogs()" class="h-8 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      [ngClass]="activeTab() === 'audit' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container/60'">
+                <span>Activity</span>
+                <span class="w-1.5 h-1.5 rounded-full" [ngClass]="activeTab() === 'audit' ? 'bg-on-primary' : 'bg-mint-green'"></span>
+              </button>
+            </nav>
+          </div>
 
           <!-- TAB: INSTAGRAM LOOKUP & CREATOR FETCHER -->
           @if (activeTab() === 'instagram') {
@@ -225,12 +230,12 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h2 class="font-headline text-lg font-bold text-ink-primary">Fetch Creator Details from Instagram</h2>
-                    <p class="text-xs text-ink-secondary mt-0.5">Look up public Creator/Business accounts, followers, bio, and recent Reels via Meta Graph API.</p>
+                    <p class="text-xs text-ink-secondary mt-0.5">Look up public Creator &amp; Business profiles, followers, bio, and recent Reels.</p>
                   </div>
                   @if (igStatus(); as ig) {
                     <span class="px-3 py-1 rounded-full text-[11px] font-semibold self-start sm:self-center shrink-0"
-                          [ngClass]="ig.configured ? 'bg-mint-container text-[#137333]' : 'bg-marigold-container text-tertiary'">
-                      {{ ig.configured ? 'Live Meta API Ready' : 'Requires .env Meta Credentials' }}
+                          [ngClass]="ig.configured ? 'bg-mint-container text-mint-green' : 'bg-marigold-container text-tertiary'">
+                      {{ ig.configured ? 'Live Sync Ready' : 'Setup Pending' }}
                     </span>
                   }
                 </div>
@@ -238,7 +243,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                 @if (igStatus() && !igStatus()?.configured) {
                   <div class="p-3.5 rounded-2xl bg-marigold-container/45 border border-tertiary-fixed-dim/40 text-xs text-ink-primary flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <strong>Meta Graph API not configured yet:</strong> Add <code class="font-mono bg-white/80 px-1.5 py-0.5 rounded">INSTAGRAM_ACCESS_TOKEN</code> and <code class="font-mono bg-white/80 px-1.5 py-0.5 rounded">INSTAGRAM_BUSINESS_ACCOUNT_ID</code> in <code class="font-mono">converge-backend/.env</code> and restart the backend for live Instagram fetching.
+                      <strong>Live Instagram insights are not enabled yet:</strong> You can still add creators and save Reel URLs now, and live metrics will appear automatically once Instagram access is active.
                     </div>
                     <button type="button" (click)="openAddCreatorModal(igLookupInput)" class="px-4 py-1.5 rounded-full bg-surface-container-lowest text-ink-primary font-semibold text-xs border border-surface-container-high shrink-0 cursor-pointer hover:bg-surface-cream">
                       + Add Manually Meanwhile
@@ -264,7 +269,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                   <button
                     type="submit"
                     [disabled]="igSearching()"
-                    class="btn-shimmer h-10.5 px-6 rounded-full bg-primary hover:bg-primary-container text-white text-xs sm:text-sm font-semibold shadow-sm cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shrink-0">
+                    class="btn-shimmer h-10.5 px-6 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs sm:text-sm font-semibold shadow-sm cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 shrink-0">
                     @if (igSearching()) {
                       <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
                       <span>Fetching...</span>
@@ -296,7 +301,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                       <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
                           <h3 class="font-headline text-xl font-bold text-ink-primary truncate">{{ p.name || p.username }}</h3>
-                          <span class="px-2.5 py-0.5 rounded-full bg-mint-container text-[#137333] text-[11px] font-semibold">{{ p.source }}</span>
+                          <span class="px-2.5 py-0.5 rounded-full bg-mint-container text-mint-green text-[11px] font-semibold">{{ p.source }}</span>
                         </div>
                         <a [href]="p.profileUrl" target="_blank" rel="noopener" class="text-xs font-mono text-primary hover:underline">{{ p.handle }} ↗</a>
                         @if (p.bio) {
@@ -313,7 +318,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                         type="button"
                         (click)="addFetchedCreatorToRoster(p)"
                         [disabled]="addingFetched()"
-                        class="btn-shimmer h-10 px-5 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-semibold shadow-sm cursor-pointer disabled:opacity-60">
+                        class="btn-shimmer h-10 px-5 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold shadow-sm cursor-pointer disabled:opacity-60">
                         {{ addingFetched() ? 'Saving...' : '+ Add to Brand Roster' }}
                       </button>
                     </div>
@@ -334,7 +339,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                     </div>
                     <div class="p-3.5 rounded-2xl bg-surface-warm/70 text-center">
                       <p class="text-[11px] text-ink-secondary uppercase font-semibold">Est. Inter. Rate</p>
-                      <p class="font-headline text-xl font-bold text-[#137333] mt-0.5">{{ (p.estimatedInteractionRate || 0) > 0 ? p.estimatedInteractionRate + '%' : '—' }}</p>
+                      <p class="font-headline text-xl font-bold text-mint-green mt-0.5">{{ (p.estimatedInteractionRate || 0) > 0 ? p.estimatedInteractionRate + '%' : '—' }}</p>
                     </div>
                     <div class="p-3.5 rounded-2xl bg-surface-warm/70 text-center col-span-2 sm:col-span-1">
                       <p class="text-[11px] text-ink-secondary uppercase font-semibold">Activity (28d)</p>
@@ -360,7 +365,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                   @if (p.recentMedia?.length) {
                     <div>
                       <h4 class="font-headline text-sm font-bold text-ink-primary mb-3">Recent Public Reels &amp; Posts ({{ p.recentMedia.length }})</h4>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3.5 xl:gap-4">
                         @for (m of p.recentMedia; track m.id) {
                           <div (click)="openLookupReelInsights(m, p)" class="p-3.5 rounded-2xl bg-surface-cream border border-surface-container-high/70 hover:border-primary/40 flex flex-col justify-between gap-2.5 cursor-pointer transition-colors">
                             <div class="space-y-2">
@@ -428,7 +433,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                     <p class="text-[11px] uppercase font-semibold text-ink-secondary tracking-wider">Deliverables</p>
                     <p class="font-headline text-2xl sm:text-3xl font-bold text-ink-primary mt-1">{{ stats().totalReels }}</p>
                   </div>
-                  <div class="w-10 h-10 rounded-2xl bg-mint-container text-[#137333] flex items-center justify-center shrink-0">
+                  <div class="w-10 h-10 rounded-2xl bg-mint-container text-mint-green flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
                   </div>
                 </div>
@@ -453,7 +458,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                               <p class="text-[11px] text-ink-secondary truncate">{{ ag.roleBadge }} • {{ ag.region }}</p>
                             </div>
                           </div>
-                          <span class="text-[11px] font-semibold text-[#137333] shrink-0">{{ ag.status }}</span>
+                          <span class="text-[11px] font-semibold text-mint-green shrink-0">{{ ag.status }}</span>
                         </div>
                       }
                     </div>
@@ -480,7 +485,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                     }
                   </div>
                   <div class="flex gap-2">
-                    <button (click)="activeTab.set('instagram')" class="flex-1 h-9 rounded-full bg-blue-container text-primary text-xs font-semibold cursor-pointer hover:bg-primary hover:text-white transition-colors">Fetch from IG</button>
+                    <button (click)="activeTab.set('instagram')" class="flex-1 h-9 rounded-full bg-blue-container text-primary text-xs font-semibold cursor-pointer hover:bg-primary hover:text-on-primary transition-colors">Fetch from IG</button>
                     <button (click)="openAddCreatorModal()" class="flex-1 h-9 rounded-full bg-surface-warm hover:bg-surface-container text-ink-primary text-xs font-semibold cursor-pointer">Add Creator</button>
                   </div>
                 </div>
@@ -492,9 +497,9 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
           @if (activeTab() === 'agencies') {
             <section class="space-y-5 animate-fade-in-up">
               <div class="bg-surface-container-lowest rounded-3xl p-4 sm:p-5 border border-surface-container-high shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                <div class="group flex-1 sm:max-w-md flex items-center gap-2.5 h-10 px-4 rounded-full bg-surface-warm border border-surface-container-high/50 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                  <svg class="doodle-svg w-4 h-4 text-ink-secondary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
-                  <input [(ngModel)]="agencySearch" (ngModelChange)="agencySearchSig.set($event)" placeholder="Search partner agencies..." class="w-full min-w-0 bg-transparent text-sm focus:outline-none"/>
+                <div class="group flex-1 sm:max-w-md flex items-center gap-2.5 h-9.5 px-3.5 rounded-full bg-surface-cream border border-surface-container-high focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 transition-all">
+                  <svg class="doodle-svg w-4 h-4 text-ink-secondary group-focus-within:text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+                  <input [(ngModel)]="agencySearch" (ngModelChange)="agencySearchSig.set($event)" placeholder="Search partner agencies..." class="w-full min-w-0 bg-transparent text-xs sm:text-sm text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none"/>
                 </div>
                 <button (click)="showAgencyModal.set(true)" class="h-10 px-4.5 rounded-full bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
                   <span>+ Connect Agency</span>
@@ -506,7 +511,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                   <p class="text-sm text-ink-secondary">No partner agencies found. Click "+ Connect Agency" to add one.</p>
                 </div>
               } @else {
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 xl:gap-5">
                   @for (ag of filteredAgencies(); track ag.id) {
                     <div (click)="filterByAgency(ag.name)" class="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container-high shadow-2xs flex items-center justify-between hover:bg-surface-cream transition-colors cursor-pointer">
                       <div class="flex items-center gap-3 min-w-0">
@@ -516,7 +521,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                           <p class="text-xs text-ink-secondary truncate">{{ ag.roleBadge }} • {{ ag.creatorsCount }} Creators</p>
                         </div>
                       </div>
-                      <span class="px-2.5 py-0.5 rounded-full bg-mint-container text-[#137333] text-[10px] font-semibold shrink-0">{{ ag.status }}</span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-mint-container text-mint-green text-[10px] font-semibold shrink-0">{{ ag.status }}</span>
                     </div>
                   }
                 </div>
@@ -529,16 +534,16 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
             <section class="space-y-5 animate-fade-in-up">
               <div class="bg-surface-container-lowest rounded-3xl p-4 sm:p-5 border border-surface-container-high shadow-2xs space-y-3">
                 <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                  <div class="group flex-1 md:max-w-lg flex items-center gap-2.5 h-10 px-4 rounded-full bg-surface-warm border border-surface-container-high/50 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                    <svg class="doodle-svg w-4 h-4 text-ink-secondary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
-                    <input [(ngModel)]="creatorSearch" (ngModelChange)="creatorSearchSig.set($event)" placeholder="Search creators by name, @handle, or niche..." class="w-full min-w-0 bg-transparent text-sm focus:outline-none"/>
+                  <div class="group flex-1 md:max-w-lg flex items-center gap-2.5 h-9.5 px-3.5 rounded-full bg-surface-cream border border-surface-container-high focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 transition-all">
+                    <svg class="doodle-svg w-4 h-4 text-ink-secondary group-focus-within:text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+                    <input [(ngModel)]="creatorSearch" (ngModelChange)="creatorSearchSig.set($event)" placeholder="Search creators by name, @handle, or niche..." class="w-full min-w-0 bg-transparent text-xs sm:text-sm text-ink-primary placeholder:text-ink-secondary/50 focus:outline-none"/>
                   </div>
                   <div class="relative shrink-0">
                     @if (agencyMenuOpen()) {
                       <div (click)="agencyMenuOpen.set(false)" class="fixed inset-0 z-30"></div>
                     }
                     <button type="button" (click)="agencyMenuOpen.set(!agencyMenuOpen())"
-                            class="h-10 px-4 rounded-full bg-surface-warm hover:bg-surface-container-soft border border-surface-container-high/50 text-xs font-semibold text-ink-primary inline-flex items-center gap-2 cursor-pointer transition-colors relative z-40">
+                            class="h-9.5 px-4 rounded-full bg-surface-cream hover:bg-surface-container-soft border border-surface-container-high text-xs font-semibold text-ink-primary inline-flex items-center gap-2 cursor-pointer transition-colors relative z-40">
                       <span>{{ selectedAgencyFilter === 'all' ? ('All Partner Agencies (' + agencies().length + ')') : selectedAgencyFilter }}</span>
                       <svg class="w-3.5 h-3.5 text-ink-secondary shrink-0 transition-transform" [class.rotate-180]="agencyMenuOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </button>
@@ -566,17 +571,17 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                     }
                   </div>
                 </div>
-                <div class="flex items-center gap-2 pt-2 border-t border-surface-variant/40 flex-wrap">
-                  <button (click)="creatorTypeFilter.set('all')" class="px-3.5 py-1 rounded-full text-xs font-semibold cursor-pointer"
-                          [ngClass]="creatorTypeFilter() === 'all' ? 'bg-blue-container text-primary' : 'bg-surface-warm text-ink-secondary'">
+                <div class="flex items-center gap-1.5 pt-2 border-t border-surface-variant/40 flex-wrap">
+                  <button type="button" (click)="creatorTypeFilter.set('all')" class="h-8 px-3.5 rounded-full text-xs font-semibold cursor-pointer transition-colors"
+                          [ngClass]="creatorTypeFilter() === 'all' ? 'bg-blue-container text-primary' : 'bg-surface-container-soft text-ink-secondary hover:bg-surface-container'">
                     All Creators ({{ creators().length }})
                   </button>
-                  <button (click)="creatorTypeFilter.set('DIRECT')" class="px-3.5 py-1 rounded-full text-xs font-semibold cursor-pointer"
-                          [ngClass]="creatorTypeFilter() === 'DIRECT' ? 'bg-blue-container text-primary' : 'bg-surface-warm text-ink-secondary'">
+                  <button type="button" (click)="creatorTypeFilter.set('DIRECT')" class="h-8 px-3.5 rounded-full text-xs font-semibold cursor-pointer transition-colors"
+                          [ngClass]="creatorTypeFilter() === 'DIRECT' ? 'bg-blue-container text-primary' : 'bg-surface-container-soft text-ink-secondary hover:bg-surface-container'">
                     Direct ({{ directCount() }})
                   </button>
-                  <button (click)="creatorTypeFilter.set('AGENCY')" class="px-3.5 py-1 rounded-full text-xs font-semibold cursor-pointer"
-                          [ngClass]="creatorTypeFilter() === 'AGENCY' ? 'bg-blue-container text-primary' : 'bg-surface-warm text-ink-secondary'">
+                  <button type="button" (click)="creatorTypeFilter.set('AGENCY')" class="h-8 px-3.5 rounded-full text-xs font-semibold cursor-pointer transition-colors"
+                          [ngClass]="creatorTypeFilter() === 'AGENCY' ? 'bg-blue-container text-primary' : 'bg-surface-container-soft text-ink-secondary hover:bg-surface-container'">
                     Agency Managed ({{ agencyCount() }})
                   </button>
                 </div>
@@ -587,11 +592,11 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                   <p class="text-sm text-ink-secondary">No creators in your roster yet. Fetch a live Instagram profile or add a creator directly.</p>
                   <div class="flex flex-wrap items-center justify-center gap-2">
                     <button (click)="activeTab.set('instagram')" class="px-5 py-2 rounded-full bg-blue-container text-primary text-xs font-semibold cursor-pointer">Fetch from Instagram</button>
-                    <button (click)="openAddCreatorModal()" class="px-5 py-2 rounded-full bg-primary text-white text-xs font-semibold cursor-pointer">+ Add Creator</button>
+                    <button (click)="openAddCreatorModal()" class="px-5 py-2 rounded-full bg-primary text-on-primary text-xs font-semibold cursor-pointer">+ Add Creator</button>
                   </div>
                 </div>
               } @else {
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 xl:gap-5">
                   @for (c of filteredCreators(); track c.id) {
                     <div class="bg-surface-container-lowest rounded-3xl p-5 border border-surface-container-high shadow-2xs flex flex-col justify-between hover:bg-surface-cream/60 transition-colors">
                       <div>
@@ -608,7 +613,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                               <div class="flex items-center gap-1.5">
                                 <h4 class="font-headline font-bold text-sm text-ink-primary hover:text-primary truncate">{{ c.name }}</h4>
                                 @if (c.verified) {
-                                  <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-primary text-white text-[9px] shrink-0">✓</span>
+                                  <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-primary text-on-primary text-[9px] shrink-0">✓</span>
                                 }
                               </div>
                               <p class="text-xs font-mono text-ink-secondary truncate">
@@ -622,8 +627,8 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                             </div>
                           </div>
                           <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold shrink-0"
-                                [ngClass]="c.igConnected ? 'bg-mint-container text-[#137333]' : (c.sourceType === 'DIRECT' ? 'bg-marigold-container/80 text-tertiary' : 'bg-blue-container text-primary')">
-                            {{ c.igConnected ? 'OAuth Linked' : (c.sourceType === 'DIRECT' ? 'Direct' : c.agencyName) }}
+                                [ngClass]="c.igConnected ? 'bg-mint-container text-mint-green' : (c.sourceType === 'DIRECT' ? 'bg-marigold-container/80 text-tertiary' : 'bg-blue-container text-primary')">
+                            {{ c.igConnected ? 'Connected' : (c.sourceType === 'DIRECT' ? 'Direct' : c.agencyName) }}
                           </span>
                         </div>
 
@@ -638,7 +643,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                           </div>
                           <div>
                             <span class="text-[10px] text-ink-secondary block">Inter. Rate</span>
-                            <span class="font-bold text-xs text-[#137333]">{{ (c.interactionRate90d || c.engagementRate) > 0 ? (c.interactionRate90d || c.engagementRate) + '%' : '—' }}</span>
+                            <span class="font-bold text-xs text-mint-green">{{ (c.interactionRate90d || c.engagementRate) > 0 ? (c.interactionRate90d || c.engagementRate) + '%' : '—' }}</span>
                           </div>
                           <div>
                             <span class="text-[10px] text-ink-secondary block">Posts</span>
@@ -669,24 +674,24 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
               <div class="bg-surface-container-lowest rounded-3xl p-5 border border-surface-container-high shadow-2xs">
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                   <div>
-                    <h3 class="font-headline text-base font-bold text-ink-primary">Live API Deliverables Sync</h3>
-                    <p class="text-xs text-ink-secondary">Audit ledger for {{ currentBrand()?.name }}</p>
+                    <h3 class="font-headline text-base font-bold text-ink-primary">Live Deliverables Sync</h3>
+                    <p class="text-xs text-ink-secondary">Activity history for {{ currentBrand()?.name }}</p>
                   </div>
                   <button (click)="triggerSync()" [disabled]="syncing()" class="h-9 px-4 rounded-full bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container flex items-center gap-1.5 cursor-pointer disabled:opacity-60">
                     <span>{{ syncing() ? 'Syncing...' : 'Sync All Deliverables' }}</span>
                   </button>
                 </div>
                 @if (auditLogs().length === 0) {
-                  <p class="text-xs text-ink-secondary py-6 text-center">No audit events recorded yet.</p>
+                  <p class="text-xs text-ink-secondary py-6 text-center">No activity recorded yet.</p>
                 } @else {
                   <div class="space-y-2.5">
                     @for (log of auditLogs(); track log.id) {
                       <div class="p-3.5 rounded-2xl bg-surface-warm/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div class="min-w-0">
-                          <p class="text-xs font-semibold text-ink-primary">{{ log.title }} <span class="font-mono text-ink-secondary ml-1">{{ log.eventCode }}</span></p>
-                          <p class="text-[11px] text-ink-secondary mt-0.5">{{ log.description }}</p>
+                          <p class="text-xs font-semibold text-ink-primary">{{ cleanAuditTitle(log.title) }}</p>
+                          <p class="text-[11px] text-ink-secondary mt-0.5">{{ cleanAuditSummary(log.description) }}</p>
                         </div>
-                        <span class="text-[11px] text-ink-secondary shrink-0">{{ log.createdAt | date:'short' }}</span>
+                        <span class="text-[11px] text-ink-secondary shrink-0">{{ log.createdAt | date:'MMM d, h:mm a' }}</span>
                       </div>
                     }
                   </div>
@@ -699,18 +704,18 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
 
       <!-- Add Direct Creator Modal -->
       @if (showAddCreatorModal()) {
-        <div class="fixed inset-0 z-50 bg-ink-primary/30 backdrop-blur-xs flex items-center justify-center p-4 animate-pop-in" (click)="modalCostMenuOpen.set(false); showAddCreatorModal.set(false)">
-          <div class="bg-surface-container-lowest rounded-3xl max-w-md w-full p-6 shadow-2xl border border-surface-variant/60" (click)="$event.stopPropagation()">
-            <div class="flex items-center justify-between pb-3 border-b border-surface-variant/50">
+        <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-pop-in" (click)="modalCostMenuOpen.set(false); showAddCreatorModal.set(false)">
+          <div class="bg-surface-container-lowest rounded-[28px] max-w-md w-full p-6 shadow-2xl border border-surface-container-high/80" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between pb-3 border-b border-surface-container-high/60">
               <h3 class="font-headline font-bold text-base text-ink-primary">Add Direct Creator</h3>
-              <button (click)="modalCostMenuOpen.set(false); showAddCreatorModal.set(false)" class="w-8 h-8 rounded-full hover:bg-surface-warm flex items-center justify-center text-ink-secondary cursor-pointer">✕</button>
+              <button type="button" (click)="modalCostMenuOpen.set(false); showAddCreatorModal.set(false)" class="w-8 h-8 rounded-full hover:bg-surface-warm flex items-center justify-center text-ink-secondary cursor-pointer">✕</button>
             </div>
             <form (ngSubmit)="submitDirectCreator()" class="space-y-3 pt-4">
               <div>
                 <label class="block text-xs font-semibold text-ink-primary mb-1">Instagram Handle</label>
                 <div class="flex gap-2">
-                  <input [(ngModel)]="newCreatorHandle" name="cHandle" placeholder="@handle or URL" required class="flex-1 min-w-0 h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
-                  <button type="button" (click)="lookupCreatorIg()" [disabled]="igFetching()" class="h-10 px-3.5 rounded-xl bg-blue-container text-primary text-xs font-semibold hover:bg-primary hover:text-white transition-colors cursor-pointer shrink-0 disabled:opacity-60">
+                  <input [(ngModel)]="newCreatorHandle" name="cHandle" placeholder="@handle or URL" required class="flex-1 min-w-0 h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
+                  <button type="button" (click)="lookupCreatorIg()" [disabled]="igFetching()" class="h-9.5 px-3.5 rounded-xl bg-blue-container text-primary text-xs font-semibold hover:bg-primary hover:text-on-primary transition-colors cursor-pointer shrink-0 disabled:opacity-60">
                     {{ igFetching() ? 'Fetching...' : 'Fetch IG' }}
                   </button>
                 </div>
@@ -720,26 +725,26 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
               </div>
               <div>
                 <label class="block text-xs font-semibold text-ink-primary mb-1">Creator Name</label>
-                <input [(ngModel)]="newCreatorName" name="cName" placeholder="Creator full name" required class="w-full h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                <input [(ngModel)]="newCreatorName" name="cName" placeholder="Creator full name" required class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-semibold text-ink-primary mb-1">Campaign</label>
-                  <input [(ngModel)]="newCreatorCampaign" name="cCampaign" placeholder="Summer Launch" class="w-full h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                  <input [(ngModel)]="newCreatorCampaign" name="cCampaign" placeholder="Summer Launch" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-ink-primary mb-1">Category / Niche</label>
-                  <input [(ngModel)]="newCreatorNiche" name="cNiche" placeholder="Artist / Skincare" class="w-full h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                  <input [(ngModel)]="newCreatorNiche" name="cNiche" placeholder="Artist / Skincare" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-semibold text-ink-primary mb-1">Management Handle</label>
-                  <input [(ngModel)]="newCreatorManagement" name="cMgmt" placeholder="@stellaartalent" class="w-full h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                  <input [(ngModel)]="newCreatorManagement" name="cMgmt" placeholder="@stellaartalent" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-ink-primary mb-1">Country</label>
-                  <input [(ngModel)]="newCreatorCountry" name="cCountry" placeholder="India" class="w-full h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                  <input [(ngModel)]="newCreatorCountry" name="cCountry" placeholder="India" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -749,7 +754,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                     <div (click)="modalCostMenuOpen.set(false)" class="fixed inset-0 z-40"></div>
                   }
                   <button type="button" (click)="modalCostMenuOpen.set(!modalCostMenuOpen())"
-                          class="w-full h-10 px-3.5 rounded-xl bg-surface-warm border border-surface-container-high text-sm text-ink-primary font-medium flex items-center justify-between gap-2 hover:bg-surface-container-soft transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer relative z-50">
+                          class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary font-medium flex items-center justify-between gap-2 hover:bg-surface-container-soft transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer relative z-50">
                     <span>{{ newCreatorCostMode === 'PER_DELIVERABLE' ? 'Cost Per Deliverable' : 'Fixed Cost' }}</span>
                     <svg class="w-4 h-4 text-ink-secondary shrink-0 transition-transform" [class.rotate-180]="modalCostMenuOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                   </button>
@@ -784,16 +789,16 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
                   <label class="block text-xs font-semibold text-ink-primary mb-1">
                     {{ newCreatorCostMode === 'PER_DELIVERABLE' ? 'Rate Per Deliverable (₹, Optional)' : 'Fixed Cost (₹, Optional)' }}
                   </label>
-                  <input [(ngModel)]="newCreatorCost" name="cCost" type="number" min="0" step="100" placeholder="100000" class="w-full h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                  <input [(ngModel)]="newCreatorCost" name="cCost" type="number" min="0" step="100" placeholder="100000" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
                 </div>
               </div>
               <div>
                 <label class="block text-xs font-semibold text-ink-primary mb-1">Email (Optional)</label>
-                <input [(ngModel)]="newCreatorEmail" name="cEmail" placeholder="creator@domain.com" type="email" class="w-full h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                <input [(ngModel)]="newCreatorEmail" name="cEmail" placeholder="creator@domain.com" type="email" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
               </div>
-              <div class="pt-3 border-t border-surface-variant/40 flex items-center justify-end gap-2">
-                <button type="button" (click)="modalCostMenuOpen.set(false); showAddCreatorModal.set(false)" class="px-4 py-2 rounded-full text-xs font-semibold text-ink-secondary cursor-pointer">Cancel</button>
-                <button type="submit" class="px-5 py-2 rounded-full bg-primary text-on-primary text-xs font-semibold cursor-pointer hover:bg-primary-container">Add Creator</button>
+              <div class="pt-3 border-t border-surface-container-high/60 flex items-center justify-end gap-2">
+                <button type="button" (click)="modalCostMenuOpen.set(false); showAddCreatorModal.set(false)" class="h-9 px-4 rounded-full bg-surface-container-soft hover:bg-surface-container text-xs font-semibold text-ink-secondary cursor-pointer transition-colors">Cancel</button>
+                <button type="submit" class="h-9 px-5 rounded-full bg-primary text-on-primary text-xs font-semibold cursor-pointer hover:bg-primary-container transition-all">Add Creator</button>
               </div>
             </form>
           </div>
@@ -802,15 +807,24 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
 
       <!-- Connect Agency Modal -->
       @if (showAgencyModal()) {
-        <div class="fixed inset-0 z-50 bg-ink-primary/30 backdrop-blur-xs flex items-center justify-center p-4 animate-pop-in" (click)="showAgencyModal.set(false)">
-          <div class="bg-surface-container-lowest rounded-3xl max-w-md w-full p-6 shadow-2xl" (click)="$event.stopPropagation()">
-            <h3 class="font-headline font-bold text-base text-ink-primary mb-3">Connect Partner Agency</h3>
+        <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-pop-in" (click)="showAgencyModal.set(false)">
+          <div class="bg-surface-container-lowest rounded-[28px] max-w-md w-full p-6 shadow-2xl border border-surface-container-high/80" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between pb-3 border-b border-surface-container-high/60 mb-4">
+              <h3 class="font-headline font-bold text-base text-ink-primary">Connect Partner Agency</h3>
+              <button type="button" (click)="showAgencyModal.set(false)" class="w-8 h-8 rounded-full hover:bg-surface-warm flex items-center justify-center text-ink-secondary cursor-pointer">✕</button>
+            </div>
             <form (ngSubmit)="submitAgency()" class="space-y-3">
-              <input [(ngModel)]="newAgencyName" name="agName" placeholder="Agency Name" required class="w-full h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
-              <input [(ngModel)]="newAgencyEmail" name="agEmail" placeholder="Agency Lead Email" type="email" class="w-full h-10 px-3.5 rounded-xl bg-surface-warm text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
-              <div class="flex justify-end gap-2 pt-2">
-                <button type="button" (click)="showAgencyModal.set(false)" class="px-4 py-2 rounded-full text-xs font-semibold text-ink-secondary cursor-pointer">Cancel</button>
-                <button type="submit" class="px-5 py-2 rounded-full bg-primary text-on-primary text-xs font-semibold cursor-pointer">Connect</button>
+              <div>
+                <label class="block text-xs font-semibold text-ink-primary mb-1">Agency Name</label>
+                <input [(ngModel)]="newAgencyName" name="agName" placeholder="Agency Name" required class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-ink-primary mb-1">Agency Lead Email</label>
+                <input [(ngModel)]="newAgencyEmail" name="agEmail" placeholder="Agency Lead Email" type="email" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high text-sm text-ink-primary focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
+              </div>
+              <div class="flex justify-end gap-2 pt-3 border-t border-surface-container-high/60">
+                <button type="button" (click)="showAgencyModal.set(false)" class="h-9 px-4 rounded-full bg-surface-container-soft hover:bg-surface-container text-xs font-semibold text-ink-secondary cursor-pointer transition-colors">Cancel</button>
+                <button type="submit" class="h-9 px-5 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold cursor-pointer transition-all">Connect</button>
               </div>
             </form>
           </div>
@@ -819,7 +833,7 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
 
       <!-- Toast -->
       @if (toastMsg()) {
-        <div class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-ink-primary text-on-primary text-xs font-semibold shadow-xl animate-pop-in">
+        <div class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-surface-container-highest text-ink-primary border border-white/15 text-xs font-semibold shadow-xl animate-pop-in">
           {{ toastMsg() }}
         </div>
       }
@@ -856,6 +870,8 @@ import { ReelInsightsViewComponent } from '../components/reel-insights-view.comp
         (confirm)="logout()"
         (cancel)="showSignOutConfirm.set(false)">
       </app-confirm-modal>
+
+      <app-footer></app-footer>
     </div>
   `
 })
@@ -956,17 +972,17 @@ export class WorkspaceComponent implements OnInit {
       case 'instagram': return 'Instagram Creator Explorer';
       case 'overview': return this.currentBrand()?.name || 'Brand Overview';
       case 'agencies': return 'Linked Agencies Network';
-      case 'audit': return 'Audit Logs & API Sync';
+      case 'audit': return 'Activity & Live Sync';
       default: return 'Creators & Reels Roster';
     }
   });
 
   viewSubtitle = computed(() => {
     switch (this.activeTab()) {
-      case 'instagram': return 'Fetch live Instagram Creator metrics, followers, bio, and recent Reels via Meta Graph API.';
+      case 'instagram': return 'Look up live Instagram Creator metrics, followers, bio, and recent Reels.';
       case 'overview': return `Brand Workspace overview: ${this.agencies().length} partner agencies and ${this.creators().length} creators.`;
       case 'agencies': return `Supervise ${this.agencies().length} authorized agency partners managing delegated talent.`;
-      case 'audit': return 'Meta Graph API telemetry and deliverable verification ledger.';
+      case 'audit': return 'Live Instagram sync status and deliverable verification history.';
       default: return `Fetch creator details, inspect public Reels, and track campaign reach across ${this.creators().length} creators.`;
     }
   });
@@ -985,12 +1001,12 @@ export class WorkspaceComponent implements OnInit {
       if (code) {
         this.api.exchangeInstagramOAuthCode(code, creatorId).subscribe({
           next: () => {
-            this.showToast('Creator Instagram OAuth connected for private Insights!');
+            this.showToast('Creator Instagram connected for live Insights!');
             this.router.navigate([], { replaceUrl: true, queryParams: {} });
             if (this.selectedBrandId()) this.selectBrand(this.selectedBrandId());
           },
           error: (err) => {
-            this.showToast(err?.error?.error || 'Instagram OAuth connection failed.');
+            this.showToast(err?.error?.error || 'Could not connect Instagram account.');
             this.router.navigate([], { replaceUrl: true, queryParams: {} });
           }
         });
@@ -1162,10 +1178,10 @@ export class WorkspaceComponent implements OnInit {
       next: (res) => {
         if (res.authorizeUrl) {
           navigator.clipboard?.writeText(res.authorizeUrl);
-          this.showToast('Copied Creator Instagram OAuth link (open or share to authorize Insights).');
+          this.showToast('Copied creator Instagram invite link (share to connect live Insights).');
         }
       },
-      error: (err) => this.showToast(err?.error?.error || 'Configure INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in .env.')
+      error: (err) => this.showToast(err?.error?.error || 'Creator sign-in connection is not enabled yet.')
     });
   }
 
@@ -1177,7 +1193,7 @@ export class WorkspaceComponent implements OnInit {
         const existing = this.creatorReels().filter(r => r.id !== reel.id);
         this.creatorReels.set([reel, ...existing]);
         this.refreshCreatorInsights(ic);
-        this.showToast(reel.status === 'VERIFIED' ? 'Reel synced from Instagram!' : 'Reel saved (pending Meta API credentials).');
+        this.showToast(reel.status === 'VERIFIED' ? 'Reel synced from Instagram!' : 'Reel saved (metrics will sync once Instagram access is active).');
       },
       error: (err) => {
         this.creatorReels.set([...this.creatorReels()]);
@@ -1230,7 +1246,7 @@ export class WorkspaceComponent implements OnInit {
         this.selectBrand(this.selectedBrandId());
         this.showToast(res.metaConfigured
           ? `Refreshed ${c.handle} (${res.verifiedDeliverables} verified reels).`
-          : 'Configure INSTAGRAM_ACCESS_TOKEN & INSTAGRAM_BUSINESS_ACCOUNT_ID in .env for live sync.');
+          : 'Live Instagram sync is not enabled on this workspace yet.');
       },
       error: (err) => this.showToast(err?.error?.error || 'Sync failed.')
     });
@@ -1254,7 +1270,7 @@ export class WorkspaceComponent implements OnInit {
         this.selectBrand(this.selectedBrandId());
         this.showToast(res.metaConfigured
           ? `Synced ${res.verifiedDeliverables} verified Reel(s) & Creator Insights.`
-          : 'Configure INSTAGRAM_ACCESS_TOKEN & INSTAGRAM_BUSINESS_ACCOUNT_ID in .env for live sync.');
+          : 'Live Instagram sync is not enabled on this workspace yet.');
       },
       error: (err) => {
         this.syncingCreator.set(false);
@@ -1371,7 +1387,7 @@ export class WorkspaceComponent implements OnInit {
             const ic = this.inspectedCreator();
             if (ic) this.inspectCreator(ic);
             this.selectBrand(this.selectedBrandId());
-            this.showToast('Reel Insights refreshed from Meta Graph API.');
+            this.showToast('Reel Insights refreshed!');
           },
           error: () => this.syncingSingleReel.set(false)
         });
@@ -1416,7 +1432,7 @@ export class WorkspaceComponent implements OnInit {
         const ic = this.inspectedCreator();
         if (ic) this.inspectCreator(ic);
         this.selectBrand(this.selectedBrandId());
-        this.showToast(updated.status === 'VERIFIED' ? 'Deliverable refreshed from Meta Graph API.' : 'Waiting on Meta API credentials.');
+        this.showToast(updated.status === 'VERIFIED' ? 'Deliverable refreshed!' : 'Saved — waiting for live Instagram sync to be enabled.');
       },
       error: (err) => this.showToast(err?.error?.error || 'Could not sync Reel.')
     });
@@ -1518,8 +1534,8 @@ export class WorkspaceComponent implements OnInit {
         this.selectBrand(this.selectedBrandId());
         if (this.activeTab() === 'audit') this.loadAuditLogs();
         this.showToast(res.metaConfigured
-          ? `Meta Graph API synced: ${res.verifiedCount ?? res.syncedCount} verified deliverables.`
-          : 'Saved URLs — add INSTAGRAM_ACCESS_TOKEN & INSTAGRAM_BUSINESS_ACCOUNT_ID in .env for live Meta insights.');
+          ? `Instagram synced: ${res.verifiedCount ?? res.syncedCount} verified deliverables.`
+          : 'Saved URLs — live Instagram sync is not enabled yet.');
       },
       error: () => this.syncing.set(false)
     });
@@ -1553,6 +1569,9 @@ export class WorkspaceComponent implements OnInit {
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
     return String(n);
   }
+
+  cleanAuditTitle = formatAuditTitle;
+  cleanAuditSummary = formatAuditSummary;
 
   logout() {
     this.auth.logout();

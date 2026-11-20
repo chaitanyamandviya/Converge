@@ -32,10 +32,10 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
                 <div class="flex items-center gap-2 flex-wrap">
                   <h1 class="font-headline text-xl sm:text-2xl font-bold text-ink-primary truncate">{{ ic.name }}</h1>
                   @if (ic.verified) {
-                    <span title="Verified Creator" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-white text-[10px]">✓</span>
+                    <span title="Verified Creator" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-on-primary text-[10px]">✓</span>
                   }
                   @if (ic.postedLast28Days) {
-                    <span class="px-2.5 py-0.5 rounded-full bg-mint-container text-[#137333] text-[10px] font-bold">Active in 28d</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-mint-container text-mint-green text-[10px] font-bold">Active in 28d</span>
                   }
                 </div>
                 <div class="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-ink-secondary mt-0.5">
@@ -138,26 +138,26 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
 
               <div>
                 <label class="block font-semibold text-ink-secondary mb-1">{{ form.costMode === 'PER_DELIVERABLE' ? 'Rate Per Deliverable (₹ INR)' : 'Fixed Cost (₹ INR)' }}</label>
-                <input [(ngModel)]="form.costQuoted" name="cCost" type="number" min="0" step="100" placeholder="e.g. 100000" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-warm font-semibold focus:outline-none focus:ring-2 focus:ring-primary"/>
+                <input [(ngModel)]="form.costQuoted" name="cCost" type="number" min="0" step="100" placeholder="e.g. 100000" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high font-semibold focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
               </div>
               <div>
                 <label class="block font-semibold text-ink-secondary mb-1">Management Handle</label>
-                <input [(ngModel)]="form.managementHandle" name="cMgmt" placeholder="@talentagency" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-warm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                <input [(ngModel)]="form.managementHandle" name="cMgmt" placeholder="@talentagency" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
               </div>
               <div>
                 <label class="block font-semibold text-ink-secondary mb-1">Country</label>
-                <input [(ngModel)]="form.country" name="cCountry" placeholder="India" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-warm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                <input [(ngModel)]="form.country" name="cCountry" placeholder="India" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end text-xs">
               <div class="sm:col-span-1 lg:col-span-3">
                 <label class="block font-semibold text-ink-secondary mb-1">Tags</label>
-                <input [(ngModel)]="form.creatorTraits" name="cTraits" placeholder="Skincare, Lifestyle" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-warm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                <input [(ngModel)]="form.creatorTraits" name="cTraits" placeholder="Skincare, Lifestyle" class="w-full h-9.5 px-3.5 rounded-xl bg-surface-cream border border-surface-container-high focus:bg-surface-container-lowest focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
               </div>
               <div class="flex justify-end gap-2">
-                <button type="button" (click)="editMode.set(false); pricingMenuOpen.set(false)" class="px-4 py-2 rounded-full text-xs font-semibold text-ink-secondary cursor-pointer">Cancel</button>
-                <button type="submit" [disabled]="savingProfile" class="px-5 py-2 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-semibold cursor-pointer disabled:opacity-60">
+                <button type="button" (click)="editMode.set(false); pricingMenuOpen.set(false)" class="h-9 px-4 rounded-full bg-surface-container-soft hover:bg-surface-container text-xs font-semibold text-ink-secondary cursor-pointer transition-colors">Cancel</button>
+                <button type="submit" [disabled]="savingProfile" class="h-9 px-5 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold cursor-pointer disabled:opacity-60 transition-all">
                   {{ savingProfile ? 'Saving...' : 'Save Cost &amp; Tags' }}
                 </button>
               </div>
@@ -194,20 +194,20 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
                 <h2 class="font-headline text-sm font-bold text-ink-primary">Tracked Performance Breakdown</h2>
                 <p class="text-[11px] text-ink-secondary">Hover or click slices to inspect tracked Reel share &amp; engagement mix</p>
               </div>
-              <div class="inline-flex items-center p-1 rounded-full bg-surface-warm border border-surface-container-high/70 self-start sm:self-center shrink-0">
+              <div class="inline-flex items-center p-1 rounded-full bg-surface-container-low border border-surface-container-high/70 self-start sm:self-center shrink-0">
                 <button type="button" (click)="selectChartTab('views')"
                         class="px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-colors"
-                        [ngClass]="chart.mode === 'views' ? 'bg-primary text-white shadow-2xs' : 'text-ink-secondary hover:text-ink-primary'">
+                        [ngClass]="chart.mode === 'views' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary'">
                   Views
                 </button>
                 <button type="button" (click)="selectChartTab('interactions')"
                         class="px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-colors"
-                        [ngClass]="chart.mode === 'interactions' ? 'bg-primary text-white shadow-2xs' : 'text-ink-secondary hover:text-ink-primary'">
+                        [ngClass]="chart.mode === 'interactions' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary'">
                   By Reel
                 </button>
                 <button type="button" (click)="selectChartTab('mix')"
                         class="px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-colors"
-                        [ngClass]="chart.mode === 'mix' ? 'bg-primary text-white shadow-2xs' : 'text-ink-secondary hover:text-ink-primary'">
+                        [ngClass]="chart.mode === 'mix' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary'">
                   Likes vs Cmts
                 </button>
               </div>
@@ -217,7 +217,7 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
               <div class="flex flex-col sm:flex-row items-center gap-5 py-2">
                 <div class="relative w-36 h-36 shrink-0 flex items-center justify-center">
                   <svg viewBox="0 0 180 180" class="w-36 h-36">
-                    <circle cx="90" cy="90" r="64" fill="none" stroke="#efe9df" stroke-width="24" stroke-dasharray="10 8"/>
+                    <circle cx="90" cy="90" r="64" fill="none" stroke="#27272e" stroke-width="24" stroke-dasharray="10 8"/>
                   </svg>
                   <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                     <span class="font-headline text-lg font-bold text-ink-secondary">—</span>
@@ -227,7 +227,7 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
                 <div class="space-y-2 text-center sm:text-left">
                   <p class="text-xs text-ink-secondary leading-relaxed">{{ chart.emptyReason }}</p>
                   @if (igStatus?.configured && !showReelPicker()) {
-                    <button type="button" (click)="toggleReelPicker(ic)" class="px-3.5 py-1.5 rounded-full bg-blue-container text-primary hover:bg-primary hover:text-white text-xs font-semibold cursor-pointer transition-colors">
+                    <button type="button" (click)="toggleReelPicker(ic)" class="px-3.5 py-1.5 rounded-full bg-blue-container text-primary hover:bg-primary hover:text-on-primary text-xs font-semibold cursor-pointer transition-colors">
                       + Pick Reel from IG
                     </button>
                   }
@@ -237,7 +237,7 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
               <div class="flex flex-col sm:flex-row items-center gap-5">
                 <div class="relative w-40 h-40 shrink-0">
                   <svg viewBox="0 0 180 180" class="w-40 h-40 select-none">
-                    <circle cx="90" cy="90" r="64" fill="none" stroke="#f2ede4" stroke-width="26"/>
+                    <circle cx="90" cy="90" r="64" fill="none" stroke="#27272e" stroke-width="26"/>
                     <g transform="rotate(-90 90 90)">
                       @for (s of chart.slices; track s.id) {
                         <circle
@@ -433,19 +433,19 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
               <span class="px-2.5 py-0.5 rounded-full bg-surface-warm border border-surface-container-high text-xs font-semibold text-ink-secondary">{{ reels.length }} Tracked</span>
             </div>
             @if (igStatus?.configured) {
-              <button type="button" (click)="toggleReelPicker(ic)" class="h-8.5 px-4 rounded-full bg-blue-container text-primary hover:bg-primary hover:text-white text-xs font-semibold cursor-pointer transition-colors self-start sm:self-center">
+              <button type="button" (click)="toggleReelPicker(ic)" class="h-8.5 px-4 rounded-full bg-blue-container text-primary hover:bg-primary hover:text-on-primary text-xs font-semibold cursor-pointer transition-colors self-start sm:self-center">
                 {{ showReelPicker() ? 'Hide IG Reel Picker' : (loadingMedia ? 'Loading IG Reels...' : '+ Pick Reel from IG (' + videoReelsFromFeed().length + ')') }}
               </button>
             }
           </div>
 
           <form (ngSubmit)="submitReelForm()" class="p-3.5 rounded-2xl bg-blue-container/25 border border-primary/20 grid grid-cols-1 gap-2.5 items-center" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-6' : 'sm:grid-cols-5'">
-            <input [(ngModel)]="newReelTitle" name="reelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-9.5 px-3.5 rounded-xl bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary"/>
-            <input [(ngModel)]="newReelUrl" (ngModelChange)="duplicateReelNotice.set('')" name="reelUrl" placeholder="https://www.instagram.com/reel/..." required class="sm:col-span-2 h-9.5 px-3.5 rounded-xl bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary"/>
+            <input [(ngModel)]="newReelTitle" name="reelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-9.5 px-3.5 rounded-xl bg-surface-container-lowest border border-surface-container-high text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
+            <input [(ngModel)]="newReelUrl" (ngModelChange)="duplicateReelNotice.set('')" name="reelUrl" placeholder="https://www.instagram.com/reel/..." required class="sm:col-span-2 h-9.5 px-3.5 rounded-xl bg-surface-container-lowest border border-surface-container-high text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
             @if (roi.costMode === 'PER_DELIVERABLE') {
-              <input [(ngModel)]="newReelCost" name="reelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-9.5 px-3.5 rounded-xl bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary"/>
+              <input [(ngModel)]="newReelCost" name="reelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-9.5 px-3.5 rounded-xl bg-surface-container-lowest border border-surface-container-high text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
             }
-            <button type="submit" class="h-9.5 px-4 rounded-xl bg-primary text-white text-xs font-semibold cursor-pointer hover:bg-primary-container">Verify &amp; Add Reel</button>
+            <button type="submit" class="h-9.5 px-4 rounded-full bg-primary text-on-primary text-xs font-semibold cursor-pointer hover:bg-primary-container transition-all">Verify &amp; Add Reel</button>
           </form>
           @if (duplicateReelNotice()) {
             <p class="text-xs font-semibold text-secondary bg-coral-container/35 border border-secondary/20 rounded-xl px-3.5 py-2">{{ duplicateReelNotice() }}</p>
@@ -467,11 +467,11 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
               @if (igReels.length === 0) {
                 <p class="text-xs text-ink-secondary py-3 text-center">No recent public Reels/Videos returned in the last 25 posts. You can still paste any older Reel URL in the bar above.</p>
               } @else {
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
                   @for (m of igReels; track m.id) {
                     @let alreadyTracked = isMediaAlreadyTracked(m);
                     <div class="p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition-colors"
-                         [ngClass]="alreadyTracked ? 'bg-mint-container/25 border-[#137333]/25' : 'bg-white border-surface-container-high'">
+                         [ngClass]="alreadyTracked ? 'bg-mint-container/25 border-mint-green/35' : 'bg-surface-container-low border-surface-container-high'">
                       <div class="flex items-center gap-2.5 min-w-0">
                         @if (m.thumbnailUrl) {
                           <img [src]="m.thumbnailUrl" alt="Reel preview" (error)="m.thumbnailUrl = ''" class="w-11 h-11 rounded-lg object-cover shrink-0"/>
@@ -484,9 +484,9 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
                         </div>
                       </div>
                       @if (alreadyTracked) {
-                        <span class="px-2.5 py-1.5 rounded-full bg-mint-container text-[#137333] text-[10px] font-bold shrink-0 select-none">✓ Already Added</span>
+                        <span class="px-2.5 py-1.5 rounded-full bg-mint-container text-mint-green text-[10px] font-bold shrink-0 select-none">✓ Already Added</span>
                       } @else {
-                        <button type="button" (click)="selectMediaForTrack(m)" class="px-2.5 py-1.5 rounded-full bg-blue-container text-primary text-[10px] font-bold hover:bg-primary hover:text-white transition-colors shrink-0 cursor-pointer">+ Track</button>
+                        <button type="button" (click)="selectMediaForTrack(m)" class="px-2.5 py-1.5 rounded-full bg-blue-container text-primary text-[10px] font-bold hover:bg-primary hover:text-on-primary transition-colors shrink-0 cursor-pointer">+ Track</button>
                       }
                     </div>
                   }
@@ -552,20 +552,20 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
                         </div>
                       </div>
 
-                      <div class="flex items-center gap-2 flex-wrap">
-                        <button type="button" (click)="openReel.emit(r)" class="px-3 py-1 rounded-full bg-surface-container-lowest border border-surface-container-high hover:border-primary/40 text-[10px] font-bold text-ink-primary uppercase tracking-wide cursor-pointer">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <button type="button" (click)="openReel.emit(r)" class="h-7.5 px-3 rounded-full bg-blue-container/75 hover:bg-primary text-primary hover:text-on-primary text-[11px] font-semibold transition-colors cursor-pointer">
                           Live Insights
                         </button>
-                        <a [href]="r.reelUrl" target="_blank" rel="noopener" class="px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-surface-container-high text-xs font-semibold text-ink-primary hover:text-primary">
+                        <a [href]="r.reelUrl" target="_blank" rel="noopener" class="inline-flex items-center h-7.5 px-3 rounded-full bg-surface-container-lowest border border-surface-container-high text-xs font-semibold text-ink-primary hover:text-primary transition-colors">
                           View ↗
                         </a>
-                        <button type="button" (click)="startEditDeliverable(r)" class="px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-surface-container-high text-xs font-semibold text-ink-primary hover:text-primary cursor-pointer">
+                        <button type="button" (click)="startEditDeliverable(r)" class="h-7.5 px-3 rounded-full bg-surface-container-lowest border border-surface-container-high text-xs font-semibold text-ink-primary hover:text-primary cursor-pointer transition-colors">
                           Edit
                         </button>
-                        <button type="button" (click)="syncReel.emit(r.id)" class="px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-surface-container-high text-xs font-semibold text-primary hover:bg-blue-container/40 cursor-pointer">
+                        <button type="button" (click)="syncReel.emit(r.id)" class="h-7.5 px-3 rounded-full bg-surface-container-lowest border border-surface-container-high text-xs font-semibold text-primary hover:bg-blue-container/40 cursor-pointer transition-colors">
                           Sync
                         </button>
-                        <button type="button" (click)="requestDeleteReel.emit(r)" class="px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-surface-container-high text-xs font-semibold text-secondary hover:bg-coral-container/40 cursor-pointer">
+                        <button type="button" (click)="requestDeleteReel.emit(r)" class="h-7.5 px-3 rounded-full bg-surface-container-lowest border border-surface-container-high text-xs font-semibold text-secondary hover:bg-coral-container/40 cursor-pointer transition-colors">
                           Delete
                         </button>
                       </div>
@@ -574,12 +574,12 @@ import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from
 
                   @if (editingDeliverableId() === r.id) {
                     <form (ngSubmit)="saveDeliverableEdit(r.id)" class="mt-3 pt-3 border-t border-surface-variant/40 grid grid-cols-1 gap-2.5 items-center animate-pop-in" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-5' : 'sm:grid-cols-4'">
-                      <input [(ngModel)]="editDelTitle" name="editDelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-9 px-3 rounded-xl bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary"/>
+                      <input [(ngModel)]="editDelTitle" name="editDelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-9 px-3.5 rounded-xl bg-surface-container-lowest border border-surface-container-high text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
                       @if (roi.costMode === 'PER_DELIVERABLE') {
-                        <input [(ngModel)]="editDelCost" name="editDelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-9 px-3 rounded-xl bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary"/>
+                        <input [(ngModel)]="editDelCost" name="editDelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-9 px-3.5 rounded-xl bg-surface-container-lowest border border-surface-container-high text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"/>
                       }
-                      <button type="submit" class="h-9 px-4 rounded-xl bg-primary text-white text-xs font-semibold cursor-pointer">Save</button>
-                      <button type="button" (click)="editingDeliverableId.set(null)" class="h-9 px-3 rounded-xl bg-surface-warm text-xs font-semibold text-ink-secondary cursor-pointer">Cancel</button>
+                      <button type="submit" class="h-9 px-4 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold cursor-pointer transition-all">Save</button>
+                      <button type="button" (click)="editingDeliverableId.set(null)" class="h-9 px-3 rounded-full bg-surface-container-soft hover:bg-surface-container text-xs font-semibold text-ink-secondary cursor-pointer transition-colors">Cancel</button>
                     </form>
                   }
                 </div>
@@ -779,7 +779,7 @@ export class CreatorInsightsViewComponent implements OnChanges {
   chartBreakdown() {
     const mode = this.effectiveChartMode();
     const kpis = this.computedKpis();
-    const palette = ['#1a56db', '#0d9488', '#d97706', '#7c3aed', '#e11d48', '#64748b'];
+    const palette = ['#f54e26', '#fabf29', '#007656', '#ffccde', '#5738af', '#d0d5ff'];
     const C = 2 * Math.PI * 64;
 
     type RawItem = { id: string; label: string; value: number; subtitle: string; reel?: ReelDeliverable };
@@ -869,7 +869,7 @@ export class CreatorInsightsViewComponent implements OnChanges {
       const offset = -cumulative;
       cumulative += arcLen;
       const color = mode === 'mix'
-        ? (item.id === 'mix-likes' ? '#1a56db' : '#d97706')
+        ? (item.id === 'mix-likes' ? '#f54e26' : '#fabf29')
         : palette[idx % palette.length];
       return {
         id: item.id,
