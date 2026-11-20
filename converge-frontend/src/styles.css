@@ -380,22 +380,6 @@
   border-color: rgba(255, 246, 232, 0.28);
 }
 
-.cursor-spotlight {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 30;
-  mix-blend-mode: screen;
-  opacity: var(--cursor-opacity, 0);
-  transition: opacity 0.35s ease;
-  background: radial-gradient(
-    400px circle at var(--cursor-x, 50vw) var(--cursor-y, 50vh),
-    rgba(245, 78, 38, 0.05),
-    rgba(250, 191, 41, 0.015) 40%,
-    transparent 68%
-  );
-}
-
 .doodle-draw-hover {
   stroke-dasharray: 220;
   stroke-dashoffset: 220;
@@ -415,10 +399,4 @@
 .group\/word.is-active .doodle-pop-hover {
   opacity: 1;
   transform: scale(1) rotate(-4deg);
-}
-
-@media (hover: none), (prefers-reduced-motion: reduce) {
-  .cursor-spotlight {
-    display: none;
-  }
 }
