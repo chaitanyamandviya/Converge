@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services/api.service';
 import { formatReelDisplayTitle, formatReelMetaLabel } from '../utils/reel-format';
 import { computeAxisBarScale, formatShortAxisDate, formatSyncAxisLabel } from '../utils/chart-axis';
+import { describeHookRate } from '../utils/campaign-analytics';
 import { computeReelSnapshotMetrics } from '../utils/reel-metrics';
 import { safeExternalUrl } from '../utils/url-safety';
 
@@ -271,8 +272,9 @@ import { safeExternalUrl } from '../utils/url-safety';
                 }
               </div>
             </div>
-            @if ((reel.reachCount || 0) > 0 || dm.savesCount > 0 || (reel.sharesCount || 0) > 0 || (reel.avgWatchTimeMs || 0) > 0) {
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-cv-border-faint tabular-nums">
+            @if ((reel.reachCount || 0) > 0 || dm.savesCount > 0 || (reel.sharesCount || 0) > 0 || (reel.avgWatchTimeMs || 0) > 0 || dm.hookRatePct != null || !(reel.mediaType === 'IMAGE' || reel.mediaType === 'CAROUSEL_ALBUM' || reel.mediaType === 'FEED')) {
+              @let hookDesc = hookBadge(dm.hookRatePct);
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-3 border-t border-cv-border-faint tabular-nums">
                 <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
                   <p class="font-headline text-xl font-bold text-cv-ink leading-none">{{ (reel.reachCount || 0) > 0 ? (reel.reachCount || 0).toLocaleString('en-IN') : '—' }}</p>
                   <p class="text-[10px] uppercase font-semibold text-cv-ink-muted mt-1">Accounts Reached</p>
@@ -288,6 +290,28 @@ import { safeExternalUrl } from '../utils/url-safety';
                 <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
                   <p class="font-headline text-xl font-bold text-cv-ink leading-none">{{ formatWatchTime(reel.avgWatchTimeMs || 0) }}</p>
                   <p class="text-[10px] uppercase font-semibold text-cv-ink-muted mt-1">Avg Watch Time</p>
+                </div>
+                <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                  <div class="flex items-center justify-between gap-1.5">
+                    <p class="font-headline text-xl font-bold leading-none"
+                       [ngClass]="hookDesc.tone === 'green' ? 'text-cv-green' : (hookDesc.tone === 'gold' ? 'text-cv-gold' : (hookDesc.tone === 'vermilion' ? 'text-[#f54e26]' : 'text-cv-ink-muted'))">
+                      {{ dm.hookRatePct != null ? dm.hookRatePct + '%' : '—' }}
+                    </p>
+                    @if (dm.hookRatePct != null) {
+                      <span class="px-1.5 py-0.5 rounded-[2px] text-[9px] font-bold uppercase"
+                            [ngClass]="hookDesc.tone === 'green' ? 'bg-[#007656] text-[#fff6e8]' : (hookDesc.tone === 'gold' ? 'bg-[#fabf29] text-[#111111]' : 'bg-[#f54e26] text-[#111111]')">
+                        {{ hookDesc.label }}
+                      </span>
+                    }
+                  </div>
+                  <p class="text-[10px] uppercase font-semibold text-cv-ink-muted mt-1">Hook Rate (3s)</p>
+                  <p class="text-[10px] text-cv-ink-subtle mt-0.5">
+                    @if (dm.hookRatePct != null) {
+                      Skip {{ dm.skipRatePct != null ? dm.skipRatePct : ((100 - dm.hookRatePct).toFixed(1)) }}% · {{ dm.hookRateSource === 'MANUAL' ? 'Manual' : 'Meta Insights' }}
+                    } @else {
+                      OAuth or manual input
+                    }
+                  </p>
                 </div>
               </div>
             }
@@ -448,7 +472,10 @@ export class ReelInsightsViewComponent implements OnChanges {
       costLabel: base.costLabel,
       costQuoted: base.costQuoted,
       costPerView: base.costPerView,
-      costPerInteraction: base.costPerInteraction
+      costPerInteraction: base.costPerInteraction,
+      hookRatePct: base.hookRatePct,
+      skipRatePct: base.skipRatePct,
+      hookRateSource: base.hookRateSource
     };
   }
 
@@ -468,6 +495,7 @@ export class ReelInsightsViewComponent implements OnChanges {
   readonly safeExternalUrl = safeExternalUrl;
   readonly displayReelTitle = formatReelDisplayTitle;
   readonly reelMetaLabel = formatReelMetaLabel;
+  readonly hookBadge = describeHookRate;
 
   formatInr(n: number, decimals = 0): string {
     if (!n || n <= 0) return '—';

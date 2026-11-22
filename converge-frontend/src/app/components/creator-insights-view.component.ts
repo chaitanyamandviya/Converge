@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signa
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CampaignSummary, Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from '../services/api.service';
+import { computeViewWeightedHookRate, describeHookRate } from '../utils/campaign-analytics';
 import { formatPublishedDateLabel, formatReelDisplayTitle } from '../utils/reel-format';
 import { safeExternalUrl } from '../utils/url-safety';
 
@@ -380,7 +381,9 @@ import { safeExternalUrl } from '../utils/url-safety';
             </div>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5 tabular-nums">
+          @let creatorHookVal = roi.avgHookRatePct != null ? roi.avgHookRatePct : ((ic.hookRate90d || 0) > 0 ? ic.hookRate90d : null);
+          @let creatorHookDesc = hookBadge(creatorHookVal);
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 tabular-nums">
             <div class="p-4 rounded-[4px] bg-cv-well border border-cv-border-soft">
               <p class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">IR % (Interaction Rate)</p>
               <p class="font-headline text-2xl font-bold text-cv-green mt-1 leading-none">{{ roi.interactionRatePct > 0 ? roi.interactionRatePct + '%' : '—' }}</p>
@@ -388,11 +391,32 @@ import { safeExternalUrl } from '../utils/url-safety';
             </div>
 
             <div class="p-4 rounded-[4px] bg-cv-well border border-cv-border-soft">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">Avg Hook Rate (3s)</p>
+                @if (creatorHookVal != null) {
+                  <span class="px-1.5 py-0.5 rounded-[2px] text-[9px] font-bold uppercase"
+                        [ngClass]="creatorHookDesc.tone === 'green' ? 'bg-[#007656] text-[#fff6e8]' : (creatorHookDesc.tone === 'gold' ? 'bg-[#fabf29] text-[#111111]' : 'bg-[#f54e26] text-[#111111]')">
+                    {{ creatorHookDesc.label }}
+                  </span>
+                }
+              </div>
+              <p class="font-headline text-2xl font-bold mt-1 leading-none"
+                 [ngClass]="creatorHookVal != null ? (creatorHookDesc.tone === 'green' ? 'text-cv-green' : (creatorHookDesc.tone === 'gold' ? 'text-cv-gold' : 'text-[#f54e26]')) : 'text-cv-ink-muted'">
+                {{ creatorHookVal != null ? creatorHookVal + '%' : '—' }}
+              </p>
+              <p class="text-[11px] text-cv-ink-subtle mt-1">
+                {{ (roi.hookMeasuredReelsCount || 0) > 0 ? ('View-weighted across ' + roi.hookMeasuredReelsCount + ' Reel(s)') : 'Connect IG OAuth or enter Hook % on Reels' }}
+              </p>
+            </div>
+
+            <div class="p-4 rounded-[4px] bg-cv-well border border-cv-border-soft">
               <p class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">Avg Views / Reel</p>
               <p class="font-headline text-2xl font-bold text-cv-ink mt-1 leading-none">{{ roi.avgViewsPerPost > 0 ? formatCount(roi.avgViewsPerPost) : '—' }}</p>
               <p class="text-[11px] text-cv-ink-subtle mt-1">{{ roi.avgViewsPostCount > 0 ? 'Across ' + roi.avgViewsPostCount + ' tracked Reel(s)' : 'Track a Video Reel for views' }}</p>
             </div>
+          </div>
 
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 tabular-nums">
             <div class="p-4 rounded-[4px] bg-cv-well border border-cv-border-soft">
               <p class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">{{ roi.costMode === 'PER_DELIVERABLE' ? 'Total Deliverable Cost' : 'Fixed Cost' }}</p>
               <p class="font-headline text-2xl font-bold text-cv-gold mt-1 leading-none">{{ roi.costQuoted ? formatInr(roi.costQuoted, 0) : (roi.costMode === 'PER_DELIVERABLE' && roi.baseRate ? formatInr(roi.baseRate, 0) + '/reel' : '—') }}</p>
@@ -445,7 +469,7 @@ import { safeExternalUrl } from '../utils/url-safety';
           </div>
 
           @if (canManage) {
-            <form (ngSubmit)="submitReelForm()" class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border grid grid-cols-1 gap-2.5 items-center" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-7' : 'sm:grid-cols-6'">
+            <form (ngSubmit)="submitReelForm()" class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border grid grid-cols-1 gap-2.5 items-center" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-8' : 'sm:grid-cols-7'">
               <input [(ngModel)]="newReelTitle" name="reelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none"/>
               <input [(ngModel)]="newReelUrl" (ngModelChange)="duplicateReelNotice.set('')" name="reelUrl" placeholder="https://www.instagram.com/reel/..." required class="sm:col-span-2 h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none"/>
               <select [(ngModel)]="newReelCampaignId" name="reelCampaign" class="h-10 px-2.5 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink focus:border-[#f54e26] focus:outline-none">
@@ -454,6 +478,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                   <option [value]="camp.id">{{ camp.name }}</option>
                 }
               </select>
+              <input [(ngModel)]="newReelHookRate" name="reelHookRate" type="number" min="0" max="100" step="0.1" placeholder="Hook % (opt.)" title="Optional 3s Hook Rate % from creator IG Insights if not OAuth-connected" class="h-10 px-2.5 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none tabular-nums"/>
               @if (roi.costMode === 'PER_DELIVERABLE') {
                 <input [(ngModel)]="newReelCost" name="reelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none tabular-nums"/>
               }
@@ -621,6 +646,16 @@ import { safeExternalUrl } from '../utils/url-safety';
                           <p class="font-headline text-base font-bold text-cv-gold leading-tight">{{ r.commentsCount.toLocaleString('en-IN') }}</p>
                           <p class="text-[10px] uppercase font-semibold text-cv-ink-muted">Comments</p>
                         </div>
+                        @if (r.hookRatePct != null) {
+                          @let rHook = hookBadge(r.hookRatePct);
+                          <div class="text-center" [title]="'3-sec Hook Rate (' + (r.hookRateSource === 'MANUAL' ? 'Manual entry' : 'Meta skip rate inverse') + ')'">
+                            <p class="font-headline text-base font-bold leading-tight"
+                               [ngClass]="rHook.tone === 'green' ? 'text-cv-green' : (rHook.tone === 'gold' ? 'text-cv-gold' : 'text-[#f54e26]')">
+                              {{ r.hookRatePct }}%
+                            </p>
+                            <p class="text-[10px] uppercase font-semibold text-cv-ink-muted">Hook (3s)</p>
+                          </div>
+                        }
                       </div>
 
                       <div class="flex items-center gap-1.5 flex-wrap">
@@ -648,7 +683,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                   </div>
 
                   @if (canManage && editingDeliverableId() === r.id) {
-                    <form (ngSubmit)="saveDeliverableEdit(r.id)" class="mt-3 pt-3 border-t border-cv-border-soft grid grid-cols-1 gap-2.5 items-center animate-pop-in" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-6' : 'sm:grid-cols-5'">
+                    <form (ngSubmit)="saveDeliverableEdit(r.id)" class="mt-3 pt-3 border-t border-cv-border-soft grid grid-cols-1 gap-2.5 items-center animate-pop-in" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-7' : 'sm:grid-cols-6'">
                       <input [(ngModel)]="editDelTitle" name="editDelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-9 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink focus:border-[#f54e26] focus:outline-none"/>
                       <select [(ngModel)]="editDelCampaignId" name="editDelCampaign" class="h-9 px-2.5 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink focus:border-[#f54e26] focus:outline-none">
                         <option value="">No Campaign</option>
@@ -656,6 +691,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                           <option [value]="camp.id">{{ camp.name }}</option>
                         }
                       </select>
+                      <input [(ngModel)]="editDelHookRate" name="editDelHookRate" type="number" min="0" max="100" step="0.1" placeholder="Hook % (opt.)" title="3-second Hook Rate % (0–100); leave blank to clear manual override" class="h-9 px-2.5 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink focus:border-[#f54e26] focus:outline-none tabular-nums"/>
                       @if (roi.costMode === 'PER_DELIVERABLE') {
                         <input [(ngModel)]="editDelCost" name="editDelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-9 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink focus:border-[#f54e26] focus:outline-none tabular-nums"/>
                       }
@@ -688,13 +724,15 @@ export class CreatorInsightsViewComponent implements OnChanges {
   @Output() syncCreator = new EventEmitter<void>();
   @Output() saveProfile = new EventEmitter<Record<string, any>>();
   @Output() browseMedia = new EventEmitter<Creator>();
-  @Output() addReel = new EventEmitter<{ title: string; reelUrl: string; costQuoted?: string; campaignId?: string | null; campaignTag?: string }>();
-  @Output() editDeliverable = new EventEmitter<{ id: string; title: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string }>();
+  @Output() addReel = new EventEmitter<{ title: string; reelUrl: string; costQuoted?: string; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }>();
+  @Output() editDeliverable = new EventEmitter<{ id: string; title: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: number | null }>();
   @Output() syncReel = new EventEmitter<string>();
   @Output() openReel = new EventEmitter<ReelDeliverable>();
   @Output() openLiveMedia = new EventEmitter<any>();
   @Output() copyUrl = new EventEmitter<string>();
   @Output() requestDeleteReel = new EventEmitter<ReelDeliverable>();
+
+  readonly hookBadge = describeHookRate;
 
   editMode = signal(false);
   pricingMenuOpen = signal(false);
@@ -710,9 +748,12 @@ export class CreatorInsightsViewComponent implements OnChanges {
   newReelTitle = '';
   newReelUrl = '';
   newReelCost = '';
+  newReelHookRate = '';
   newReelCampaignId = '';
   editDelTitle = '';
   editDelCost = '';
+  editDelHookRate = '';
+  originalEditDelHook = '';
   editDelCampaignId = '';
 
   form = {
@@ -813,12 +854,18 @@ export class CreatorInsightsViewComponent implements OnChanges {
     const avgViews = kpis.postsWithViewsCount > 0 && kpis.totalViews > 0
       ? Math.round(kpis.totalViews / kpis.postsWithViewsCount)
       : 0;
+    const hookRollup = computeViewWeightedHookRate(this.reels);
+    const creatorHook = hookRollup.avgHookRatePct != null
+      ? hookRollup.avgHookRatePct
+      : ((this.creator?.hookRate90d || 0) > 0 ? this.creator!.hookRate90d! : null);
 
     return {
       tier: this.computeTier(followers),
       followersCount: followers,
       followersDisplay: followers > 0 ? (this.creator?.followersDisplay || this.formatCompact(followers)) : '—',
       interactionRatePct: irPct,
+      avgHookRatePct: creatorHook,
+      hookMeasuredReelsCount: hookRollup.hookMeasuredReelsCount,
       avgViewsPerPost: avgViews,
       avgViewsPostCount: kpis.postsWithViewsCount,
       costMode: mode,
@@ -1029,6 +1076,8 @@ export class CreatorInsightsViewComponent implements OnChanges {
     this.editingDeliverableId.set(r.id);
     this.editDelTitle = this.displayReelTitle(r);
     this.editDelCost = r.costQuoted ? String(r.costQuoted) : '';
+    this.editDelHookRate = r.hookRatePct != null ? String(r.hookRatePct) : '';
+    this.originalEditDelHook = this.editDelHookRate;
     const byId = r.campaignId ? this.campaigns.find(c => c.id === r.campaignId) : null;
     const byTag = !byId && r.campaignTag
       ? this.campaigns.find(c => c.name.trim().toLowerCase() === r.campaignTag!.trim().toLowerCase())
@@ -1039,15 +1088,19 @@ export class CreatorInsightsViewComponent implements OnChanges {
   saveDeliverableEdit(deliverableId: string) {
     if (!this.canManage) return;
     const rawCost = String(this.editDelCost || '').trim();
+    const rawHook = String(this.editDelHookRate ?? '').trim();
     const chosenCamp = this.editDelCampaignId
       ? this.campaigns.find(c => c.id === this.editDelCampaignId)
       : null;
-    const out: { id: string; title: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string } = {
+    const out: { id: string; title: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: number | null } = {
       id: deliverableId,
       title: this.editDelTitle.trim(),
       campaignId: chosenCamp ? chosenCamp.id : null,
       campaignTag: chosenCamp ? chosenCamp.name : ''
     };
+    if (rawHook !== this.originalEditDelHook) {
+      out.hookRatePct = rawHook !== '' ? Number(rawHook) : null;
+    }
     if (this.computedRoi().costMode === 'PER_DELIVERABLE') {
       out.costQuoted = rawCost ? Number(rawCost) : null;
     }
@@ -1090,16 +1143,19 @@ export class CreatorInsightsViewComponent implements OnChanges {
     const chosenCamp = this.newReelCampaignId
       ? this.campaigns.find(c => c.id === this.newReelCampaignId)
       : null;
+    const rawHook = String(this.newReelHookRate ?? '').trim();
     this.addReel.emit({
       title: this.newReelTitle || 'Verified Campaign Reel',
       reelUrl: cleanUrl,
       costQuoted: this.newReelCost ? String(this.newReelCost) : undefined,
       campaignId: chosenCamp ? chosenCamp.id : undefined,
-      campaignTag: chosenCamp ? chosenCamp.name : undefined
+      campaignTag: chosenCamp ? chosenCamp.name : undefined,
+      hookRatePct: rawHook ? rawHook : undefined
     });
     this.newReelTitle = '';
     this.newReelUrl = '';
     this.newReelCost = '';
+    this.newReelHookRate = '';
     this.newReelCampaignId = '';
   }
 

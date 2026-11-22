@@ -17,6 +17,9 @@ export interface ResolvedReelMetrics {
   costQuoted: number | null;
   costPerView: number | null;
   costPerInteraction: number | null;
+  hookRatePct: number | null;
+  skipRatePct: number | null;
+  hookRateSource: string | null;
   viewsDelta: number;
   isSnapshotPreview: boolean;
 }
@@ -82,11 +85,17 @@ export function computeReelSnapshotMetrics(params: {
       costQuoted: costQuoted ?? null,
       costPerView: bundleDerived.costPerView ?? (costQuoted && views > 0 ? Math.round((costQuoted / views) * 100) / 100 : null),
       costPerInteraction: bundleDerived.costPerInteraction ?? (costQuoted && totalInteractions > 0 ? Math.round((costQuoted / totalInteractions) * 100) / 100 : null),
+      hookRatePct: bundleDerived.hookRatePct ?? reel.hookRatePct ?? null,
+      skipRatePct: bundleDerived.skipRatePct ?? reel.skipRatePct ?? null,
+      hookRateSource: bundleDerived.hookRateSource ?? reel.hookRateSource ?? null,
       viewsDelta: bundleDerived.viewsDeltaLastSync ?? viewsDeltaLastSync,
       isSnapshotPreview: false
     };
   }
 
+  const snapHook = usingSnapshot
+    ? (snapshot!.hookRatePct ?? reel.hookRatePct ?? null)
+    : (reel.hookRatePct ?? null);
   return {
     viewsCount: views,
     likesCount: likes,
@@ -104,6 +113,9 @@ export function computeReelSnapshotMetrics(params: {
     costQuoted: costQuoted ?? null,
     costPerView: costQuoted && views > 0 ? Math.round((costQuoted / views) * 100) / 100 : null,
     costPerInteraction: costQuoted && totalInteractions > 0 ? Math.round((costQuoted / totalInteractions) * 100) / 100 : null,
+    hookRatePct: snapHook,
+    skipRatePct: snapHook !== null ? Math.round((100 - snapHook) * 10) / 10 : (reel.skipRatePct ?? null),
+    hookRateSource: reel.hookRateSource ?? null,
     viewsDelta: usingSnapshot ? (snapshot!.deltaViews || 0) : viewsDeltaLastSync,
     isSnapshotPreview: usingSnapshot
   };

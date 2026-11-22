@@ -148,11 +148,16 @@ export interface AssignCreatorPayload {
             </p>
           </div>
           <div class="px-5 py-3.5">
-            <p class="text-xs text-cv-ink-muted font-medium">Engagement Rate</p>
+            <p class="text-xs text-cv-ink-muted font-medium">Engagement &amp; Hook Rate</p>
             <p class="font-headline text-3xl font-bold text-cv-green mt-1 leading-none">
               {{ st.engagementRate > 0 ? st.engagementRate + '%' : '—' }}
+              @if (st.avgHookRatePct != null) {
+                <span class="text-lg font-semibold text-cv-gold ml-1">• {{ st.avgHookRatePct }}% Hook</span>
+              }
             </p>
-            <p class="text-[11px] text-cv-ink-subtle mt-1.5">Across campaign Reels</p>
+            <p class="text-[11px] text-cv-ink-subtle mt-1.5">
+              {{ st.avgHookRatePct != null ? ('3s Hook across ' + (st.hookMeasuredReelsCount || 0) + ' Reel(s)') : 'Across campaign Reels' }}
+            </p>
           </div>
           <div class="px-5 py-3.5">
             <p class="text-xs text-cv-ink-muted font-medium">Deliverables Status</p>
@@ -274,6 +279,12 @@ export interface AssignCreatorPayload {
                       <p class="font-headline text-base font-bold text-cv-ink">{{ row.reelsCount }} / {{ row.expectedReels }}</p>
                       <p class="text-[10px] uppercase text-cv-ink-muted">Reels</p>
                     </div>
+                    @if (row.hookRatePct != null) {
+                      <div class="text-center">
+                        <p class="font-headline text-base font-bold text-cv-green">{{ row.hookRatePct }}%</p>
+                        <p class="text-[10px] uppercase text-cv-ink-muted">Hook (3s)</p>
+                      </div>
+                    }
                     <div class="text-center">
                       <p class="font-headline text-base font-bold text-cv-gold">{{ row.calculatedSpend ? money(row.calculatedSpend, 0) : '—' }}</p>
                       <p class="text-[10px] uppercase text-cv-ink-muted">Agreed / Spend</p>
@@ -340,6 +351,12 @@ export interface AssignCreatorPayload {
                       <p class="font-headline text-base font-bold text-cv-gold">{{ (r.commentsCount || 0).toLocaleString('en-IN') }}</p>
                       <p class="text-[10px] uppercase text-cv-ink-muted">Cmts</p>
                     </div>
+                    @if (r.hookRatePct != null) {
+                      <div class="text-center">
+                        <p class="font-headline text-base font-bold text-cv-green">{{ r.hookRatePct }}%</p>
+                        <p class="text-[10px] uppercase text-cv-ink-muted">Hook</p>
+                      </div>
+                    }
                     <div class="flex items-center gap-1.5">
                       <button type="button" (click)="openReel.emit(r)"
                               class="h-8 px-3 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] text-xs font-bold cursor-pointer transition-colors">

@@ -121,9 +121,12 @@ import { safeExternalUrl } from '../utils/url-safety';
             }
 
             <div class="px-5 py-4">
-              <p class="text-xs text-cv-ink-muted font-medium">Engagement &amp; Health</p>
+              <p class="text-xs text-cv-ink-muted font-medium">Engagement &amp; Hook Rate</p>
               <p class="font-headline text-3xl font-bold text-cv-green mt-1 leading-none">
                 {{ sum.blendedEngagementRate > 0 ? sum.blendedEngagementRate + '%' : '—' }}
+                @if (sum.avgHookRatePct != null) {
+                  <span class="text-lg font-semibold text-cv-gold ml-1">• {{ sum.avgHookRatePct }}% Hook</span>
+                }
               </p>
               <p class="text-[11px] text-cv-ink-subtle mt-1.5">{{ sum.healthScore.label }} • {{ sum.healthScore.benchmarkNote }}</p>
             </div>
@@ -270,6 +273,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                       <th class="px-4 py-2.5 text-right">Likes</th>
                       <th class="px-4 py-2.5 text-right">Comments</th>
                       <th class="px-4 py-2.5 text-right">Eng. Rate</th>
+                      <th class="px-4 py-2.5 text-right">Hook (3s)</th>
                       <th class="px-4 py-2.5 text-right cv-print-hide">Link</th>
                     </tr>
                   </thead>
@@ -283,6 +287,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                         <td class="px-4 py-3 text-right text-cv-gold">{{ (r.likesCount || 0).toLocaleString('en-IN') }}</td>
                         <td class="px-4 py-3 text-right text-cv-green">{{ (r.commentsCount || 0).toLocaleString('en-IN') }}</td>
                         <td class="px-4 py-3 text-right text-cv-blush">{{ r.engagementRate > 0 ? r.engagementRate + '%' : '—' }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-cv-green">{{ r.hookRatePct != null ? r.hookRatePct + '%' : '—' }}</td>
                         <td class="px-4 py-3 text-right cv-print-hide">
                           @if (safeExternalUrl(r.reelUrl, true); as safeLink) {
                             <a [href]="safeLink" target="_blank" rel="noopener noreferrer" class="text-[#f54e26] hover:underline font-semibold">View ↗</a>

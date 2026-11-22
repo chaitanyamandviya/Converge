@@ -556,4 +556,95 @@ class InstagramGraphServiceTest {
         assertEquals(4.76, reel.getEngagementRate());
         mockServer.verify();
     }
+
+    @Test
+    void syncsReelsSkipRateFallsBackGracefullyAndComputesViewWeightedHookRate() {
+        Creator creator = new Creator();
+        creator.setId(UUID.randomUUID());
+        creator.setHandle("@hook_creator");
+        creator.setFollowersCount(100000L);
+        creator.setIgConnected(true);
+        creator.setIgAccessToken("IG_TOKEN");
+
+        // 1. Ratio scale (0.385 -> 38.5% skip rate -> 61.5% hook rate)
+        ReelDeliverable ratioReel = new ReelDeliverable();
+        ratioReel.setReelUrl("https://www.instagram.com/reel/HookRatio1/");
+        ratioReel.setIgMediaId("180555111222");
+
+        String mediaJson1 = """
+            {"id":"180555111222","media_type":"VIDEO","media_product_type":"REELS","permalink":"https://www.instagram.com/reel/HookRatio1/","like_count":1500,"comments_count":50}
+            """;
+        String insightsJson1 = """
+            {
+              "data": [
+                {"name": "views", "values": [{"value": 100000}]},
+                {"name": "ig_reels_avg_watch_time", "values": [{"value": 15200}]},
+                {"name": "reels_skip_rate", "values": [{"value": 0.385}]}
+              ]
+            }
+            """;
+
+        mockServer.expect(requestTo(containsString("/180555111222?fields=")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(mediaJson1, MediaType.APPLICATION_JSON));
+        mockServer.expect(requestTo(containsString("/180555111222/insights")))
+                .andExpect(requestTo(containsString("reels_skip_rate")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(insightsJson1, MediaType.APPLICATION_JSON));
+
+        service.syncReelDeliverable(ratioReel, creator);
+        assertEquals(38.5, ratioReel.getSkipRatePct());
+        assertEquals(61.5, ratioReel.getHookRatePct());
+        assertEquals("META_GRAPH_INSIGHTS", ratioReel.getHookRateSource());
+        mockServer.verify();
+        mockServer.reset();
+
+        // 2. Fallback when Meta rejects reels_skip_rate: preserves manual hookRatePct & keeps other insights!
+        ReelDeliverable fallbackReel = new ReelDeliverable();
+        fallbackReel.setReelUrl("https://www.instagram.com/reel/HookFallback2/");
+        fallbackReel.setIgMediaId("180555111333");
+        fallbackReel.setHookRatePct(48.0);
+        fallbackReel.setSkipRatePct(52.0);
+        fallbackReel.setHookRateSource("MANUAL");
+
+        String mediaJson2 = """
+            {"id":"180555111333","media_type":"VIDEO","media_product_type":"REELS","permalink":"https://www.instagram.com/reel/HookFallback2/","like_count":800,"comments_count":20}
+            """;
+        String insightsJson2 = """
+            {
+              "data": [
+                {"name": "views", "values": [{"value": 50000}]},
+                {"name": "ig_reels_avg_watch_time", "values": [{"value": 11000}]}
+              ]
+            }
+            """;
+
+        mockServer.expect(requestTo(containsString("/180555111333?fields=")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(mediaJson2, MediaType.APPLICATION_JSON));
+        mockServer.expect(requestTo(containsString("reels_skip_rate")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withBadRequest());
+        mockServer.expect(requestTo(containsString("/180555111333/insights")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(insightsJson2, MediaType.APPLICATION_JSON));
+
+        service.syncReelDeliverable(fallbackReel, creator);
+        assertEquals(50000L, fallbackReel.getViewsCount());
+        assertEquals(48.0, fallbackReel.getHookRatePct());
+        assertEquals("MANUAL", fallbackReel.getHookRateSource());
+
+        // 3. View-weighted rollup: (61.5 * 100k + 48.0 * 50k) / 150k = 57.0%
+        var unmeasuredReel = new ReelDeliverable();
+        unmeasuredReel.setViewsCount(40000L);
+        var rollup = InstagramGraphService.computeViewWeightedHookRate(List.of(ratioReel, fallbackReel, unmeasuredReel));
+        assertEquals(2, rollup.measuredReelsCount());
+        assertEquals(57.0, rollup.avgHookRatePct());
+
+        // Percentage scale check (42.6 -> 42.6%)
+        assertEquals(42.6, InstagramGraphService.normalizeMetaSkipRatePct(42.6));
+        assertNull(InstagramGraphService.normalizeMetaSkipRatePct(0.0));
+
+        mockServer.verify();
+    }
 }

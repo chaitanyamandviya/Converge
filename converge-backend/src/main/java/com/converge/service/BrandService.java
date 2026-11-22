@@ -390,6 +390,16 @@ public class BrandService {
         long totalReach = creators.stream().mapToLong(Creator::getReachCount).sum();
         double avgEngagement = creators.isEmpty() ? 0.0 :
                 creators.stream().mapToDouble(Creator::getEngagementRate).average().orElse(0.0);
+        InstagramGraphService.HookRateRollup brandHook = InstagramGraphService.computeViewWeightedHookRate(reels);
+
+        Map<String, Object> brandStats = new LinkedHashMap<>();
+        brandStats.put("totalReels", reels.size());
+        brandStats.put("totalReach", totalReach);
+        brandStats.put("avgEngagement", Math.round(avgEngagement * 100.0) / 100.0);
+        brandStats.put("avgHookRatePct", brandHook.avgHookRatePct());
+        brandStats.put("hookMeasuredReelsCount", brandHook.measuredReelsCount());
+        brandStats.put("activeAgencies", agencies.size());
+        brandStats.put("totalCreators", creators.size());
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("brand", brand);
@@ -399,13 +409,7 @@ public class BrandService {
         result.put("deliverables", reels);
         result.put("campaigns", buildCampaignSummariesList(brandId, scopedAgency, creators, reels));
         result.put("reelDeltas", buildBrandReelDeltasMap(brandId, reels));
-        result.put("stats", Map.of(
-                "totalReels", reels.size(),
-                "totalReach", totalReach,
-                "avgEngagement", Math.round(avgEngagement * 100.0) / 100.0,
-                "activeAgencies", agencies.size(),
-                "totalCreators", creators.size()
-        ));
+        result.put("stats", brandStats);
         return result;
     }
 
@@ -1022,6 +1026,7 @@ public class BrandService {
         } else {
             reel.setStatus("PENDING_META_SYNC");
         }
+        applyManualHookRateFromPayload(reel, payload);
 
         ReelDeliverable saved = reelRepository.save(reel);
         if (resolvedCamp != null) {
@@ -1310,8 +1315,10 @@ public class BrandService {
                     }
                 }
             }
+            applyManualHookRateFromPayload(reel, payload);
         }
         ReelDeliverable saved = reelRepository.save(reel);
+        recordDeliverableSnapshotIfChanged(saved, false);
         Optional<Creator> parentCreator = creatorRepository.findById(saved.getCreatorId());
         parentCreator.ifPresent(this::rollUpCreatorMetrics);
         recordAudit(saved.getBrandId(), parentCreator.map(Creator::getAgencyId).orElse(null), "REEL_AUDIT", "Deliverable Updated", "Updated",
@@ -1642,6 +1649,11 @@ public class BrandService {
             creator.setEngagementRate(trackedIrPct);
         }
 
+        InstagramGraphService.HookRateRollup hookRollup = InstagramGraphService.computeViewWeightedHookRate(safeItems);
+        if (hookRollup.avgHookRatePct() != null) {
+            creator.setHookRate90d(hookRollup.avgHookRatePct());
+        }
+
         instagramGraphService.evaluateCreatorQualification(creator);
         creator.setLastSyncedAt(Instant.now());
         return creatorRepository.save(creator);
@@ -1744,7 +1756,7 @@ public class BrandService {
                 .filter(c -> activeCampaign == null || creatorMatchesCampaign(c, deliverablesByCreator.getOrDefault(c.getId(), List.of()), activeCampaign))
                 .toList();
         StringBuilder sb = new StringBuilder();
-        sb.append("Brand,Code,Creator,Handle,Tier,Category,ManagementHandle,Country,Followers,AccountInteractions,Views,InteractionRate,CostMode,CostQuoted,Verified,PreviousPartners,Source,Agency,Campaign,AuditedReels,EngagementRate,Status\n");
+        sb.append("Brand,Code,Creator,Handle,Tier,Category,ManagementHandle,Country,Followers,AccountInteractions,Views,InteractionRate,CostMode,CostQuoted,Verified,PreviousPartners,Source,Agency,Campaign,AuditedReels,EngagementRate,HookRate,Status\n");
         for (Creator c : creators) {
             Double exportedCost;
             if ("PER_DELIVERABLE".equals(c.getCostMode())) {
@@ -1778,6 +1790,7 @@ public class BrandService {
               .append(csv(c.getCampaignName())).append(',')
               .append(c.getAuditedReelsCount()).append(',')
               .append(c.getEngagementRate()).append("%,")
+              .append(c.getHookRate90d() > 0 ? c.getHookRate90d() + "%" : "").append(',')
               .append(csv(c.getStatus())).append('\n');
         }
         return sb.toString();
@@ -1914,7 +1927,8 @@ public class BrandService {
                 || latest.getLikesCount() != reel.getLikesCount()
                 || latest.getCommentsCount() != reel.getCommentsCount()
                 || latest.getSavesCount() != reel.getSavesCount()
-                || latest.getSharesCount() != reel.getSharesCount();
+                || latest.getSharesCount() != reel.getSharesCount()
+                || !Objects.equals(latest.getHookRatePct(), reel.getHookRatePct());
         boolean intervalElapsed = allowPeriodicCheckIn
                 && latest.getCapturedAt() != null
                 && latest.getCapturedAt().isBefore(Instant.now().minusSeconds(6 * 3600L));
@@ -1933,6 +1947,7 @@ public class BrandService {
         snap.setCommentsCount(reel.getCommentsCount());
         snap.setSavesCount(reel.getSavesCount());
         snap.setSharesCount(reel.getSharesCount());
+        snap.setHookRatePct(reel.getHookRatePct());
         snap.setCapturedAt(capturedAt != null ? capturedAt : Instant.now());
         reelSnapshotRepository.save(snap);
     }
@@ -1990,6 +2005,7 @@ public class BrandService {
             pt.put("likesCount", cur.getLikesCount());
             pt.put("commentsCount", cur.getCommentsCount());
             pt.put("savesCount", cur.getSavesCount());
+            pt.put("hookRatePct", cur.getHookRatePct());
             pt.put("deltaViews", i > 0 ? (cur.getViewsCount() - prevViews) : 0L);
             pt.put("deltaLikes", i > 0 ? (cur.getLikesCount() - prevLikes) : 0L);
             pt.put("capturedAt", cur.getCapturedAt());
@@ -2001,6 +2017,7 @@ public class BrandService {
             baseline.put("likesCount", reel.getLikesCount());
             baseline.put("commentsCount", reel.getCommentsCount());
             baseline.put("savesCount", reel.getSavesCount());
+            baseline.put("hookRatePct", reel.getHookRatePct());
             baseline.put("deltaViews", 0L);
             baseline.put("deltaLikes", 0L);
             baseline.put("capturedAt", reel.getSyncedAt() != null ? reel.getSyncedAt() : Instant.now());
@@ -2248,6 +2265,12 @@ public class BrandService {
             } else {
                 reel.setStatus("PENDING_META_SYNC");
             }
+            try {
+                applyManualHookRateFromPayload(reel, entryMap);
+            } catch (IllegalArgumentException badHook) {
+                errors.add(Map.of("row", rowNum, "reelUrl", reelUrl, "reason", badHook.getMessage()));
+                continue;
+            }
 
             ReelDeliverable saved = reelRepository.save(reel);
             if (itemCampaign != null) {
@@ -2389,21 +2412,21 @@ public class BrandService {
 
         List<ReelDeliverable> createdReels = new ArrayList<>();
         createdReels.add(saveDemoReel(aanya, "Morning Vitamin C Routine", summerId, "Summer Glow Drop", "C0DemoAanya01",
-                840_000L, 48_200L, 912L, 3_420L, 35_000.0, now.minusSeconds(9 * 86400L)));
+                840_000L, 48_200L, 912L, 3_420L, 35_000.0, 54.2, 16_400L, now.minusSeconds(9 * 86400L)));
         createdReels.add(saveDemoReel(aanya, "7-Day Hydration Test", summerId, "Summer Glow Drop", "C0DemoAanya02",
-                310_000L, 19_400L, 418L, 1_290L, 35_000.0, now.minusSeconds(4 * 86400L)));
+                310_000L, 19_400L, 418L, 1_290L, 35_000.0, 41.8, 12_800L, now.minusSeconds(4 * 86400L)));
         createdReels.add(saveDemoReel(rohan, "AM Grooming Essentials", summerId, "Summer Glow Drop", "C0DemoRohan01",
-                520_000L, 28_600L, 640L, 1_850L, 48_000.0, now.minusSeconds(11 * 86400L)));
+                520_000L, 28_600L, 640L, 1_850L, 48_000.0, 47.6, 14_900L, now.minusSeconds(11 * 86400L)));
         createdReels.add(saveDemoReel(rohan, "Travel Kit Breakdown", monsoonId, "Monsoon Creator Wave", "C0DemoRohan02",
-                195_000L, 11_200L, 244L, 680L, 48_000.0, now.minusSeconds(3 * 86400L)));
+                195_000L, 11_200L, 244L, 680L, 48_000.0, 35.4, 10_200L, now.minusSeconds(3 * 86400L)));
         createdReels.add(saveDemoReel(nisha, "Rain-Proof Skincare Layering", monsoonId, "Monsoon Creator Wave", "C0DemoNisha01",
-                245_000L, 16_800L, 530L, 1_940L, null, now.minusSeconds(6 * 86400L)));
+                245_000L, 16_800L, 530L, 1_940L, null, 58.9, 18_300L, now.minusSeconds(6 * 86400L)));
         createdReels.add(saveDemoReel(kabir, "Post-Workout Recovery Ritual", summerId, "Summer Glow Drop", "C0DemoKabir01",
-                218_000L, 12_900L, 310L, 820L, null, now.minusSeconds(8 * 86400L)));
+                218_000L, 12_900L, 310L, 820L, null, 38.2, 11_600L, now.minusSeconds(8 * 86400L)));
         createdReels.add(saveDemoReel(kabir, "Unboxing Brand Kit", summerId, "Summer Glow Drop", "C0DemoKabir02",
-                142_000L, 7_600L, 198L, 410L, null, now.minusSeconds(2 * 86400L)));
+                142_000L, 7_600L, 198L, 410L, null, 31.5, 9_400L, now.minusSeconds(2 * 86400L)));
         createdReels.add(saveDemoReel(tara, "Honest Texture & SPF Review", monsoonId, "Monsoon Creator Wave", "C0DemoTara01",
-                92_000L, 6_450L, 265L, 790L, 18_000.0, now.minusSeconds(1 * 86400L)));
+                92_000L, 6_450L, 265L, 790L, 18_000.0, 49.0, 15_200L, now.minusSeconds(1 * 86400L)));
 
         for (Creator dc : createdCreators) {
             rollUpCreatorMetrics(dc);
@@ -2487,6 +2510,8 @@ public class BrandService {
             long comments,
             long saves,
             Double costQuoted,
+            Double hookRatePct,
+            long avgWatchTimeMs,
             Instant publishedAt) {
         ReelDeliverable r = new ReelDeliverable();
         r.setBrandId(creator.getBrandId());
@@ -2504,6 +2529,13 @@ public class BrandService {
         r.setLikesCount(likes);
         r.setCommentsCount(comments);
         r.setSavesCount(saves);
+        r.setAvgWatchTimeMs(avgWatchTimeMs);
+        if (hookRatePct != null) {
+            double hr = Math.round(hookRatePct * 10.0) / 10.0;
+            r.setHookRatePct(hr);
+            r.setSkipRatePct(Math.round((100.0 - hr) * 10.0) / 10.0);
+            r.setHookRateSource("META_GRAPH_INSIGHTS");
+        }
         double er = views > 0 ? Math.round(((likes + comments) * 100.0 / views) * 100.0) / 100.0 : 0.0;
         r.setEngagementRate(er);
         r.setStatus("VERIFIED");
@@ -2526,6 +2558,7 @@ public class BrandService {
                 snap.setLikesCount(Math.round(likes * ratios[i]));
                 snap.setCommentsCount(Math.round(comments * ratios[i]));
                 snap.setSavesCount(Math.round(saves * ratios[i]));
+                snap.setHookRatePct(saved.getHookRatePct());
                 snap.setCapturedAt(now.minusSeconds(offsetsHours[i] * 3600L));
                 reelSnapshotRepository.save(snap);
             }
@@ -2791,6 +2824,7 @@ public class BrandService {
             m.put("auditedReelsCount", c.getAuditedReelsCount());
             m.put("engagementRate", c.getEngagementRate());
             m.put("interactionRate90d", c.getInteractionRate90d());
+            m.put("hookRate90d", c.getHookRate90d());
             return m;
         }).toList();
 
@@ -2810,6 +2844,9 @@ public class BrandService {
             m.put("commentsCount", r.getCommentsCount());
             m.put("savesCount", r.getSavesCount());
             m.put("sharesCount", r.getSharesCount());
+            m.put("hookRatePct", r.getHookRatePct());
+            m.put("skipRatePct", r.getSkipRatePct());
+            m.put("hookRateSource", r.getHookRateSource());
             m.put("engagementRate", r.getEngagementRate());
             m.put("status", r.getStatus());
             m.put("publishedAt", r.getPublishedAt());
@@ -2818,14 +2855,18 @@ public class BrandService {
             return m;
         }).toList();
 
+        InstagramGraphService.HookRateRollup reportHook = InstagramGraphService.computeViewWeightedHookRate(filteredReels);
+        Map<String, Object> reportMeta = new LinkedHashMap<>();
+        reportMeta.put("title", report.getTitle());
+        reportMeta.put("campaignFilter", campaignFilter);
+        reportMeta.put("includeSpend", includeSpend);
+        reportMeta.put("avgHookRatePct", reportHook.avgHookRatePct());
+        reportMeta.put("hookMeasuredReelsCount", reportHook.measuredReelsCount());
+        reportMeta.put("createdAt", report.getCreatedAt());
+        reportMeta.put("expiresAt", report.getExpiresAt() != null ? report.getExpiresAt().toString() : "");
+
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("report", Map.of(
-                "title", report.getTitle(),
-                "campaignFilter", campaignFilter,
-                "includeSpend", includeSpend,
-                "createdAt", report.getCreatedAt(),
-                "expiresAt", report.getExpiresAt() != null ? report.getExpiresAt().toString() : ""
-        ));
+        out.put("report", reportMeta);
         out.put("brand", safeBrand);
         out.put("creators", safeCreators);
         out.put("deliverables", safeReels);
@@ -3146,6 +3187,7 @@ public class BrandService {
             double spend = computeCampaignSpend(creatorIdsInCamp, assignmentByCreator, creatorMap, campReels, totalReelsByCreator);
             double cpv = (spend > 0 && views > 0) ? Math.round((spend / views) * 100.0) / 100.0 : 0.0;
             double engRate = (views > 0 && interactions > 0) ? Math.round((interactions * 100.0 / views) * 100.0) / 100.0 : 0.0;
+            InstagramGraphService.HookRateRollup campHook = InstagramGraphService.computeViewWeightedHookRate(campReels);
 
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", camp.getId());
@@ -3166,9 +3208,53 @@ public class BrandService {
             row.put("spendAmount", Math.round(spend));
             row.put("blendedCpv", cpv > 0 ? cpv : null);
             row.put("engagementRate", engRate);
+            row.put("avgHookRatePct", campHook.avgHookRatePct());
+            row.put("hookMeasuredReelsCount", campHook.measuredReelsCount());
             summaries.add(row);
         }
         return summaries;
+    }
+
+    /**
+     * Applies optional manual {@code hookRatePct} / {@code skipRatePct} overrides (0–100%)
+     * for non-OAuth creators or IG Insights screenshot imports. Blank strings clear manual fields.
+     */
+    public void applyManualHookRateFromPayload(ReelDeliverable reel, Map<?, ?> payload) {
+        if (reel == null || payload == null) return;
+        boolean hasHookKey = payload.containsKey("hookRatePct") || payload.containsKey("hookRate");
+        boolean hasSkipKey = payload.containsKey("skipRatePct");
+        if (!hasHookKey && !hasSkipKey) return;
+
+        Object rawObj = payload.containsKey("hookRatePct")
+                ? payload.get("hookRatePct")
+                : (payload.containsKey("hookRate") ? payload.get("hookRate") : payload.get("skipRatePct"));
+        boolean isSkipInput = !hasHookKey && hasSkipKey;
+
+        String rawStr = strVal(rawObj).replace("%", "").replaceAll("\\s+", "");
+        if (rawStr.isEmpty()) {
+            reel.setHookRatePct(null);
+            reel.setSkipRatePct(null);
+            reel.setHookRateSource(null);
+            return;
+        }
+        double parsed;
+        try {
+            parsed = Double.parseDouble(rawStr);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Hook rate must be a number between 0 and 100.");
+        }
+        if (!Double.isFinite(parsed) || parsed < 0.0 || parsed > 100.0) {
+            throw new IllegalArgumentException("Hook rate must be between 0% and 100%.");
+        }
+        double rounded = Math.round(parsed * 10.0) / 10.0;
+        if (isSkipInput) {
+            reel.setSkipRatePct(rounded);
+            reel.setHookRatePct(Math.round((100.0 - rounded) * 10.0) / 10.0);
+        } else {
+            reel.setHookRatePct(rounded);
+            reel.setSkipRatePct(Math.round((100.0 - rounded) * 10.0) / 10.0);
+        }
+        reel.setHookRateSource("MANUAL");
     }
 
     public double computeCampaignSpend(

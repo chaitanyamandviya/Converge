@@ -5,6 +5,7 @@ export interface ParsedBulkReelRow {
   title: string;
   costQuoted: string;
   campaignTag: string;
+  hookRatePct: string;
   valid: boolean;
   reason?: string;
 }
@@ -76,6 +77,7 @@ export function parseBulkReelLines(rawText: string, hasDefaultCreator = false): 
         title: cols[2] || '',
         costQuoted: cols[3] || '',
         campaignTag: cols[4] || '',
+        hookRatePct: cols[5] || '',
         valid: false,
         reason: 'Invalid public https://www.instagram.com/reel/... or /p/... URL'
       });
@@ -94,6 +96,7 @@ export function parseBulkReelLines(rawText: string, hasDefaultCreator = false): 
         title: cols[2] || '',
         costQuoted: cols[3] || '',
         campaignTag: cols[4] || '',
+        hookRatePct: cols[5] || '',
         valid: false,
         reason: `Invalid creator handle "@${creatorHandle}"`
       });
@@ -109,13 +112,13 @@ export function parseBulkReelLines(rawText: string, hasDefaultCreator = false): 
         title: cols[2] || '',
         costQuoted: cols[3] || '',
         campaignTag: cols[4] || '',
+        hookRatePct: cols[5] || '',
         valid: false,
         reason: 'Pick a default creator or include @handle in CSV'
       });
       continue;
     }
 
-    // Flexible optional column parsing: if col[1] was numeric cost on 2-col input? Wait: keep strict positional: url, handle, title, cost, campaign
     const title = (cols[2] || '').trim();
     const rawCost = (cols[3] || '').replace(/[,₹$\s]/g, '').trim();
     if (rawCost && (Number.isNaN(Number(rawCost)) || Number(rawCost) <= 0)) {
@@ -126,10 +129,30 @@ export function parseBulkReelLines(rawText: string, hasDefaultCreator = false): 
         title,
         costQuoted: rawCost,
         campaignTag: (cols[4] || '').trim(),
+        hookRatePct: cols[5] || '',
         valid: false,
         reason: 'Cost must be a positive number'
       });
       continue;
+    }
+
+    const rawHook = (cols[5] || '').replace(/%/g, '').trim();
+    if (rawHook) {
+      const parsedHook = Number(rawHook);
+      if (Number.isNaN(parsedHook) || parsedHook < 0 || parsedHook > 100) {
+        rows.push({
+          rowNum: i + 1,
+          reelUrl,
+          creatorHandle: formattedHandle,
+          title,
+          costQuoted: rawCost,
+          campaignTag: (cols[4] || '').trim(),
+          hookRatePct: rawHook,
+          valid: false,
+          reason: 'Hook rate must be between 0 and 100'
+        });
+        continue;
+      }
     }
 
     rows.push({
@@ -139,6 +162,7 @@ export function parseBulkReelLines(rawText: string, hasDefaultCreator = false): 
       title,
       costQuoted: rawCost,
       campaignTag: (cols[4] || '').trim(),
+      hookRatePct: rawHook,
       valid: true
     });
   }

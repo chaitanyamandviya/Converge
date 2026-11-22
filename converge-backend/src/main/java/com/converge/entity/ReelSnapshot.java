@@ -36,6 +36,7 @@ public class ReelSnapshot {
     private long commentsCount = 0;
     private long savesCount = 0;
     private long sharesCount = 0;
+    private Double hookRatePct;
 
     @Column(nullable = false)
     private Instant capturedAt = Instant.now();
@@ -58,6 +59,8 @@ public class ReelSnapshot {
     public void setSavesCount(long savesCount) { this.savesCount = savesCount; }
     public long getSharesCount() { return sharesCount; }
     public void setSharesCount(long sharesCount) { this.sharesCount = sharesCount; }
+    public Double getHookRatePct() { return hookRatePct; }
+    public void setHookRatePct(Double hookRatePct) { this.hookRatePct = hookRatePct; }
     public Instant getCapturedAt() { return capturedAt; }
     public void setCapturedAt(Instant capturedAt) { this.capturedAt = capturedAt; }
 }

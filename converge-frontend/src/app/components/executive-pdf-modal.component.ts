@@ -87,9 +87,12 @@ import { formatPublishedDateLabel, formatReelKindLabel } from '../utils/reel-for
                 </p>
               </div>
               <div class="p-4">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-[#52535c]">Campaign Health</p>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-[#52535c]">Campaign Health &amp; Hook</p>
                 <p class="font-headline text-3xl font-bold text-[#007656] mt-1 leading-none">
                   {{ summary().blendedEngagementRate > 0 ? summary().blendedEngagementRate + '%' : '—' }}
+                  @if (summary().avgHookRatePct != null) {
+                    <span class="text-base font-bold text-[#b45309] ml-1">• {{ summary().avgHookRatePct }}% Hook</span>
+                  }
                 </p>
                 <p class="text-[11px] text-[#52535c] mt-1">{{ summary().healthScore.label }} • {{ summary().healthScore.benchmarkNote }}</p>
               </div>
@@ -157,6 +160,7 @@ import { formatPublishedDateLabel, formatReelKindLabel } from '../utils/reel-for
                         <th class="px-3 py-2 font-semibold text-right">Likes</th>
                         <th class="px-3 py-2 font-semibold text-right">Cmts</th>
                         <th class="px-3 py-2 font-semibold text-right">Eng.</th>
+                        <th class="px-3 py-2 font-semibold text-right">Hook (3s)</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-[#141414]/10">
@@ -169,6 +173,7 @@ import { formatPublishedDateLabel, formatReelKindLabel } from '../utils/reel-for
                           <td class="px-3 py-2 text-right">{{ (r.likesCount || 0).toLocaleString('en-IN') }}</td>
                           <td class="px-3 py-2 text-right">{{ (r.commentsCount || 0).toLocaleString('en-IN') }}</td>
                           <td class="px-3 py-2 text-right font-semibold text-[#007656]">{{ r.engagementRate > 0 ? r.engagementRate + '%' : '—' }}</td>
+                          <td class="px-3 py-2 text-right font-semibold text-[#b45309]">{{ r.hookRatePct != null ? r.hookRatePct + '%' : '—' }}</td>
                         </tr>
                       }
                     </tbody>

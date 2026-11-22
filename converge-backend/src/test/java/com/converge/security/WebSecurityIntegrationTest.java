@@ -678,20 +678,35 @@ class WebSecurityIntegrationTest {
                 .andExpect(jsonPath("$.assignedCreators.length()").value(2))
                 .andExpect(jsonPath("$.stats.totalSpend").value(40000));
 
-        // Agency links a Reel into the campaign -> creator flips to POSTED
-        mockMvc.perform(post("/api/creators/{creatorId}/deliverables", agencyCreatorId)
+        // Agency links a Reel into the campaign with optional manual Hook Rate -> creator flips to POSTED & campaign exposes Hook Rate
+        var linkReelRes = mockMvc.perform(post("/api/creators/{creatorId}/deliverables", agencyCreatorId)
                         .header("Authorization", "Bearer " + agencyToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"Apex Unboxing Reel\",\"reelUrl\":\"https://www.instagram.com/reel/D1ApexReel1/\",\"campaignId\":\"" + activeCampId + "\"}"))
+                        .content("{\"title\":\"Apex Unboxing Reel\",\"reelUrl\":\"https://www.instagram.com/reel/D1ApexReel1/\",\"campaignId\":\"" + activeCampId + "\",\"hookRatePct\":\"52.4\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.campaignId").value(activeCampId))
-                .andExpect(jsonPath("$.campaignTag").value("Summer Hydration"));
+                .andExpect(jsonPath("$.campaignTag").value("Summer Hydration"))
+                .andExpect(jsonPath("$.hookRatePct").value(52.4))
+                .andExpect(jsonPath("$.skipRatePct").value(47.6))
+                .andExpect(jsonPath("$.hookRateSource").value("MANUAL"))
+                .andReturn();
+        String linkedReelId = objectMapper.readTree(linkReelRes.getResponse().getContentAsString()).get("id").asText();
 
         mockMvc.perform(get("/api/campaigns/{cid}", activeCampId)
                         .header("Authorization", "Bearer " + agencyToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.assignedCreators[0].status").value("POSTED"))
-                .andExpect(jsonPath("$.assignedCreators[0].reelsCount").value(1));
+                .andExpect(jsonPath("$.assignedCreators[0].reelsCount").value(1))
+                .andExpect(jsonPath("$.assignedCreators[0].hookRatePct").value(52.4))
+                .andExpect(jsonPath("$.stats.avgHookRatePct").value(52.4));
+
+        mockMvc.perform(put("/api/creators/deliverables/{did}", linkedReelId)
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"hookRatePct\":61.2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hookRatePct").value(61.2))
+                .andExpect(jsonPath("$.skipRatePct").value(38.8));
 
         // Campaign rename propagates campaignTag onto linked deliverables
         mockMvc.perform(patch("/api/campaigns/{cid}", activeCampId)

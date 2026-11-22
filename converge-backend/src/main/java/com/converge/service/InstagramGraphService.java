@@ -541,19 +541,36 @@ public class InstagramGraphService {
             long likes = asLong(result.get("likeCount"));
             long comments = asLong(result.get("commentsCount"));
 
-            Map<String, Long> insightMetrics = fetchInsightMetricsSafe(effectiveBase, igMediaId, token, mediaType);
-            if (insightMetrics.containsKey("views") && (insightMetrics.get("views") > 0 || !viewsFieldSupported)) {
-                views = insightMetrics.get("views");
-                result.put("viewsFieldSupported", Boolean.TRUE);
+            Map<String, Double> insightMetrics = fetchInsightMetricsSafe(effectiveBase, igMediaId, token, mediaType);
+            if (insightMetrics.containsKey("views")) {
+                long insViews = Math.round(insightMetrics.get("views"));
+                if (insViews > 0 || !viewsFieldSupported) {
+                    views = insViews;
+                    result.put("viewsFieldSupported", Boolean.TRUE);
+                }
             }
-            if (likes == 0 && insightMetrics.containsKey("likes")) likes = insightMetrics.get("likes");
-            if (comments == 0 && insightMetrics.containsKey("comments")) comments = insightMetrics.get("comments");
+            if (likes == 0 && insightMetrics.containsKey("likes")) likes = Math.round(insightMetrics.get("likes"));
+            if (comments == 0 && insightMetrics.containsKey("comments")) comments = Math.round(insightMetrics.get("comments"));
 
-            long reach = insightMetrics.getOrDefault("reach", 0L);
-            long saves = insightMetrics.getOrDefault("saved", 0L);
-            long shares = insightMetrics.getOrDefault("shares", 0L);
-            long avgWatchTimeMs = insightMetrics.getOrDefault("ig_reels_avg_watch_time", 0L);
-            long totalInteractions = insightMetrics.getOrDefault("total_interactions", likes + comments + saves + shares);
+            long reach = insightMetrics.containsKey("reach") ? Math.round(insightMetrics.get("reach")) : 0L;
+            long saves = insightMetrics.containsKey("saved") ? Math.round(insightMetrics.get("saved")) : 0L;
+            long shares = insightMetrics.containsKey("shares") ? Math.round(insightMetrics.get("shares")) : 0L;
+            long avgWatchTimeMs = insightMetrics.containsKey("ig_reels_avg_watch_time")
+                    ? Math.round(insightMetrics.get("ig_reels_avg_watch_time"))
+                    : 0L;
+            long totalInteractions = insightMetrics.containsKey("total_interactions")
+                    ? Math.round(insightMetrics.get("total_interactions"))
+                    : (likes + comments + saves + shares);
+
+            Double rawSkip = insightMetrics.get("reels_skip_rate");
+            Double skipRatePct = rawSkip != null ? normalizeMetaSkipRatePct(rawSkip) : null;
+            if (skipRatePct != null) {
+                double hookRatePct = Math.round((100.0 - skipRatePct) * 10.0) / 10.0;
+                result.put("skipRatePct", skipRatePct);
+                result.put("hookRatePct", hookRatePct);
+                log.info("Meta reels_skip_rate for {} -> raw={}, skipRatePct={}%, hookRatePct={}%",
+                        igMediaId, rawSkip, skipRatePct, hookRatePct);
+            }
 
             result.put("viewsCount", views);
             result.put("reachCount", reach);
@@ -945,9 +962,10 @@ public class InstagramGraphService {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Long> fetchInsightMetricsSafe(String baseUrl, String igMediaId, String token, String mediaType) {
+    private Map<String, Double> fetchInsightMetricsSafe(String baseUrl, String igMediaId, String token, String mediaType) {
         String[] metricSets = isVideoOrReelType(mediaType)
                 ? new String[]{
+                        "views,reach,saved,shares,total_interactions,likes,comments,ig_reels_avg_watch_time,reels_skip_rate",
                         "views,reach,saved,shares,total_interactions,likes,comments,ig_reels_avg_watch_time",
                         "views,reach,saved,shares,total_interactions,likes,comments",
                         "views,reach,saved,shares,total_interactions",
@@ -971,16 +989,18 @@ public class InstagramGraphService {
                         igMediaId
                 );
                 if (resp.get("data") instanceof List<?> dataList) {
-                    Map<String, Long> parsed = new LinkedHashMap<>();
+                    Map<String, Double> parsed = new LinkedHashMap<>();
                     for (Object rowObj : dataList) {
                         if (rowObj instanceof Map<?, ?> row && row.get("name") instanceof String name) {
-                            long val = 0L;
+                            Double val = null;
                             if (row.get("total_value") instanceof Map<?, ?> tv && tv.get("value") != null) {
-                                val = asFlexibleLong(tv.get("value"));
-                            } else if (row.get("values") instanceof List<?> vals && !vals.isEmpty() && vals.get(0) instanceof Map<?, ?> first) {
-                                val = asFlexibleLong(first.get("value"));
+                                val = asFlexibleDouble(tv.get("value"));
+                            } else if (row.get("values") instanceof List<?> vals && !vals.isEmpty() && vals.get(0) instanceof Map<?, ?> first && first.get("value") != null) {
+                                val = asFlexibleDouble(first.get("value"));
                             }
-                            parsed.put(name, val);
+                            if (val != null) {
+                                parsed.put(name, val);
+                            }
                         }
                     }
                     if (!parsed.isEmpty()) return parsed;
@@ -1124,6 +1144,16 @@ public class InstagramGraphService {
         reel.setAvgWatchTimeMs(avgWatchMs);
         reel.setTotalViewTimeMs(0L);
 
+        if (m.get("hookRatePct") instanceof Number hrNum) {
+            double hr = Math.max(0.0, Math.min(100.0, Math.round(hrNum.doubleValue() * 10.0) / 10.0));
+            double sr = (m.get("skipRatePct") instanceof Number srNum)
+                    ? Math.max(0.0, Math.min(100.0, Math.round(srNum.doubleValue() * 10.0) / 10.0))
+                    : Math.round((100.0 - hr) * 10.0) / 10.0;
+            reel.setHookRatePct(hr);
+            reel.setSkipRatePct(sr);
+            reel.setHookRateSource("META_GRAPH_INSIGHTS");
+        }
+
         long effectiveViews = reel.getViewsCount();
         long denom = effectiveViews > 0 ? effectiveViews : creatorFollowers;
         if (denom > 0) {
@@ -1226,6 +1256,61 @@ public class InstagramGraphService {
 
     private static double asDouble(Object v) {
         return v instanceof Number n ? n.doubleValue() : 0.0;
+    }
+
+    private static Double asFlexibleDouble(Object v) {
+        if (v instanceof Number n) {
+            double d = n.doubleValue();
+            return Double.isFinite(d) ? d : null;
+        }
+        if (v instanceof String s && !s.isBlank()) {
+            try {
+                double d = Double.parseDouble(s.trim());
+                return Double.isFinite(d) ? d : null;
+            } catch (NumberFormatException ignored) {}
+        }
+        return null;
+    }
+
+    /**
+     * Normalizes Meta's {@code reels_skip_rate} to a 0–100 percentage, handling both
+     * ratio floats (e.g. 0.425 = 42.5%) and percentage values (e.g. 42.5).
+     * Rejects non-positive values (0.0 often indicates uncalculated/missing sample data).
+     */
+    public static Double normalizeMetaSkipRatePct(double raw) {
+        if (!Double.isFinite(raw) || raw <= 0.0 || raw > 100.0) return null;
+        double pct = raw <= 1.0 ? raw * 100.0 : raw;
+        return Math.max(0.0, Math.min(100.0, Math.round(pct * 10.0) / 10.0));
+    }
+
+    public record HookRateRollup(Double avgHookRatePct, int measuredReelsCount) {}
+
+    /**
+     * Computes view-weighted average Hook Rate across Reels that have a measured Hook Rate
+     * (falls back to simple average across measured Reels when views are still 0).
+     */
+    public static HookRateRollup computeViewWeightedHookRate(Collection<ReelDeliverable> reels) {
+        if (reels == null || reels.isEmpty()) return new HookRateRollup(null, 0);
+        int count = 0;
+        double simpleSum = 0.0;
+        double weightedSum = 0.0;
+        long totalWeightViews = 0L;
+        for (ReelDeliverable r : reels) {
+            if (r == null || r.getHookRatePct() == null || r.getHookRatePct() < 0.0) continue;
+            double hr = Math.max(0.0, Math.min(100.0, r.getHookRatePct()));
+            count++;
+            simpleSum += hr;
+            long v = Math.max(0L, r.getViewsCount());
+            if (v > 0L) {
+                weightedSum += hr * v;
+                totalWeightViews += v;
+            }
+        }
+        if (count == 0) return new HookRateRollup(null, 0);
+        double avg = totalWeightViews > 0L
+                ? weightedSum / totalWeightViews
+                : (simpleSum / count);
+        return new HookRateRollup(Math.round(avg * 10.0) / 10.0, count);
     }
 
     public static String extractManagementHandle(String bio) {
@@ -1799,6 +1884,11 @@ public class InstagramGraphService {
                 ? Math.round((effectiveCost / totalViews) * 100.0) / 100.0
                 : null;
 
+        HookRateRollup hookRollup = computeViewWeightedHookRate(safeDeliverables);
+        Double creatorHookRate = hookRollup.avgHookRatePct() != null
+                ? hookRollup.avgHookRatePct()
+                : (creator.getHookRate90d() > 0 ? creator.getHookRate90d() : null);
+
         Map<String, Object> kpiSummary = new LinkedHashMap<>();
         kpiSummary.put("totalViews", totalViews);
         kpiSummary.put("totalLikes", totalLikes);
@@ -1809,12 +1899,16 @@ public class InstagramGraphService {
         kpiSummary.put("postsAnalyzedCount", postsAnalyzed);
         kpiSummary.put("postsWithViewsCount", postsWithViews);
         kpiSummary.put("staticPhotoCount", staticPhotoCount);
+        kpiSummary.put("avgHookRatePct", creatorHookRate);
+        kpiSummary.put("hookMeasuredReelsCount", hookRollup.measuredReelsCount());
 
         Map<String, Object> roiBenchmarks = new LinkedHashMap<>();
         roiBenchmarks.put("tier", computeFollowerTier(followers));
         roiBenchmarks.put("followersCount", followers);
         roiBenchmarks.put("followersDisplay", followers > 0 ? creator.getFollowersDisplay() : "—");
         roiBenchmarks.put("interactionRatePct", irPct);
+        roiBenchmarks.put("avgHookRatePct", creatorHookRate);
+        roiBenchmarks.put("hookMeasuredReelsCount", hookRollup.measuredReelsCount());
         roiBenchmarks.put("avgViewsPerPost", avgViewsPerPost);
         roiBenchmarks.put("avgViewsPostCount", postsWithViews);
         roiBenchmarks.put("costMode", costMode);
@@ -1993,6 +2087,10 @@ public class InstagramGraphService {
         derived.put("costQuoted", effectiveCost);
         derived.put("costPerView", costPerView);
         derived.put("costPerInteraction", costPerInteraction);
+        derived.put("hookRatePct", reel.getHookRatePct());
+        derived.put("skipRatePct", reel.getSkipRatePct());
+        derived.put("hookRateSource", reel.getHookRateSource());
+        derived.put("creatorAvgHookRatePct", (creator != null && creator.getHookRate90d() > 0) ? creator.getHookRate90d() : null);
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("deliverable", reel);

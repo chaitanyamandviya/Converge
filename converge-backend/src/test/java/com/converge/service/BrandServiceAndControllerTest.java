@@ -851,4 +851,44 @@ class BrandServiceAndControllerTest {
         assertEquals(2, savedCampaigns.size());
         assertEquals(2, savedLinks.size());
     }
+
+    @Test
+    void manualHookRateValidationUpdateAndClearWorkAcrossDeliverables() {
+        UUID brandId = UUID.randomUUID();
+        UUID creatorId = UUID.randomUUID();
+        UUID delId = UUID.randomUUID();
+
+        var creator = new Creator();
+        creator.setId(creatorId);
+        creator.setBrandId(brandId);
+        creator.setHandle("@manual_hook_star");
+
+        var reel = new com.converge.entity.ReelDeliverable();
+        reel.setId(delId);
+        reel.setBrandId(brandId);
+        reel.setCreatorId(creatorId);
+        reel.setTitle("Test Reel");
+        reel.setViewsCount(25000L);
+
+        when(reelRepository.findById(delId)).thenReturn(Optional.of(reel));
+        when(reelRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(creatorRepository.findById(creatorId)).thenReturn(Optional.of(creator));
+        when(reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId)).thenReturn(List.of(reel));
+        when(creatorRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        var updated = brandService.updateDeliverable(delId, Map.of("hookRatePct", 48.5), "Tester");
+        assertEquals(48.5, updated.getHookRatePct());
+        assertEquals(51.5, updated.getSkipRatePct());
+        assertEquals("MANUAL", updated.getHookRateSource());
+        assertEquals(48.5, creator.getHookRate90d());
+
+        var cleared = brandService.updateDeliverable(delId, Map.of("hookRatePct", ""), "Tester");
+        assertNull(cleared.getHookRatePct());
+        assertNull(cleared.getSkipRatePct());
+        assertNull(cleared.getHookRateSource());
+
+        assertThrows(IllegalArgumentException.class, () ->
+                brandService.updateDeliverable(delId, Map.of("hookRatePct", 105), "Tester")
+        );
+    }
 }

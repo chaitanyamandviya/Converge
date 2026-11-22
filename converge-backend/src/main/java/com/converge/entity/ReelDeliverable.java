@@ -50,6 +50,9 @@ public class ReelDeliverable {
     private long sharesCount = 0;
     private Long avgWatchTimeMs = 0L;
     private Long totalViewTimeMs = 0L;
+    private Double hookRatePct;
+    private Double skipRatePct;
+    private String hookRateSource; // META_GRAPH_INSIGHTS, MANUAL
     private double engagementRate = 0.0;
 
     @Column(nullable = false)
@@ -109,6 +112,12 @@ public class ReelDeliverable {
     public void setAvgWatchTimeMs(Long avgWatchTimeMs) { this.avgWatchTimeMs = avgWatchTimeMs != null ? avgWatchTimeMs : 0L; }
     public long getTotalViewTimeMs() { return totalViewTimeMs != null ? totalViewTimeMs : 0L; }
     public void setTotalViewTimeMs(Long totalViewTimeMs) { this.totalViewTimeMs = totalViewTimeMs != null ? totalViewTimeMs : 0L; }
+    public Double getHookRatePct() { return hookRatePct; }
+    public void setHookRatePct(Double hookRatePct) { this.hookRatePct = hookRatePct; }
+    public Double getSkipRatePct() { return skipRatePct; }
+    public void setSkipRatePct(Double skipRatePct) { this.skipRatePct = skipRatePct; }
+    public String getHookRateSource() { return hookRateSource; }
+    public void setHookRateSource(String hookRateSource) { this.hookRateSource = hookRateSource; }
     public double getEngagementRate() { return engagementRate; }
     public void setEngagementRate(double engagementRate) { this.engagementRate = engagementRate; }
     public String getStatus() { return status; }

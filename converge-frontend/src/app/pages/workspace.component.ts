@@ -648,7 +648,7 @@ import { safeExternalUrl } from '../utils/url-safety';
 
                 <div class="px-5 py-3.5">
                   <div class="flex items-center justify-between gap-2">
-                    <p class="text-xs text-cv-ink-muted font-medium">Campaign Health</p>
+                    <p class="text-xs text-cv-ink-muted font-medium">Campaign Health &amp; Hook</p>
                     <span class="px-1.5 py-0.5 rounded-[2px] text-[10px] font-bold uppercase"
                           [ngClass]="exec.healthScore.tone === 'green' ? 'bg-[#007656] text-[#fff6e8]' : (exec.healthScore.tone === 'gold' ? 'bg-[#fabf29] text-[#111111]' : (exec.healthScore.tone === 'vermilion' ? 'bg-[#f54e26] text-[#111111]' : 'bg-cv-well text-cv-ink-muted'))">
                       {{ exec.healthScore.label }}
@@ -656,6 +656,9 @@ import { safeExternalUrl } from '../utils/url-safety';
                   </div>
                   <p class="font-headline text-3xl font-bold text-cv-green mt-1 leading-none">
                     {{ exec.blendedEngagementRate > 0 ? exec.blendedEngagementRate + '%' : (stats().avgEngagement > 0 ? stats().avgEngagement + '%' : '—') }}
+                    @if (exec.avgHookRatePct != null) {
+                      <span class="text-lg font-semibold text-cv-gold ml-1">• {{ exec.avgHookRatePct }}% Hook</span>
+                    }
                   </p>
                   <p class="text-[11px] text-cv-ink-subtle mt-1.5 truncate">{{ exec.healthScore.benchmarkNote }}</p>
                 </div>
@@ -1228,8 +1231,8 @@ import { safeExternalUrl } from '../utils/url-safety';
                       </div>
 
                       <div class="pt-3 border-t border-cv-border-faint flex items-center justify-between gap-2 text-xs">
-                        <span class="text-cv-ink-muted">
-                          {{ camp.blendedCpv ? ('Blended CPV: ' + formatBrandMoney(camp.blendedCpv, 2)) : (camp.engagementRate > 0 ? camp.engagementRate + '% ER' : 'Ready for deliverables') }}
+                        <span class="text-cv-ink-muted truncate">
+                          {{ camp.blendedCpv ? ('CPV: ' + formatBrandMoney(camp.blendedCpv, 2)) : (camp.engagementRate > 0 ? camp.engagementRate + '% ER' : 'Ready for deliverables') }}{{ camp.avgHookRatePct != null ? (' • ' + camp.avgHookRatePct + '% Hook') : '' }}
                         </span>
                         <div class="flex items-center gap-2 shrink-0" (click)="$event.stopPropagation()">
                           @if (canManageAgencies()) {
@@ -1449,8 +1452,8 @@ import { safeExternalUrl } from '../utils/url-safety';
                             <span class="font-bold text-xs text-cv-green">{{ (c.interactionRate90d || c.engagementRate) > 0 ? (c.interactionRate90d || c.engagementRate) + '%' : '—' }}</span>
                           </div>
                           <div class="py-2 px-1">
-                            <span class="text-[10px] text-cv-ink-muted block">Posts</span>
-                            <span class="font-bold text-xs text-cv-gold">{{ c.mediaCount || '—' }}</span>
+                            <span class="text-[10px] text-cv-ink-muted block">{{ (c.hookRate90d || 0) > 0 ? 'Hook (3s)' : 'Posts' }}</span>
+                            <span class="font-bold text-xs text-cv-gold">{{ (c.hookRate90d || 0) > 0 ? c.hookRate90d + '%' : (c.mediaCount || '—') }}</span>
                           </div>
                         </div>
                       </div>
@@ -2682,7 +2685,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  submitReel(payload: { title: string; reelUrl: string; costQuoted?: string; campaignId?: string | null; campaignTag?: string }) {
+  submitReel(payload: { title: string; reelUrl: string; costQuoted?: string; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }) {
     const ic = this.inspectedCreator();
     if (!ic || !payload.reelUrl.trim()) return;
     this.api.addReelDeliverable(ic.id, payload).subscribe({
@@ -2700,8 +2703,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  saveDeliverableEdit(payload: { id: string; title: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string }) {
-    const body: { title?: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string } = { title: payload.title };
+  saveDeliverableEdit(payload: { id: string; title: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: number | null }) {
+    const body: { title?: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: number | null } = { title: payload.title };
     if (payload.costQuoted !== undefined) {
       body.costQuoted = payload.costQuoted;
     }
@@ -2710,6 +2713,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     }
     if (payload.campaignTag !== undefined) {
       body.campaignTag = payload.campaignTag;
+    }
+    if (payload.hookRatePct !== undefined) {
+      body.hookRatePct = payload.hookRatePct;
     }
     this.api.updateDeliverable(payload.id, body).subscribe({
       next: () => {

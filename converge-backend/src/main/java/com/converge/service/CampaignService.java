@@ -297,6 +297,7 @@ public class CampaignService {
             entry.put("viewsCount", views);
             entry.put("likesCount", likes);
             entry.put("commentsCount", comments);
+            entry.put("hookRatePct", InstagramGraphService.computeViewWeightedHookRate(cReels).avgHookRatePct());
             entry.put("calculatedSpend", cSpend > 0 ? Math.round(cSpend) : null);
             entry.put("status", !cReels.isEmpty() ? "POSTED" : "PENDING_POST");
             assignedCreators.add(entry);
@@ -309,6 +310,7 @@ public class CampaignService {
         Double blendedCpv = (totalSpend > 0 && viewsDelivered > 0) ? Math.round((totalSpend / viewsDelivered) * 100.0) / 100.0 : null;
         Double blendedCpe = (totalSpend > 0 && interactions > 0) ? Math.round((totalSpend / interactions) * 100.0) / 100.0 : null;
         double engRate = (viewsDelivered > 0 && interactions > 0) ? Math.round((interactions * 100.0 / viewsDelivered) * 100.0) / 100.0 : 0.0;
+        InstagramGraphService.HookRateRollup campHook = InstagramGraphService.computeViewWeightedHookRate(campReels);
 
         Double budgetRemaining = (camp.getBudgetAmount() != null && camp.getBudgetAmount() > 0)
                 ? Math.round((camp.getBudgetAmount() - totalSpend) * 100.0) / 100.0
@@ -330,6 +332,8 @@ public class CampaignService {
         stats.put("blendedCpv", blendedCpv);
         stats.put("blendedCpe", blendedCpe);
         stats.put("engagementRate", engRate);
+        stats.put("avgHookRatePct", campHook.avgHookRatePct());
+        stats.put("hookMeasuredReelsCount", campHook.measuredReelsCount());
         stats.put("assignedCreatorsCount", assignedCreators.size());
         stats.put("postedCreatorsCount", postedCreatorsCount);
         stats.put("expectedReelsCount", expectedReelsTotal);

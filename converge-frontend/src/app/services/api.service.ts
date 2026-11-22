@@ -105,12 +105,16 @@ export interface CreatorInsightsBundle {
     postsAnalyzedCount: number;
     postsWithViewsCount: number;
     staticPhotoCount?: number;
+    avgHookRatePct?: number | null;
+    hookMeasuredReelsCount?: number;
   };
   roiBenchmarks?: {
     tier: string;
     followersCount: number;
     followersDisplay: string;
     interactionRatePct: number;
+    avgHookRatePct?: number | null;
+    hookMeasuredReelsCount?: number;
     avgViewsPerPost: number;
     avgViewsPostCount: number;
     costMode?: 'COLLECTIVE' | 'PER_DELIVERABLE';
@@ -149,6 +153,7 @@ export interface ReelSnapshotPoint {
   likesCount: number;
   commentsCount: number;
   savesCount?: number;
+  hookRatePct?: number | null;
   deltaViews: number;
   deltaLikes?: number;
   capturedAt: string;
@@ -173,6 +178,10 @@ export interface DeliverableInsightsBundle {
     viewToFollowerRatioPct: number;
     shareOfCreatorViewsPct: number;
     engagementVsCreatorAvgPct: number;
+    hookRatePct?: number | null;
+    skipRatePct?: number | null;
+    hookRateSource?: string | null;
+    creatorAvgHookRatePct?: number | null;
     viewsDeltaLastSync?: number;
     likesDeltaLastSync?: number;
     commentsDeltaLastSync?: number;
@@ -210,6 +219,9 @@ export interface ReelDeliverable {
   savesCount?: number;
   sharesCount?: number;
   avgWatchTimeMs?: number;
+  hookRatePct?: number | null;
+  skipRatePct?: number | null;
+  hookRateSource?: string | null;
   engagementRate: number;
   status: string;
   metricsSource?: string;
@@ -236,6 +248,8 @@ export interface CampaignSummary {
   spendAmount: number;
   blendedCpv?: number | null;
   engagementRate: number;
+  avgHookRatePct?: number | null;
+  hookMeasuredReelsCount?: number;
 }
 
 export interface Campaign {
@@ -273,6 +287,7 @@ export interface CampaignCreatorEntry {
   viewsCount: number;
   likesCount: number;
   commentsCount: number;
+  hookRatePct?: number | null;
   calculatedSpend?: number | null;
   status: 'POSTED' | 'PENDING_POST';
 }
@@ -293,6 +308,8 @@ export interface CampaignDetailBundle {
     blendedCpv?: number | null;
     blendedCpe?: number | null;
     engagementRate: number;
+    avgHookRatePct?: number | null;
+    hookMeasuredReelsCount?: number;
     assignedCreatorsCount: number;
     postedCreatorsCount: number;
     expectedReelsCount: number;
@@ -320,6 +337,8 @@ export interface PublicReportBundle {
     title: string;
     campaignFilter: string;
     includeSpend: boolean;
+    avgHookRatePct?: number | null;
+    hookMeasuredReelsCount?: number;
     createdAt: string;
     expiresAt: string;
   };
@@ -391,6 +410,8 @@ export class ApiService {
       totalReels: number;
       totalReach: number;
       avgEngagement: number;
+      avgHookRatePct?: number | null;
+      hookMeasuredReelsCount?: number;
       activeAgencies: number;
       totalCreators: number;
     };
@@ -450,11 +471,11 @@ export class ApiService {
     return this.http.get<ReelDeliverable[]>(`/api/creators/${creatorId}/deliverables`);
   }
 
-  addReelDeliverable(creatorId: string, payload: { title: string; reelUrl: string; costQuoted?: string | number | null; campaignId?: string | null; campaignTag?: string }): Observable<ReelDeliverable> {
+  addReelDeliverable(creatorId: string, payload: { title: string; reelUrl: string; costQuoted?: string | number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }): Observable<ReelDeliverable> {
     return this.http.post<ReelDeliverable>(`/api/creators/${creatorId}/deliverables`, payload);
   }
 
-  updateDeliverable(deliverableId: string, payload: { title?: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string }): Observable<ReelDeliverable> {
+  updateDeliverable(deliverableId: string, payload: { title?: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: number | null }): Observable<ReelDeliverable> {
     return this.http.put<ReelDeliverable>(`/api/creators/deliverables/${deliverableId}`, payload);
   }
 
@@ -538,7 +559,7 @@ export class ApiService {
     defaultCampaignId?: string | null;
     defaultCampaignTag?: string;
     defaultCostQuoted?: number | string | null;
-    items: Array<{ reelUrl: string; creatorHandle?: string; title?: string; costQuoted?: string | number | null; campaignId?: string | null; campaignTag?: string }>;
+    items: Array<{ reelUrl: string; creatorHandle?: string; title?: string; costQuoted?: string | number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }>;
   }): Observable<{
     addedCount: number;
     skippedDuplicatesCount: number;

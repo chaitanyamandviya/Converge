@@ -9,6 +9,7 @@ export interface CampaignBreakdownRow {
   spend: number;
   cpv: number | null;
   engRate: number;
+  avgHookRatePct: number | null;
 }
 
 export interface ExecutiveAnalyticsSummary {
@@ -24,6 +25,8 @@ export interface ExecutiveAnalyticsSummary {
   blendedCpv: number | null;
   blendedCpe: number | null;
   blendedEngagementRate: number;
+  avgHookRatePct: number | null;
+  hookMeasuredReelsCount: number;
   healthScore: {
     label: 'Outperforming' | 'Healthy' | 'Growing' | 'Pending Sync';
     tone: 'green' | 'gold' | 'vermilion' | 'muted';
@@ -294,6 +297,7 @@ export function computeExecutiveAnalytics(params: {
     views: number;
     interactions: number;
     spend: number;
+    reels: ReelDeliverable[];
   }>();
 
   for (const r of deliverables) {
@@ -306,9 +310,11 @@ export function computeExecutiveAnalytics(params: {
       creatorIds: new Set<string>(),
       views: 0,
       interactions: 0,
-      spend: 0
+      spend: 0,
+      reels: []
     };
     g.reelsCount++;
+    g.reels.push(r);
     if (r.creatorId) g.creatorIds.add(r.creatorId);
     g.views += r.viewsCount || 0;
     g.interactions += (r.likesCount || 0) + (r.commentsCount || 0);
@@ -334,6 +340,7 @@ export function computeExecutiveAnalytics(params: {
       const engRate = g.views > 0 && g.interactions > 0
         ? Math.round((g.interactions * 100.0 / g.views) * 100) / 100
         : 0;
+      const grpHook = computeViewWeightedHookRate(g.reels);
       return {
         campaign: g.label,
         reelsCount: g.reelsCount,
@@ -342,10 +349,13 @@ export function computeExecutiveAnalytics(params: {
         interactions: g.interactions,
         spend: roundedSpend,
         cpv,
-        engRate
+        engRate,
+        avgHookRatePct: grpHook.avgHookRatePct
       };
     })
     .sort((a, b) => b.views - a.views);
+
+  const totalHook = computeViewWeightedHookRate(deliverables);
 
   return {
     totalViews,
@@ -360,9 +370,54 @@ export function computeExecutiveAnalytics(params: {
     blendedCpv,
     blendedCpe,
     blendedEngagementRate,
+    avgHookRatePct: totalHook.avgHookRatePct,
+    hookMeasuredReelsCount: totalHook.hookMeasuredReelsCount,
     healthScore,
     topReel: topReelObj,
     goalProgress,
     campaignBreakdowns
   };
+}
+
+/**
+ * View-weighted 3-second Hook Rate rollup across measured Reels (with simple mean fallback
+ * if measured Reels currently have 0 recorded views).
+ */
+export function computeViewWeightedHookRate(reels: ReelDeliverable[]): {
+  avgHookRatePct: number | null;
+  hookMeasuredReelsCount: number;
+} {
+  let count = 0;
+  let simpleSum = 0;
+  let weightedSum = 0;
+  let weightViews = 0;
+  for (const r of reels) {
+    if (r.hookRatePct == null || Number.isNaN(r.hookRatePct) || r.hookRatePct < 0) continue;
+    const hr = Math.max(0, Math.min(100, Number(r.hookRatePct)));
+    count++;
+    simpleSum += hr;
+    const v = Math.max(0, Number(r.viewsCount || 0));
+    if (v > 0) {
+      weightedSum += hr * v;
+      weightViews += v;
+    }
+  }
+  if (count === 0) return { avgHookRatePct: null, hookMeasuredReelsCount: 0 };
+  const raw = weightViews > 0 ? weightedSum / weightViews : simpleSum / count;
+  return {
+    avgHookRatePct: Math.round(raw * 10) / 10,
+    hookMeasuredReelsCount: count
+  };
+}
+
+export function describeHookRate(hookRate: number | null | undefined): {
+  label: string;
+  tone: 'green' | 'gold' | 'vermilion' | 'muted';
+} {
+  if (hookRate == null || Number.isNaN(hookRate) || hookRate < 0) {
+    return { label: 'Not Measured', tone: 'muted' };
+  }
+  if (hookRate >= 40) return { label: 'Strong Hook', tone: 'green' };
+  if (hookRate >= 25) return { label: 'Avg Hook', tone: 'gold' };
+  return { label: 'Weak Hook', tone: 'vermilion' };
 }

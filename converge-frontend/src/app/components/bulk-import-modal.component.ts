@@ -16,6 +16,7 @@ export interface BulkImportSubmitPayload {
     title?: string;
     costQuoted?: string | number | null;
     campaignTag?: string;
+    hookRatePct?: string | number | null;
   }>;
 }
 
@@ -129,7 +130,7 @@ export interface BulkImportResult {
                 placeholder="Paste Reel links or CSV rows:&#10;https://www.instagram.com/aman.gulabani/reel/DHyTOkXBzZ.../&#10;https://www.instagram.com/reel/C8xYz.../, @creatorhandle, Launch Video, 25000, Summer Drop"
                 class="w-full p-3 rounded-[4px] bg-cv-well border border-cv-border-strong text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none font-mono leading-relaxed"></textarea>
               <p class="text-[11px] text-cv-ink-muted">
-                CSV Format (optional columns): <code class="text-cv-ink">instagram_url, @handle, title, cost, campaign</code>. URLs formatted like <code class="text-cv-ink">instagram.com/username/reel/...</code> automatically detect the creator.
+                CSV Format (optional columns): <code class="text-cv-ink">instagram_url, @handle, title, cost, campaign, hook_rate</code>. URLs formatted like <code class="text-cv-ink">instagram.com/username/reel/...</code> automatically detect the creator.
               </p>
             </div>
 
@@ -161,7 +162,7 @@ export interface BulkImportResult {
                         }
                       </div>
                       <span class="shrink-0 tabular-nums" [ngClass]="row.valid ? 'text-cv-ink-muted' : 'text-cv-danger-ink'">
-                        {{ row.valid ? (row.costQuoted ? currencySymbol() + row.costQuoted : 'Ready') : row.reason }}
+                        {{ row.valid ? ((row.costQuoted ? currencySymbol() + row.costQuoted : 'Ready') + (row.hookRatePct ? ' • ' + row.hookRatePct + '% Hook' : '')) : row.reason }}
                       </span>
                     </div>
                   }
@@ -269,7 +270,8 @@ export class BulkImportModalComponent implements OnChanges {
         creatorHandle: r.creatorHandle || undefined,
         title: r.title || undefined,
         costQuoted: r.costQuoted || undefined,
-        campaignTag: r.campaignTag || undefined
+        campaignTag: r.campaignTag || undefined,
+        hookRatePct: r.hookRatePct || undefined
       }))
     });
   }
