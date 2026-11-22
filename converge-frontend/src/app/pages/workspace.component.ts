@@ -177,13 +177,8 @@ import { safeExternalUrl } from '../utils/url-safety';
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap mb-1">
                 <span class="font-headline uppercase text-base sm:text-lg font-bold tracking-[0.03em] text-[#f54e26] leading-none truncate">
-                  {{ currentBrand()?.name }}
+                  {{ currentPartnerAgency()?.name || currentBrand()?.name }}
                 </span>
-                @if (currentPartnerAgency(); as ag) {
-                  <span class="px-2 py-0.5 rounded-[3px] bg-[#5738af] text-[#fff6e8] text-[10px] font-bold uppercase tracking-wide shrink-0">
-                    Partner Agency • {{ ag.name }}
-                  </span>
-                }
               </div>
               <h1 class="font-headline uppercase text-3xl sm:text-4xl font-bold tracking-[0.015em] text-cv-ink leading-none">{{ viewTitle() }}</h1>
             </div>
@@ -1662,7 +1657,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
       case 'agencies': return 'Linked Agencies';
       case 'audit': return 'Activity';
       case 'overview':
-      default: return 'Brand Overview';
+      default: return this.currentPartnerAgency() ? 'Agency Overview' : 'Brand Overview';
     }
   });
 
