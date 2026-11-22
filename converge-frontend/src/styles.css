@@ -529,3 +529,47 @@ html.light {
   opacity: 1;
   transform: scale(1) rotate(-4deg);
 }
+
+@media print {
+  @page {
+    size: auto;
+    margin: 12mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #141414 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .cv-print-hide {
+    display: none !important;
+  }
+
+  .cv-print-modal-backdrop {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+  }
+
+  .cv-print-sheet {
+    position: static !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: 100% !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #141414 !important;
+  }
+
+  .cv-print-body {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}

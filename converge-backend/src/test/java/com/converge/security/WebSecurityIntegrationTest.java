@@ -430,4 +430,120 @@ class WebSecurityIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.deleted").value(true));
     }
+
+    @Test
+    void enforcesPitchEnhancementsSecurityAndPublicReportScoping() throws Exception {
+        String tokenA = jwtService.generateToken(managerA);
+        String tokenB = jwtService.generateToken(managerB);
+
+        // Seed Partner Agency on Brand A
+        com.converge.entity.Agency ag = new com.converge.entity.Agency();
+        ag.setBrandId(brandA.getId());
+        ag.setName("Scoped Partner");
+        ag.setHandle("@scopedpartner");
+        ag.setContactName("Rhea");
+        ag.setContactEmail("rhea@scoped.test");
+        ag.setStatus("CONNECTED");
+        ag = agencyRepository.save(ag);
+
+        User agencyUser = new User();
+        agencyUser.setName("Rhea");
+        agencyUser.setEmail("rhea@scoped.test");
+        agencyUser.setRole("BRAND_MANAGER");
+        agencyUser.setVerified(true);
+        agencyUser.setPasswordHash(passwordEncoder.encode("AgencyPass1!"));
+        agencyUser = userRepository.save(agencyUser);
+        String agencyToken = jwtService.generateToken(agencyUser);
+
+        // Partner Agency CANNOT modify Brand A's targetViewsGoal settings
+        mockMvc.perform(patch("/api/brands/{id}/settings", brandA.getId())
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetViewsGoal\":5000000}"))
+                .andExpect(status().isForbidden());
+
+        // Brand Owner A CAN update targetViewsGoal
+        mockMvc.perform(patch("/api/brands/{id}/settings", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetViewsGoal\":3000000}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.targetViewsGoal").value(3000000));
+
+        // Demo campaign load + clear works end-to-end (Brand Manager loads direct demo data; Manager B forbidden)
+        mockMvc.perform(post("/api/brands/{id}/demo-campaign", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/brands/{id}/demo-campaign", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.creatorsAdded").value(5))
+                .andExpect(jsonPath("$.reelsAdded").value(8));
+
+        // Agency loads its own scoped demo creator + creates agency-scoped public report WITHOUT spend
+        mockMvc.perform(post("/api/brands/{id}/bulk", brandA.getId())) // unknown path denied by denyAll
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/brands/{id}/deliverables/bulk", brandA.getId())
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"defaultCampaignTag\":\"Agency Drop\",\"items\":[{\"reelUrl\":\"https://www.instagram.com/agency_talent/reel/AgDemo01/\"}]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.addedCount").value(1));
+
+        String agencyShareBody = mockMvc.perform(post("/api/brands/{id}/share-reports", brandA.getId())
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Partner Agency View\",\"campaignFilter\":\"ALL\",\"includeSpend\":false}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        var agencyShareNode = objectMapper.readTree(agencyShareBody);
+        String agencyReportToken = agencyShareNode.get("shareToken").asText();
+        String agencyReportId = agencyShareNode.get("id").asText();
+
+        // Unauthenticated GET to public report works AND strictly scopes to agency's creator only + hides manager emails!
+        mockMvc.perform(get("/api/public/reports/{token}", agencyReportToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.report.title").value("Partner Agency View"))
+                .andExpect(jsonPath("$.brand.name").value("Scoped Partner"))
+                .andExpect(jsonPath("$.creators.length()").value(1))
+                .andExpect(jsonPath("$.creators[0].handle").value("@agency_talent"))
+                .andExpect(content().string(not(containsString("@aanya.kapoor_demo"))))
+                .andExpect(content().string(not(containsString("mgra@converge.test"))));
+
+        // Brand Owner A can create a campaign-filtered report ("Summer Glow Drop") including spend
+        String brandShareBody = mockMvc.perform(post("/api/brands/{id}/share-reports", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"CMO Summer Recap\",\"campaignFilter\":\"Summer Glow Drop\",\"includeSpend\":true}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String brandReportToken = objectMapper.readTree(brandShareBody).get("shareToken").asText();
+
+        mockMvc.perform(get("/api/public/reports/{token}", brandReportToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.report.campaignFilter").value("Summer Glow Drop"))
+                .andExpect(jsonPath("$.deliverables.length()").value(5));
+
+        // Revoking the agency report blocks subsequent unauthenticated access
+        mockMvc.perform(delete("/api/brands/{id}/share-reports/{reportId}", brandA.getId(), agencyReportId)
+                        .header("Authorization", "Bearer " + agencyToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/public/reports/{token}", agencyReportToken))
+                .andExpect(status().isBadRequest());
+
+        // Clearing demo data removes only demo items while retaining real creators (creatorA)
+        mockMvc.perform(delete("/api/brands/{id}/demo-campaign", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.removedCreators").value(5))
+                .andExpect(jsonPath("$.removedReels").value(8));
+
+        mockMvc.perform(get("/api/brands/{id}", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.creators.length()").value(2)); // creatorA + @agency_talent remain intact!
+    }
 }

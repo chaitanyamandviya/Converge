@@ -4,18 +4,22 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { ApiService, Agency, AuditLog, Brand, Creator, CreatorInsightsBundle, DeliverableInsightsBundle, InstagramStatus, ReelDeliverable, ReelDeltaSummary, ReelSnapshotPoint } from '../services/api.service';
+import { ApiService, Agency, AuditLog, Brand, Creator, CreatorInsightsBundle, DeliverableInsightsBundle, InstagramStatus, ReelDeliverable, ReelDeltaSummary, ReelSnapshotPoint, SharedReportRecord } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { DashboardExitAware, DashboardExitController } from '../services/auth.guard';
 import { ConfirmModalComponent } from '../components/confirm-modal.component';
 import { AgencyFormModalComponent, AgencyFormPayload } from '../components/agency-form-modal.component';
 import { AgencyDetailsModalComponent } from '../components/agency-details-modal.component';
+import { BulkImportModalComponent, BulkImportResult, BulkImportSubmitPayload } from '../components/bulk-import-modal.component';
+import { CreateShareReportPayload, ShareReportModalComponent } from '../components/share-report-modal.component';
+import { ExecutivePdfModalComponent } from '../components/executive-pdf-modal.component';
 import { CreatorInsightsViewComponent } from '../components/creator-insights-view.component';
 import { ReelInsightsViewComponent } from '../components/reel-insights-view.component';
 import { AppHeaderComponent } from '../components/app-header.component';
 import { AppFooterComponent } from '../components/app-footer.component';
 import { ThemeToggleComponent } from '../components/theme-toggle.component';
 import { formatAuditSummary, formatAuditTitle } from '../utils/audit-format';
+import { computeExecutiveAnalytics, extractDistinctCampaigns, filterWorkspaceByCampaign, formatMoney } from '../utils/campaign-analytics';
 import { formatPublishedDateLabel, formatReelDisplayTitle, formatReelMetaLabel } from '../utils/reel-format';
 import { computeAxisBarScale, formatShortAxisDate, formatSyncAxisLabel } from '../utils/chart-axis';
 import { computeReelSnapshotMetrics } from '../utils/reel-metrics';
@@ -24,9 +28,9 @@ import { safeExternalUrl } from '../utils/url-safety';
 @Component({
   selector: 'app-workspace',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmModalComponent, AgencyFormModalComponent, AgencyDetailsModalComponent, CreatorInsightsViewComponent, ReelInsightsViewComponent, AppHeaderComponent, AppFooterComponent, ThemeToggleComponent],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent, AgencyFormModalComponent, AgencyDetailsModalComponent, BulkImportModalComponent, ShareReportModalComponent, ExecutivePdfModalComponent, CreatorInsightsViewComponent, ReelInsightsViewComponent, AppHeaderComponent, AppFooterComponent, ThemeToggleComponent],
   template: `
-    <div class="bg-cv-canvas text-cv-ink font-body antialiased min-h-screen flex flex-col overflow-x-clip selection:bg-[#f54e26]/25 selection:text-cv-ink">
+    <div [class.cv-print-hide]="showPdfModal()" class="bg-cv-canvas text-cv-ink font-body antialiased min-h-screen flex flex-col overflow-x-clip selection:bg-[#f54e26]/25 selection:text-cv-ink">
       <!-- Editorial Header -->
       <app-header [elevated]="true" brandLink="/workspace">
         <div header-left class="flex items-center gap-2.5 min-w-0">
@@ -183,6 +187,10 @@ import { safeExternalUrl } from '../utils/url-safety';
               <h1 class="font-headline uppercase text-3xl sm:text-4xl font-bold tracking-[0.015em] text-cv-ink leading-none">{{ viewTitle() }}</h1>
             </div>
             <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <button type="button" (click)="openBulkImportModal()"
+                      class="h-9 px-3.5 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border border-[#111111] text-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                <span>+ Bulk Import</span>
+              </button>
               <button type="button" (click)="triggerSync()" [disabled]="syncing()"
                       class="h-9 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-cv-ink text-xs font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-60">
                 <svg class="w-3.5 h-3.5 shrink-0" [class.animate-spin]="syncing()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -193,15 +201,32 @@ import { safeExternalUrl } from '../utils/url-safety';
                 </svg>
                 <span>{{ syncing() ? 'Refreshing...' : 'Refresh Reels' }}</span>
               </button>
-              <button type="button" (click)="openCsvRecapView()"
+              <button type="button" (click)="openShareModal()"
                       class="h-9 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-cv-ink text-xs font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer">
-                <span>CSV Recap</span>
+                <span>Share Report ↗</span>
+              </button>
+              <button type="button" (click)="showPdfModal.set(true)"
+                      class="h-9 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-cv-ink text-xs font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                <span>PDF Recap</span>
               </button>
               <button type="button" (click)="exportCsv()" class="h-9 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-cv-ink text-xs font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer">
                 <span>Export CSV</span>
               </button>
             </div>
           </div>
+
+          @if (hasDemoData()) {
+            <div class="mt-3 px-4 py-2.5 rounded-[4px] bg-cv-well border border-[#f54e26]/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="px-2 py-0.5 rounded-[3px] bg-[#f54e26] text-[#111111] font-bold uppercase text-[10px] tracking-wide shrink-0">Demo Data Active</span>
+                <span class="text-cv-ink-muted">Exploring sample campaign creators &amp; Reel growth trajectories (skipped during live Instagram sync).</span>
+              </div>
+              <button type="button" (click)="clearDemoData()" [disabled]="demoBusy()"
+                      class="h-7 px-3 rounded-[3px] bg-cv-danger-bg hover:bg-cv-danger-hover border border-[#ff5c5c]/40 text-cv-danger-ink font-semibold cursor-pointer transition-colors disabled:opacity-50 shrink-0">
+                {{ demoBusy() ? 'Clearing...' : 'Clear Sample Data' }}
+              </button>
+            </div>
+          }
 
           <!-- Editorial Underline Sub-Nav Tabs -->
           <div class="pt-3 pb-5">
@@ -470,30 +495,159 @@ import { safeExternalUrl } from '../utils/url-safety';
 
           <!-- TAB: OVERVIEW -->
           @if (activeTab() === 'overview') {
+            @let exec = executiveSummary();
             <section class="space-y-5 animate-fade-in-up">
+              @if (creators().length === 0) {
+                <div class="rounded-[6px] bg-cv-card border-2 border-cv-border-strong shadow-[4px_4px_0px_#f54e26] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div class="space-y-1">
+                    <span class="px-2 py-0.5 rounded-[3px] bg-cv-well border border-cv-border text-[10px] font-bold uppercase tracking-wide text-[#f54e26]">Quick Start</span>
+                    <h2 class="font-headline uppercase text-2xl font-bold text-cv-ink tracking-[0.02em]">READY TO PITCH OR EXPLORE CONVERGE?</h2>
+                    <p class="text-xs text-cv-ink-muted max-w-xl">
+                      Load a sample campaign with 5 creators, 8 Reels, view-growth snapshots, and CPV benchmarks in 1 click — or paste your real campaign URLs with Bulk Import.
+                    </p>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                    <button type="button" (click)="loadDemoCampaign()" [disabled]="demoBusy()"
+                            class="h-10 px-5 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border-2 border-[#111111] shadow-[3px_3px_0px_var(--cv-shadow-ink)] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer disabled:opacity-50 transition-all">
+                      {{ demoBusy() ? 'LOADING DEMO...' : 'TRY DEMO CAMPAIGN ↗' }}
+                    </button>
+                    <button type="button" (click)="openBulkImportModal()"
+                            class="h-10 px-4 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-xs font-semibold text-cv-ink cursor-pointer transition-colors">
+                      + Bulk Import URLs
+                    </button>
+                  </div>
+                </div>
+              }
+
+              @if (availableCampaigns().length > 0) {
+                <div class="flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-[4px] bg-cv-card border border-cv-border">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-cv-ink-muted mr-1">Campaign:</span>
+                    <button type="button" (click)="setCampaignFilter('ALL')"
+                            class="h-7 px-3 rounded-[3px] text-xs font-medium cursor-pointer transition-colors"
+                            [ngClass]="selectedCampaignFilter() === 'ALL' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                      All Campaigns ({{ deliverables().length }})
+                    </button>
+                    @for (camp of availableCampaigns(); track camp) {
+                      <button type="button" (click)="setCampaignFilter(camp)"
+                              class="h-7 px-3 rounded-[3px] text-xs font-medium cursor-pointer transition-colors"
+                              [ngClass]="selectedCampaignFilter().toLowerCase() === camp.toLowerCase() ? 'bg-[#f54e26] text-[#111111] font-bold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                        {{ camp }}
+                      </button>
+                    }
+                  </div>
+                  @if (selectedCampaignFilter() !== 'ALL') {
+                    <button type="button" (click)="setCampaignFilter('ALL')" class="text-[11px] font-semibold text-[#f54e26] hover:underline cursor-pointer">
+                      Show All ✕
+                    </button>
+                  }
+                </div>
+              }
+
+              <!-- Target vs Actual Views Goal Progress Bar -->
+              @if (selectedCampaignFilter() === 'ALL' && (canManageAgencies() || exec.goalProgress)) {
+                <div class="rounded-[4px] bg-cv-card border border-cv-border px-5 py-3.5 space-y-2.5 tabular-nums">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                      <span class="font-headline uppercase text-base font-bold tracking-[0.02em] text-cv-ink">CAMPAIGN VIEWS GOAL</span>
+                      @if (exec.goalProgress; as gp) {
+                        <span class="text-xs font-semibold" [ngClass]="gp.achieved ? 'text-cv-green' : 'text-[#f54e26]'">
+                          {{ gp.delivered.toLocaleString('en-IN') }} / {{ gp.target.toLocaleString('en-IN') }} Views ({{ gp.rawPct }}%)
+                        </span>
+                        <span class="px-2 py-0.5 rounded-[3px] text-[10px] font-bold uppercase tracking-wide"
+                              [ngClass]="gp.achieved ? 'bg-[#007656] text-[#fff6e8]' : 'bg-cv-well border border-cv-border text-cv-ink-muted'">
+                          {{ gp.achieved ? '✓ Target Achieved' : (formatNum(gp.remaining) + ' remaining') }}
+                        </span>
+                      } @else {
+                        <span class="text-xs text-cv-ink-muted">No view target configured yet — set a campaign milestone to track progress.</span>
+                      }
+                    </div>
+                    @if (canManageAgencies() && !editingGoal()) {
+                      <button type="button" (click)="startEditGoal()"
+                              class="h-7 px-3 rounded-[3px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-[11px] font-medium text-cv-ink cursor-pointer transition-colors">
+                        {{ exec.goalProgress ? 'Edit Goal' : '+ Set Goal' }}
+                      </button>
+                    }
+                  </div>
+
+                  @if (editingGoal()) {
+                    <form (ngSubmit)="saveTargetGoal()" class="flex flex-wrap items-center gap-2 pt-1 animate-pop-in">
+                      <input [(ngModel)]="goalInput" name="goalTargetInput" type="number" min="0" step="10000" placeholder="e.g. 3000000"
+                             class="h-8 w-44 px-3 rounded-[4px] bg-cv-well border border-cv-border-strong text-xs text-cv-ink tabular-nums focus:border-[#f54e26] focus:outline-none"/>
+                      <button type="submit" [disabled]="savingGoal()"
+                              class="h-8 px-3.5 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] text-xs font-bold cursor-pointer disabled:opacity-50">
+                        {{ savingGoal() ? 'Saving...' : 'Save Goal' }}
+                      </button>
+                      @if (currentBrand()?.targetViewsGoal) {
+                        <button type="button" (click)="clearTargetGoal()" [disabled]="savingGoal()"
+                                class="h-8 px-3 rounded-[4px] bg-cv-danger-bg hover:bg-cv-danger-hover border border-[#ff5c5c]/40 text-xs font-medium text-cv-danger-ink cursor-pointer">
+                          Clear
+                        </button>
+                      }
+                      <button type="button" (click)="editingGoal.set(false)"
+                              class="h-8 px-3 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-xs text-cv-ink-muted cursor-pointer">
+                        Cancel
+                      </button>
+                    </form>
+                  } @else if (exec.goalProgress; as gp) {
+                    <div class="h-2.5 w-full rounded-[2px] bg-cv-well border border-cv-border-soft overflow-hidden">
+                      <div class="h-full transition-all duration-300" [style.width.%]="gp.pct" [style.background]="gp.achieved ? '#007656' : '#f54e26'"></div>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Executive KPI & ROI Summary Strip -->
               <div class="rounded-[4px] bg-cv-card border border-cv-border grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-cv-divide tabular-nums">
-                @if (canManageAgencies()) {
-                  <div (click)="switchTab('agencies')" class="px-5 py-3.5 cursor-pointer hover:bg-cv-hover-subtle transition-colors">
-                    <p class="text-xs text-cv-ink-muted font-medium">Partner Agencies</p>
-                    <p class="font-headline text-3xl font-bold text-cv-ink mt-1 leading-none">{{ agencies().length }}</p>
-                  </div>
-                } @else {
-                  <div class="px-5 py-3.5">
-                    <p class="text-xs text-cv-ink-muted font-medium">Avg. Engagement</p>
-                    <p class="font-headline text-3xl font-bold text-cv-ink mt-1 leading-none">{{ stats().avgEngagement }}%</p>
-                  </div>
-                }
-                <div (click)="switchTab('creators')" class="px-5 py-3.5 cursor-pointer hover:bg-cv-hover-subtle transition-colors">
-                  <p class="text-xs text-cv-ink-muted font-medium">Creators</p>
-                  <p class="font-headline text-3xl font-bold text-cv-gold mt-1 leading-none">{{ creators().length }}</p>
-                </div>
                 <div class="px-5 py-3.5">
-                  <p class="text-xs text-cv-ink-muted font-medium">Total Reach</p>
-                  <p class="font-headline text-3xl font-bold text-[#f54e26] mt-1 leading-none">{{ formatNum(stats().totalReach) }}</p>
+                  <p class="text-xs text-cv-ink-muted font-medium">Delivered Views</p>
+                  <p class="font-headline text-3xl font-bold text-[#f54e26] mt-1 leading-none">{{ formatNum(exec.totalViews > 0 ? exec.totalViews : stats().totalReach) }}</p>
+                  <p class="text-[11px] text-cv-ink-subtle mt-1.5">{{ exec.totalReels }} reel(s) • {{ exec.totalCreators }} creator(s)</p>
                 </div>
-                <div (click)="switchTab('audit')" class="px-5 py-3.5 cursor-pointer hover:bg-cv-hover-subtle transition-colors">
-                  <p class="text-xs text-cv-ink-muted font-medium">Tracked Reels</p>
-                  <p class="font-headline text-3xl font-bold text-cv-green mt-1 leading-none">{{ stats().totalReels }}</p>
+
+                <div class="px-5 py-3.5">
+                  <p class="text-xs text-cv-ink-muted font-medium">Total Spend &amp; Blended CPV</p>
+                  <p class="font-headline text-3xl font-bold text-cv-ink mt-1 leading-none">
+                    {{ exec.totalSpend > 0 ? formatBrandMoney(exec.totalSpend, 0) : '—' }}
+                  </p>
+                  <p class="text-[11px] text-cv-ink-subtle mt-1.5">
+                    @if (exec.blendedCpv !== null) {
+                      CPV: <strong class="text-cv-ink">{{ formatBrandMoney(exec.blendedCpv, 2) }}</strong>
+                      @if (exec.blendedCpe !== null) { • CPE: {{ formatBrandMoney(exec.blendedCpe, 1) }} }
+                    } @else {
+                      Set creator rates for CPV ROI
+                    }
+                  </p>
+                </div>
+
+                <div class="px-5 py-3.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs text-cv-ink-muted font-medium">Campaign Health</p>
+                    <span class="px-1.5 py-0.5 rounded-[2px] text-[10px] font-bold uppercase"
+                          [ngClass]="exec.healthScore.tone === 'green' ? 'bg-[#007656] text-[#fff6e8]' : (exec.healthScore.tone === 'gold' ? 'bg-[#fabf29] text-[#111111]' : (exec.healthScore.tone === 'vermilion' ? 'bg-[#f54e26] text-[#111111]' : 'bg-cv-well text-cv-ink-muted'))">
+                      {{ exec.healthScore.label }}
+                    </span>
+                  </div>
+                  <p class="font-headline text-3xl font-bold text-cv-green mt-1 leading-none">
+                    {{ exec.blendedEngagementRate > 0 ? exec.blendedEngagementRate + '%' : (stats().avgEngagement > 0 ? stats().avgEngagement + '%' : '—') }}
+                  </p>
+                  <p class="text-[11px] text-cv-ink-subtle mt-1.5 truncate">{{ exec.healthScore.benchmarkNote }}</p>
+                </div>
+
+                <div (click)="exec.topReel && openDeliverableInsights(exec.topReel.reel)"
+                     class="px-5 py-3.5 transition-colors"
+                     [ngClass]="exec.topReel ? 'cursor-pointer hover:bg-cv-hover-subtle' : ''">
+                  <p class="text-xs text-cv-ink-muted font-medium">Top Performing Reel</p>
+                  @if (exec.topReel; as tr) {
+                    <p class="font-headline text-3xl font-bold text-cv-gold mt-1 leading-none">{{ formatNum(tr.reel.viewsCount) }}</p>
+                    <p class="text-[11px] text-cv-ink mt-1.5 truncate font-medium">
+                      {{ tr.creator?.handle || tr.reel.creatorHandle }}
+                      @if (tr.cpv !== null) { <span class="text-cv-ink-muted font-normal"> • {{ formatBrandMoney(tr.cpv, 2) }} CPV</span> }
+                    </p>
+                  } @else {
+                    <p class="font-headline text-3xl font-bold text-cv-ink-muted mt-1 leading-none">—</p>
+                    <p class="text-[11px] text-cv-ink-subtle mt-1.5">Track a Reel to see top ROI</p>
+                  }
                 </div>
               </div>
 
@@ -501,7 +655,7 @@ import { safeExternalUrl } from '../utils/url-safety';
               <div class="rounded-[6px] bg-cv-card border-2 border-cv-border-strong shadow-[6px_6px_0px_#f54e26] p-4 sm:p-5 space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-2 pb-3.5 border-b border-cv-border-soft">
                   <div class="flex items-center gap-1.5 flex-wrap">
-                    @for (c of creators().slice(0, 6); track c.id) {
+                    @for (c of scopedCreators().slice(0, 6); track c.id) {
                       <button type="button"
                               (click)="selectSpotlightCreator(c.id)"
                               class="px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors cursor-pointer"
@@ -511,7 +665,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                         {{ c.handle }}
                       </button>
                     }
-                    @if (creators().length === 0) {
+                    @if (scopedCreators().length === 0) {
                       <span class="font-headline uppercase text-base font-bold text-cv-ink tracking-[0.02em]">REEL SPOTLIGHT &amp; RECAP</span>
                     }
                   </div>
@@ -635,7 +789,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                           <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-cv-ink-muted">
                             <div class="flex items-center gap-2">
                               <span>{{ barChart.subtitle }}</span>
-                              @if ((deltaInfo?.snapshots?.length || 0) >= 2 && deliverables().length > 1) {
+                              @if ((deltaInfo?.snapshots?.length || 0) >= 2 && scopedDeliverables().length > 1) {
                                 <div class="inline-flex items-center p-0.5 rounded-[3px] bg-cv-card border border-cv-border-soft text-[10px]">
                                   <button type="button" (click)="setSpotlightChartMode('snapshots')"
                                           class="px-1.5 py-0.5 rounded-[2px] cursor-pointer"
@@ -764,6 +918,36 @@ import { safeExternalUrl } from '../utils/url-safety';
                   </div>
                 }
               </div>
+
+              <!-- Campaign ROI Breakdown Strip (when viewing All Campaigns with named campaigns) -->
+              @if (selectedCampaignFilter() === 'ALL' && exec.campaignBreakdowns.length > 0 && (exec.campaignBreakdowns.length > 1 || exec.campaignBreakdowns[0].campaign !== 'Untagged / General')) {
+                <div class="bg-cv-card rounded-[4px] border border-cv-border p-4 sm:p-5 space-y-3">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 class="font-headline uppercase text-lg font-bold text-cv-ink tracking-[0.02em]">CAMPAIGN ROI BREAKDOWN</h3>
+                      <p class="text-[11px] text-cv-ink-muted">Click any campaign card to filter Overview &amp; Recap metrics</p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 tabular-nums">
+                    @for (cb of exec.campaignBreakdowns; track cb.campaign) {
+                      <button type="button" (click)="setCampaignFilter(cb.campaign)"
+                              class="text-left p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft hover:border-[#f54e26] transition-colors cursor-pointer space-y-1.5">
+                        <div class="flex items-center justify-between gap-2">
+                          <span class="font-semibold text-xs text-cv-ink truncate">{{ cb.campaign }}</span>
+                          <span class="text-[10px] text-cv-ink-muted shrink-0">{{ cb.reelsCount }} reel(s) • {{ cb.creatorsCount }} creator(s)</span>
+                        </div>
+                        <div class="flex items-baseline justify-between gap-2">
+                          <span class="font-headline text-2xl font-bold text-[#f54e26]">{{ formatNum(cb.views) }} views</span>
+                          <span class="text-xs font-semibold text-cv-green">{{ cb.engRate > 0 ? cb.engRate + '% ER' : '—' }}</span>
+                        </div>
+                        <p class="text-[11px] text-cv-ink-muted">
+                          {{ cb.spend > 0 ? ('Spend: ' + formatBrandMoney(cb.spend, 0) + (cb.cpv !== null ? ' • CPV: ' + formatBrandMoney(cb.cpv, 2) : '')) : 'Add creator rates for campaign CPV' }}
+                        </p>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
 
               @if (canManageAgencies()) {
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -990,19 +1174,33 @@ import { safeExternalUrl } from '../utils/url-safety';
                     </div>
                   }
                 </div>
-                @if (canManageAgencies()) {
-                  <div class="flex items-center gap-1.5 pt-2.5 border-t border-cv-border-soft flex-wrap">
-                    <button type="button" (click)="creatorTypeFilter.set('all')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
-                            [ngClass]="creatorTypeFilter() === 'all' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
-                      All Creators ({{ creators().length }})
-                    </button>
-                    <button type="button" (click)="creatorTypeFilter.set('DIRECT')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
-                            [ngClass]="creatorTypeFilter() === 'DIRECT' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
-                      Direct ({{ directCount() }})
-                    </button>
-                    <button type="button" (click)="creatorTypeFilter.set('AGENCY')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
-                            [ngClass]="creatorTypeFilter() === 'AGENCY' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
-                      Agency Managed ({{ agencyCount() }})
+                @if (canManageAgencies() || availableCampaigns().length > 0) {
+                  <div class="flex items-center justify-between gap-2 pt-2.5 border-t border-cv-border-soft flex-wrap">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      @if (canManageAgencies()) {
+                        <button type="button" (click)="creatorTypeFilter.set('all')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
+                                [ngClass]="creatorTypeFilter() === 'all' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                          All Creators ({{ creators().length }})
+                        </button>
+                        <button type="button" (click)="creatorTypeFilter.set('DIRECT')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
+                                [ngClass]="creatorTypeFilter() === 'DIRECT' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                          Direct ({{ directCount() }})
+                        </button>
+                        <button type="button" (click)="creatorTypeFilter.set('AGENCY')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
+                                [ngClass]="creatorTypeFilter() === 'AGENCY' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                          Agency Managed ({{ agencyCount() }})
+                        </button>
+                      }
+                      @if (selectedCampaignFilter() !== 'ALL') {
+                        <button type="button" (click)="setCampaignFilter('ALL')"
+                                class="h-8 px-3 rounded-[4px] bg-[#f54e26] text-[#111111] text-xs font-bold cursor-pointer">
+                          Campaign: {{ selectedCampaignFilter() }} ✕
+                        </button>
+                      }
+                    </div>
+                    <button type="button" (click)="openBulkImportModal()"
+                            class="h-8 px-3 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-xs font-semibold text-cv-ink cursor-pointer transition-colors">
+                      + Bulk Import Reels
                     </button>
                   </div>
                 }
@@ -1010,9 +1208,13 @@ import { safeExternalUrl } from '../utils/url-safety';
 
               @if (filteredCreators().length === 0) {
                 <div class="p-8 sm:p-10 rounded-[4px] bg-cv-card border border-dashed border-cv-border-strong text-center space-y-3">
-                  <p class="text-sm text-cv-ink-muted">No creators in your roster yet. Use Instagram Lookup to fetch a live creator profile.</p>
+                  <p class="text-sm text-cv-ink-muted">No creators match the current filter. Fetch from Instagram, bulk-import Reel links, or explore sample data.</p>
                   <div class="flex flex-wrap items-center justify-center gap-2">
                     <button (click)="switchTab('instagram')" class="h-9 px-5 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase text-base font-bold cursor-pointer transition-colors">FETCH FROM INSTAGRAM ↗</button>
+                    <button type="button" (click)="openBulkImportModal()" class="h-9 px-4 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-xs font-semibold text-cv-ink cursor-pointer transition-colors">+ Bulk Import Reels</button>
+                    @if (creators().length === 0) {
+                      <button type="button" (click)="loadDemoCampaign()" [disabled]="demoBusy()" class="h-9 px-4 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-xs font-semibold text-cv-ink cursor-pointer transition-colors">Try Demo Campaign</button>
+                    }
                   </div>
                 </div>
               } @else {
@@ -1300,6 +1502,45 @@ import { safeExternalUrl } from '../utils/url-safety';
 
       <app-footer></app-footer>
     </div>
+
+    <!-- Bulk Instagram Reel Import Modal -->
+    <app-bulk-import-modal
+      [open]="showBulkImportModal()"
+      [manageableCreators]="manageableCreators()"
+      [currency]="currentBrand()?.currency || 'INR'"
+      [busy]="bulkImportBusy()"
+      [errorMsg]="bulkImportError()"
+      [result]="bulkImportResult()"
+      (close)="showBulkImportModal.set(false)"
+      (importSubmit)="submitBulkImport($event)">
+    </app-bulk-import-modal>
+
+    <!-- Shareable Client Report Modal -->
+    <app-share-report-modal
+      [open]="showShareModal()"
+      [brandName]="currentPartnerAgency()?.name || currentBrand()?.name || 'Workspace'"
+      [campaigns]="availableCampaigns()"
+      [defaultCampaignFilter]="selectedCampaignFilter()"
+      [reports]="sharedReports()"
+      [busy]="shareCreating()"
+      [loadingList]="shareLoading()"
+      (close)="showShareModal.set(false)"
+      (createReport)="submitCreateShareReport($event)"
+      (revokeReport)="revokeShareReport($event)"
+      (copyLink)="copyShareUrl($event)">
+    </app-share-report-modal>
+
+    <!-- Executive Print / PDF Recap Modal (renders outside .cv-print-hide for clean printing) -->
+    <app-executive-pdf-modal
+      [open]="showPdfModal()"
+      [workspaceTitle]="currentPartnerAgency()?.name || currentBrand()?.name || 'Workspace'"
+      [campaignFilter]="selectedCampaignFilter()"
+      [currency]="currentBrand()?.currency || 'INR'"
+      [creators]="scopedCreators()"
+      [deliverables]="scopedDeliverables()"
+      [summary]="executiveSummary()"
+      (close)="showPdfModal.set(false)">
+    </app-executive-pdf-modal>
   `
 })
 export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware {
@@ -1388,6 +1629,54 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   agencySaving = signal(false);
   agencyFormError = signal('');
 
+  selectedCampaignFilter = signal<string>('ALL');
+  editingGoal = signal(false);
+  savingGoal = signal(false);
+  goalInput = '';
+
+  demoBusy = signal(false);
+
+  showBulkImportModal = signal(false);
+  bulkImportBusy = signal(false);
+  bulkImportError = signal('');
+  bulkImportResult = signal<BulkImportResult | null>(null);
+
+  showShareModal = signal(false);
+  sharedReports = signal<SharedReportRecord[]>([]);
+  shareLoading = signal(false);
+  shareCreating = signal(false);
+
+  showPdfModal = signal(false);
+
+  hasDemoData = computed(() =>
+    this.creators().some(c => !!c.demoData) || this.deliverables().some(r => !!r.demoData)
+  );
+
+  availableCampaigns = computed(() =>
+    extractDistinctCampaigns(this.creators(), this.deliverables())
+  );
+
+  scopedWorkspace = computed(() =>
+    filterWorkspaceByCampaign(this.creators(), this.deliverables(), this.selectedCampaignFilter())
+  );
+
+  scopedCreators = computed(() => this.scopedWorkspace().creators);
+  scopedDeliverables = computed(() => this.scopedWorkspace().deliverables);
+
+  manageableCreators = computed(() =>
+    this.creators().filter(c => this.canManageCreatorDeliverables(c))
+  );
+
+  executiveSummary = computed(() =>
+    computeExecutiveAnalytics({
+      creators: this.scopedCreators(),
+      deliverables: this.scopedDeliverables(),
+      currency: this.currentBrand()?.currency,
+      targetViewsGoal: this.selectedCampaignFilter() === 'ALL' ? this.currentBrand()?.targetViewsGoal : null,
+      includeSpend: true
+    })
+  );
+
   directCreators = computed(() => this.creators().filter(c => c.sourceType === 'DIRECT'));
   directCount = computed(() => this.directCreators().length);
   agencyCount = computed(() => this.creators().filter(c => c.sourceType === 'AGENCY').length);
@@ -1424,7 +1713,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   readonly Math = Math;
 
   spotlightCreator = computed(() => {
-    const list = this.creators();
+    const list = this.scopedCreators();
     if (list.length === 0) return null;
     const picked = this.spotlightCreatorId();
     return list.find(c => c.id === picked) || list[0];
@@ -1433,7 +1722,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   spotlightCreatorReels = computed(() => {
     const sc = this.spotlightCreator();
     if (!sc) return [];
-    return this.deliverables().filter(r => r.creatorId === sc.id);
+    return this.scopedDeliverables().filter(r => r.creatorId === sc.id);
   });
 
   activeSpotlightReel = computed(() => {
@@ -1495,7 +1784,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     } else {
       const sourceReels = this.spotlightCreatorReels().length > 1
         ? this.spotlightCreatorReels()
-        : this.deliverables();
+        : this.scopedDeliverables();
       const topReels = sourceReels.slice(0, 7);
       const hasViews = topReels.some(r => (r.viewsCount || 0) > 0);
       unit = hasViews ? 'views' : 'interactions';
@@ -1609,8 +1898,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   });
 
   csvRecapRows = computed(() => {
-    const deliv = this.deliverables();
-    return this.creators().map(c => {
+    const deliv = this.scopedDeliverables();
+    return this.scopedCreators().map(c => {
       const owned = deliv.filter(r => r.creatorId === c.id);
       const views = owned.length > 0
         ? owned.reduce((s, r) => s + (r.viewsCount || 0), 0)
@@ -1642,7 +1931,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     const q = this.creatorSearchSig().toLowerCase();
     const ag = this.selectedAgencySig();
     const tp = this.creatorTypeFilter();
-    return this.creators().filter(c => {
+    return this.scopedCreators().filter(c => {
       const mType = tp === 'all' || c.sourceType === tp;
       const mAg = ag === 'all' || c.agencyName === ag;
       const mQ = !q || c.name.toLowerCase().includes(q) || c.handle.toLowerCase().includes(q) || (c.niche || '').toLowerCase().includes(q);
@@ -1719,6 +2008,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   private closeTransientModals(): void {
     this.showAddCreatorModal.set(false);
     this.showAgencyModal.set(false);
+    this.showBulkImportModal.set(false);
+    this.showShareModal.set(false);
+    this.showPdfModal.set(false);
+    this.editingGoal.set(false);
     this.editingAgency.set(null);
     this.viewedAgency.set(null);
     this.agencyToDelete.set(null);
@@ -2117,7 +2410,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  submitReel(payload: { title: string; reelUrl: string; costQuoted?: string }) {
+  submitReel(payload: { title: string; reelUrl: string; costQuoted?: string; campaignTag?: string }) {
     const ic = this.inspectedCreator();
     if (!ic || !payload.reelUrl.trim()) return;
     this.api.addReelDeliverable(ic.id, payload).subscribe({
@@ -2135,10 +2428,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  saveDeliverableEdit(payload: { id: string; title: string; costQuoted?: number | null }) {
-    const body: { title?: string; costQuoted?: number | null } = { title: payload.title };
+  saveDeliverableEdit(payload: { id: string; title: string; costQuoted?: number | null; campaignTag?: string }) {
+    const body: { title?: string; costQuoted?: number | null; campaignTag?: string } = { title: payload.title };
     if (payload.costQuoted !== undefined) {
       body.costQuoted = payload.costQuoted;
+    }
+    if (payload.campaignTag !== undefined) {
+      body.campaignTag = payload.campaignTag;
     }
     this.api.updateDeliverable(payload.id, body).subscribe({
       next: () => {
@@ -2667,7 +2963,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
 
   exportCsv() {
     if (!this.selectedBrandId()) return;
-    this.api.exportBrandCsv(this.selectedBrandId()).subscribe(blob => {
+    const camp = this.selectedCampaignFilter();
+    this.api.exportBrandCsv(this.selectedBrandId(), camp).subscribe(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -2676,6 +2973,178 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
       URL.revokeObjectURL(url);
       this.showToast('CSV report downloaded!');
     });
+  }
+
+  formatBrandMoney(amount: number | null | undefined, decimals = 0): string {
+    return formatMoney(amount, this.currentBrand()?.currency, decimals);
+  }
+
+  setCampaignFilter(camp: string) {
+    this.selectedCampaignFilter.set(camp || 'ALL');
+    this.spotlightCreatorId.set('');
+    this.spotlightReelId.set('');
+    this.hoveredSpotlightBarIdx.set(null);
+    this.pinnedSpotlightSnapIdx.set(null);
+  }
+
+  startEditGoal() {
+    const cur = this.currentBrand()?.targetViewsGoal;
+    this.goalInput = cur ? String(cur) : '';
+    this.editingGoal.set(true);
+  }
+
+  saveTargetGoal() {
+    const brandId = this.selectedBrandId();
+    if (!brandId || this.savingGoal()) return;
+    const raw = String(this.goalInput || '').trim();
+    const parsed = raw ? Math.round(Number(raw)) : null;
+    if (parsed !== null && (Number.isNaN(parsed) || parsed < 0)) {
+      this.showToast('Enter a valid non-negative number of views.');
+      return;
+    }
+    this.savingGoal.set(true);
+    this.api.updateBrandWorkspaceSettings(brandId, { targetViewsGoal: parsed && parsed > 0 ? parsed : null }).subscribe({
+      next: (updated) => {
+        this.savingGoal.set(false);
+        this.editingGoal.set(false);
+        this.currentBrand.set(updated);
+        this.showToast(updated.targetViewsGoal ? 'Campaign view target updated!' : 'Campaign view target cleared.');
+      },
+      error: (err) => {
+        this.savingGoal.set(false);
+        this.showToast(err?.error?.error || 'Could not update view goal.');
+      }
+    });
+  }
+
+  clearTargetGoal() {
+    this.goalInput = '';
+    this.saveTargetGoal();
+  }
+
+  loadDemoCampaign() {
+    const brandId = this.selectedBrandId();
+    if (!brandId || this.demoBusy()) return;
+    this.demoBusy.set(true);
+    this.api.seedDemoCampaign(brandId).subscribe({
+      next: (res) => {
+        this.demoBusy.set(false);
+        this.selectBrand(brandId, true);
+        if (this.activeTab() === 'audit') this.loadAuditLogs(brandId);
+        this.showToast(res.alreadyLoaded
+          ? 'Sample campaign is already active in this workspace.'
+          : `Loaded ${res.creatorsAdded} sample creators & ${res.reelsAdded} Reels with growth snapshots!`);
+      },
+      error: (err) => {
+        this.demoBusy.set(false);
+        this.showToast(err?.error?.error || 'Could not load sample campaign.');
+      }
+    });
+  }
+
+  clearDemoData() {
+    const brandId = this.selectedBrandId();
+    if (!brandId || this.demoBusy()) return;
+    this.demoBusy.set(true);
+    this.api.clearDemoCampaign(brandId).subscribe({
+      next: (res) => {
+        this.demoBusy.set(false);
+        if (this.selectedCampaignFilter() !== 'ALL') {
+          this.selectedCampaignFilter.set('ALL');
+        }
+        this.selectBrand(brandId, true);
+        if (this.activeTab() === 'audit') this.loadAuditLogs(brandId);
+        this.showToast(`Cleared ${res.removedCreators} sample creator(s) & ${res.removedReels} sample reel(s).`);
+      },
+      error: (err) => {
+        this.demoBusy.set(false);
+        this.showToast(err?.error?.error || 'Could not clear sample data.');
+      }
+    });
+  }
+
+  openBulkImportModal() {
+    this.bulkImportError.set('');
+    this.bulkImportResult.set(null);
+    this.showBulkImportModal.set(true);
+  }
+
+  submitBulkImport(payload: BulkImportSubmitPayload) {
+    const brandId = this.selectedBrandId();
+    if (!brandId || this.bulkImportBusy()) return;
+    this.bulkImportBusy.set(true);
+    this.bulkImportError.set('');
+    this.bulkImportResult.set(null);
+    this.api.bulkImportDeliverables(brandId, payload).subscribe({
+      next: (res) => {
+        this.bulkImportBusy.set(false);
+        this.bulkImportResult.set(res);
+        this.selectBrand(brandId, true);
+        if (this.activeTab() === 'audit') this.loadAuditLogs(brandId);
+        this.showToast(`Imported ${res.addedCount} deliverable(s)!`);
+      },
+      error: (err) => {
+        this.bulkImportBusy.set(false);
+        this.bulkImportError.set(err?.error?.error || 'Bulk import failed.');
+      }
+    });
+  }
+
+  openShareModal() {
+    const brandId = this.selectedBrandId();
+    if (!brandId) return;
+    this.showShareModal.set(true);
+    this.loadSharedReportsList(brandId);
+  }
+
+  private loadSharedReportsList(brandId: string) {
+    this.shareLoading.set(true);
+    this.api.listSharedReports(brandId).subscribe({
+      next: (list) => {
+        this.shareLoading.set(false);
+        this.sharedReports.set(list);
+      },
+      error: () => {
+        this.shareLoading.set(false);
+      }
+    });
+  }
+
+  submitCreateShareReport(payload: CreateShareReportPayload) {
+    const brandId = this.selectedBrandId();
+    if (!brandId || this.shareCreating()) return;
+    this.shareCreating.set(true);
+    this.api.createSharedReport(brandId, payload).subscribe({
+      next: (created) => {
+        this.shareCreating.set(false);
+        this.sharedReports.update(cur => [created, ...cur]);
+        const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/report/${encodeURIComponent(created.shareToken)}`;
+        navigator.clipboard?.writeText(url);
+        if (this.activeTab() === 'audit') this.loadAuditLogs(brandId);
+        this.showToast('Client report link created & copied to clipboard!');
+      },
+      error: (err) => {
+        this.shareCreating.set(false);
+        this.showToast(err?.error?.error || 'Could not generate report link.');
+      }
+    });
+  }
+
+  revokeShareReport(reportId: string) {
+    const brandId = this.selectedBrandId();
+    if (!brandId) return;
+    this.api.revokeSharedReport(brandId, reportId).subscribe({
+      next: () => {
+        this.sharedReports.update(list => list.filter(r => r.id !== reportId));
+        this.showToast('Shared report link revoked.');
+      },
+      error: (err) => this.showToast(err?.error?.error || 'Could not revoke report link.')
+    });
+  }
+
+  copyShareUrl(url: string) {
+    navigator.clipboard?.writeText(url);
+    this.showToast('Client report URL copied to clipboard!');
   }
 
   copyReelUrl(url: string) {

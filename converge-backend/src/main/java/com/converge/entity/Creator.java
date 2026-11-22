@@ -99,6 +99,8 @@ public class Creator {
     @Column(nullable = false)
     private String status = "ACTIVE_VERIFIED"; // ACTIVE_VERIFIED, PENDING
 
+    private Boolean demoData = false;
+
     @Column(nullable = false, updatable = false)
     private Instant linkedAt = Instant.now();
 
@@ -204,6 +206,8 @@ public class Creator {
     public void setLastSyncedAt(Instant lastSyncedAt) { this.lastSyncedAt = lastSyncedAt; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public boolean isDemoData() { return Boolean.TRUE.equals(demoData); }
+    public void setDemoData(Boolean demoData) { this.demoData = Boolean.TRUE.equals(demoData); }
     public Instant getLinkedAt() { return linkedAt; }
     public void setLinkedAt(Instant linkedAt) { this.linkedAt = linkedAt; }
 }

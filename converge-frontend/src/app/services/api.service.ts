@@ -19,6 +19,7 @@ export interface Brand {
   managerName: string;
   managerEmail: string;
   managerRoleTitle: string;
+  targetViewsGoal?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,6 +88,7 @@ export interface Creator {
   currency?: string;
   lastSyncedAt?: string;
   status: string;
+  demoData?: boolean;
   linkedAt: string;
 }
 
@@ -198,6 +200,8 @@ export interface ReelDeliverable {
   thumbnailUrl?: string;
   duration: string;
   costQuoted?: number | null;
+  campaignTag?: string;
+  demoData?: boolean;
   viewsCount: number;
   reachCount?: number;
   likesCount: number;
@@ -210,6 +214,40 @@ export interface ReelDeliverable {
   metricsSource?: string;
   publishedAt?: string;
   syncedAt: string;
+}
+
+export interface SharedReportRecord {
+  id: string;
+  brandId: string;
+  agencyId?: string | null;
+  shareToken: string;
+  title: string;
+  campaignFilter: string;
+  includeSpend: boolean;
+  createdBy?: string;
+  active: boolean;
+  expiresAt?: string | null;
+  createdAt: string;
+}
+
+export interface PublicReportBundle {
+  report: {
+    title: string;
+    campaignFilter: string;
+    includeSpend: boolean;
+    createdAt: string;
+    expiresAt: string;
+  };
+  brand: {
+    name: string;
+    brandName: string;
+    slug: string;
+    currency: string;
+    targetViewsGoal?: number | null;
+  };
+  creators: Creator[];
+  deliverables: ReelDeliverable[];
+  reelDeltas?: Record<string, ReelDeltaSummary>;
 }
 
 export interface InstagramStatus {
@@ -326,11 +364,11 @@ export class ApiService {
     return this.http.get<ReelDeliverable[]>(`/api/creators/${creatorId}/deliverables`);
   }
 
-  addReelDeliverable(creatorId: string, payload: { title: string; reelUrl: string; costQuoted?: string | number | null }): Observable<ReelDeliverable> {
+  addReelDeliverable(creatorId: string, payload: { title: string; reelUrl: string; costQuoted?: string | number | null; campaignTag?: string }): Observable<ReelDeliverable> {
     return this.http.post<ReelDeliverable>(`/api/creators/${creatorId}/deliverables`, payload);
   }
 
-  updateDeliverable(deliverableId: string, payload: { title?: string; costQuoted?: number | null }): Observable<ReelDeliverable> {
+  updateDeliverable(deliverableId: string, payload: { title?: string; costQuoted?: number | null; campaignTag?: string }): Observable<ReelDeliverable> {
     return this.http.put<ReelDeliverable>(`/api/creators/deliverables/${deliverableId}`, payload);
   }
 
@@ -399,7 +437,58 @@ export class ApiService {
     return this.http.get<any>(`/api/brands/${brandId}/audit-logs`, { params });
   }
 
-  exportBrandCsv(brandId: string): Observable<Blob> {
-    return this.http.get(`/api/brands/${brandId}/export`, { responseType: 'blob' });
+  exportBrandCsv(brandId: string, campaign?: string): Observable<Blob> {
+    let params = new HttpParams();
+    if (campaign && campaign !== 'ALL') params = params.set('campaign', campaign);
+    return this.http.get(`/api/brands/${brandId}/export`, { params, responseType: 'blob' });
+  }
+
+  updateBrandWorkspaceSettings(brandId: string, payload: { targetViewsGoal: number | null }): Observable<Brand> {
+    return this.http.patch<Brand>(`/api/brands/${brandId}/settings`, payload);
+  }
+
+  bulkImportDeliverables(brandId: string, payload: {
+    defaultCreatorId?: string;
+    defaultCampaignTag?: string;
+    defaultCostQuoted?: number | string | null;
+    items: Array<{ reelUrl: string; creatorHandle?: string; title?: string; costQuoted?: string | number | null; campaignTag?: string }>;
+  }): Observable<{
+    addedCount: number;
+    skippedDuplicatesCount: number;
+    failedCount: number;
+    createdCreatorsCount: number;
+    deliverables: ReelDeliverable[];
+    errors: Array<{ row: number; reelUrl: string; reason: string }>;
+  }> {
+    return this.http.post<any>(`/api/brands/${brandId}/deliverables/bulk`, payload);
+  }
+
+  seedDemoCampaign(brandId: string): Observable<{ alreadyLoaded: boolean; creatorsAdded: number; reelsAdded: number }> {
+    return this.http.post<any>(`/api/brands/${brandId}/demo-campaign`, {});
+  }
+
+  clearDemoCampaign(brandId: string): Observable<{ removedCreators: number; removedReels: number }> {
+    return this.http.delete<any>(`/api/brands/${brandId}/demo-campaign`);
+  }
+
+  listSharedReports(brandId: string): Observable<SharedReportRecord[]> {
+    return this.http.get<SharedReportRecord[]>(`/api/brands/${brandId}/share-reports`);
+  }
+
+  createSharedReport(brandId: string, payload: {
+    title: string;
+    campaignFilter: string;
+    includeSpend: boolean;
+    expiryDays?: number | null;
+  }): Observable<SharedReportRecord> {
+    return this.http.post<SharedReportRecord>(`/api/brands/${brandId}/share-reports`, payload);
+  }
+
+  revokeSharedReport(brandId: string, reportId: string): Observable<{ revoked: boolean }> {
+    return this.http.delete<{ revoked: boolean }>(`/api/brands/${brandId}/share-reports/${reportId}`);
+  }
+
+  getPublicSharedReport(token: string): Observable<PublicReportBundle> {
+    return this.http.get<PublicReportBundle>(`/api/public/reports/${encodeURIComponent(token)}`);
   }
 }

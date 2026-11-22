@@ -35,6 +35,7 @@ public class BrandService {
     private final EmailService emailService;
     private final InstagramGraphService instagramGraphService;
     private final ReelSnapshotRepository reelSnapshotRepository;
+    private final SharedReportRepository sharedReportRepository;
     private final String adminEmail;
     private static final long AUTO_SYNC_COOLDOWN_SECONDS = 60L;
     private final java.util.concurrent.ConcurrentHashMap<String, Instant> recentSyncTimestamps =
@@ -55,7 +56,23 @@ public class BrandService {
             InstagramGraphService instagramGraphService,
             @Value("${app.admin.email:}") String adminEmail) {
         this(brandRepository, agencyRepository, creatorRepository, reelRepository,
-                auditLogRepository, userRepository, emailService, instagramGraphService, null, adminEmail);
+                auditLogRepository, userRepository, emailService, instagramGraphService, null, null, adminEmail);
+    }
+
+    public BrandService(
+            BrandRepository brandRepository,
+            AgencyRepository agencyRepository,
+            CreatorRepository creatorRepository,
+            ReelDeliverableRepository reelRepository,
+            AuditLogRepository auditLogRepository,
+            UserRepository userRepository,
+            EmailService emailService,
+            InstagramGraphService instagramGraphService,
+            ReelSnapshotRepository reelSnapshotRepository,
+            @Value("${app.admin.email:}") String adminEmail) {
+        this(brandRepository, agencyRepository, creatorRepository, reelRepository,
+                auditLogRepository, userRepository, emailService, instagramGraphService,
+                reelSnapshotRepository, null, adminEmail);
     }
 
     @Autowired
@@ -69,6 +86,7 @@ public class BrandService {
             EmailService emailService,
             InstagramGraphService instagramGraphService,
             ReelSnapshotRepository reelSnapshotRepository,
+            SharedReportRepository sharedReportRepository,
             @Value("${app.admin.email:}") String adminEmail) {
         this.brandRepository = brandRepository;
         this.agencyRepository = agencyRepository;
@@ -79,6 +97,7 @@ public class BrandService {
         this.emailService = emailService;
         this.instagramGraphService = instagramGraphService;
         this.reelSnapshotRepository = reelSnapshotRepository;
+        this.sharedReportRepository = sharedReportRepository;
         this.adminEmail = adminEmail != null ? adminEmail.trim().toLowerCase() : "";
     }
 
@@ -582,6 +601,9 @@ public class BrandService {
     @Transactional
     public void deleteBrand(UUID brandId) {
         Brand brand = getBrand(brandId);
+        if (sharedReportRepository != null) {
+            sharedReportRepository.deleteByBrandId(brandId);
+        }
         if (reelSnapshotRepository != null) {
             reelSnapshotRepository.deleteByBrandId(brandId);
         }
@@ -947,8 +969,12 @@ public class BrandService {
             throw new IllegalArgumentException("This Reel is already added to " + creator.getHandle() + "'s tracked deliverables.");
         }
 
-        String title = strVal(payload.get("title"));
+        String title = trimToMax(strVal(payload.get("title")), 160);
         if (title.isEmpty()) title = "Campaign Reel Deliverable";
+        String campaignTag = trimToMax(strVal(payload.get("campaignTag")), 80);
+        if (campaignTag.isEmpty() && creator.getCampaignName() != null && !creator.getCampaignName().isBlank()) {
+            campaignTag = trimToMax(creator.getCampaignName().trim(), 80);
+        }
 
         ReelDeliverable reel = new ReelDeliverable();
         reel.setBrandId(creator.getBrandId());
@@ -957,12 +983,17 @@ public class BrandService {
         reel.setTitle(title);
         reel.setReelUrl(reelUrl);
         reel.setShortcode(shortcode);
+        reel.setCampaignTag(campaignTag);
         Double delCost = parseNullablePositiveDouble(payload.get("costQuoted"));
         if (delCost != null) {
             reel.setCostQuoted(delCost);
         }
 
-        instagramGraphService.syncReelDeliverable(reel, creator);
+        if (!creator.isDemoData()) {
+            instagramGraphService.syncReelDeliverable(reel, creator);
+        } else {
+            reel.setStatus("PENDING_META_SYNC");
+        }
 
         ReelDeliverable saved = reelRepository.save(reel);
         recordDeliverableSnapshotIfChanged(saved, false);
@@ -988,11 +1019,11 @@ public class BrandService {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
         List<ReelDeliverable> reels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
-        List<Map<String, Object>> recentMedia = loadRecentMediaSafe(creator);
+        List<Map<String, Object>> recentMedia = creator.isDemoData() ? List.of() : loadRecentMediaSafe(creator);
 
         boolean anyReelUpdated = false;
         Instant staleCutoff = Instant.now().minusSeconds(600);
-        if (!reels.isEmpty()) {
+        if (!reels.isEmpty() && !creator.isDemoData()) {
             for (ReelDeliverable r : reels) {
                 String sc = r.getShortcode() != null ? r.getShortcode() : InstagramGraphService.extractShortcode(r.getReelUrl());
                 boolean matchedRecent = false;
@@ -1010,6 +1041,7 @@ public class BrandService {
                     }
                 }
                 boolean needsInitialSync = !matchedRecent
+                        && !r.isDemoData()
                         && r.getViewsCount() == 0
                         && !isStaticPhotoType(r.getMediaType())
                         && !"NOT_FOUND".equals(r.getStatus())
@@ -1083,7 +1115,9 @@ public class BrandService {
 
         List<ReelDeliverable> allCreatorReels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creator.getId());
         Instant staleCutoff = Instant.now().minusSeconds(600);
-        boolean shouldSync = reel.getViewsCount() == 0
+        boolean shouldSync = !reel.isDemoData()
+                && !creator.isDemoData()
+                && reel.getViewsCount() == 0
                 && !isStaticPhotoType(reel.getMediaType())
                 && !"VERIFIED".equals(reel.getStatus())
                 && (reel.getSyncedAt() == null || reel.getSyncedAt().isBefore(staleCutoff));
@@ -1172,10 +1206,14 @@ public class BrandService {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
         instagramGraphService.evictCreatorCache(creator.getHandle());
-        boolean profileUpdated = instagramGraphService.applyProfileIfAvailable(creator);
+        boolean profileUpdated = !creator.isDemoData() && instagramGraphService.applyProfileIfAvailable(creator);
         List<ReelDeliverable> reels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
         int verifiedCount = 0;
         for (ReelDeliverable r : reels) {
+            if (r.isDemoData() || creator.isDemoData()) {
+                if ("VERIFIED".equals(r.getStatus())) verifiedCount++;
+                continue;
+            }
             ensureBaselineSnapshotBeforeSync(r);
             instagramGraphService.evictMediaCache(r.getIgMediaId());
             instagramGraphService.syncReelDeliverable(r, creator);
@@ -1184,7 +1222,9 @@ public class BrandService {
         List<ReelDeliverable> savedReels = reelRepository.saveAll(reels);
         List<ReelDeliverable> finalReels = (savedReels != null && !savedReels.isEmpty()) ? savedReels : reels;
         for (ReelDeliverable r : finalReels) {
-            recordDeliverableSnapshotIfChanged(r, true);
+            if (!r.isDemoData()) {
+                recordDeliverableSnapshotIfChanged(r, true);
+            }
         }
         Creator updated = rollUpCreatorMetrics(creator, finalReels);
 
@@ -1193,7 +1233,7 @@ public class BrandService {
                 "Refreshed " + creator.getHandle() + " (" + verifiedCount + " of " + reels.size() + " reels updated).",
                 actor != null && !actor.isBlank() ? actor : "Workspace Manager", "Creator Sync");
 
-        List<Map<String, Object>> recentMedia = loadRecentMediaSafe(updated);
+        List<Map<String, Object>> recentMedia = creator.isDemoData() ? List.of() : loadRecentMediaSafe(updated);
         Map<String, Object> out = enrichCreatorSummary(updated, reels, recentMedia, includeAllBrands, callerEmail);
         out.put("profileUpdated", profileUpdated);
         out.put("verifiedDeliverables", verifiedCount);
@@ -1212,11 +1252,14 @@ public class BrandService {
                 .orElseThrow(() -> new IllegalArgumentException("Deliverable not found."));
         if (payload != null) {
             if (payload.containsKey("title")) {
-                String title = strVal(payload.get("title"));
+                String title = trimToMax(strVal(payload.get("title")), 160);
                 if (!title.isEmpty()) reel.setTitle(title);
             }
             if (payload.containsKey("costQuoted")) {
                 reel.setCostQuoted(parseNullablePositiveDouble(payload.get("costQuoted")));
+            }
+            if (payload.containsKey("campaignTag")) {
+                reel.setCampaignTag(trimToMax(strVal(payload.get("campaignTag")), 80));
             }
         }
         ReelDeliverable saved = reelRepository.save(reel);
@@ -1231,8 +1274,14 @@ public class BrandService {
     public ReelDeliverable syncDeliverableFromInstagram(UUID deliverableId) {
         ReelDeliverable reel = reelRepository.findById(deliverableId)
                 .orElseThrow(() -> new IllegalArgumentException("Deliverable not found."));
+        if (reel.isDemoData()) {
+            return reel;
+        }
         Creator creator = creatorRepository.findById(reel.getCreatorId())
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
+        if (creator.isDemoData()) {
+            return reel;
+        }
         ensureBaselineSnapshotBeforeSync(reel);
         instagramGraphService.evictCreatorCache(creator.getHandle());
         instagramGraphService.evictMediaCache(reel.getIgMediaId());
@@ -1423,8 +1472,10 @@ public class BrandService {
                 .toList();
         Map<UUID, Creator> creatorMap = new LinkedHashMap<>();
         for (Creator c : creators) {
-            instagramGraphService.evictCreatorCache(c.getHandle());
-            instagramGraphService.applyProfileIfAvailable(c);
+            if (!c.isDemoData()) {
+                instagramGraphService.evictCreatorCache(c.getHandle());
+                instagramGraphService.applyProfileIfAvailable(c);
+            }
             creatorMap.put(c.getId(), c);
         }
 
@@ -1436,10 +1487,12 @@ public class BrandService {
         int verifiedCount = 0;
         int pendingCount = 0;
         for (ReelDeliverable r : reels) {
-            ensureBaselineSnapshotBeforeSync(r);
-            instagramGraphService.evictMediaCache(r.getIgMediaId());
             Creator c = creatorMap.get(r.getCreatorId());
-            instagramGraphService.syncReelDeliverable(r, c);
+            if (!r.isDemoData() && (c == null || !c.isDemoData())) {
+                ensureBaselineSnapshotBeforeSync(r);
+                instagramGraphService.evictMediaCache(r.getIgMediaId());
+                instagramGraphService.syncReelDeliverable(r, c);
+            }
             if ("VERIFIED".equals(r.getStatus())) {
                 verifiedCount++;
             } else {
@@ -1450,7 +1503,9 @@ public class BrandService {
         List<ReelDeliverable> savedReels = reelRepository.saveAll(reels);
         List<ReelDeliverable> snapReels = (savedReels != null && !savedReels.isEmpty()) ? savedReels : reels;
         for (ReelDeliverable r : snapReels) {
-            recordDeliverableSnapshotIfChanged(r, true);
+            if (!r.isDemoData()) {
+                recordDeliverableSnapshotIfChanged(r, true);
+            }
         }
         for (Creator c : creators) {
             rollUpCreatorMetrics(c, reelsByCreator.getOrDefault(c.getId(), List.of()));
@@ -1614,20 +1669,28 @@ public class BrandService {
     }
 
     public String exportBrandCsv(UUID brandId) {
-        return exportBrandCsv(brandId, null);
+        return exportBrandCsv(brandId, null, null);
     }
 
     public String exportBrandCsv(UUID brandId, Authentication auth) {
+        return exportBrandCsv(brandId, auth, null);
+    }
+
+    public String exportBrandCsv(UUID brandId, Authentication auth, String campaignFilter) {
         Brand brand = getBrand(brandId);
         Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
-        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
-                .filter(c -> scopedAgency.isEmpty() || creatorBelongsToAgency(c, scopedAgency.get()))
-                .toList();
+        String activeCampaign = (campaignFilter != null && !campaignFilter.isBlank() && !"ALL".equalsIgnoreCase(campaignFilter.trim()))
+                ? campaignFilter.trim()
+                : null;
         List<ReelDeliverable> allReels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId);
         Map<UUID, List<ReelDeliverable>> deliverablesByCreator = new HashMap<>();
         for (ReelDeliverable r : allReels) {
             deliverablesByCreator.computeIfAbsent(r.getCreatorId(), k -> new ArrayList<>()).add(r);
         }
+        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
+                .filter(c -> scopedAgency.isEmpty() || creatorBelongsToAgency(c, scopedAgency.get()))
+                .filter(c -> activeCampaign == null || creatorMatchesCampaign(c, deliverablesByCreator.getOrDefault(c.getId(), List.of()), activeCampaign))
+                .toList();
         StringBuilder sb = new StringBuilder();
         sb.append("Brand,Code,Creator,Handle,Tier,Category,ManagementHandle,Country,Followers,AccountInteractions,Views,InteractionRate,CostMode,CostQuoted,Verified,PreviousPartners,Source,Agency,Campaign,AuditedReels,EngagementRate,Status\n");
         for (Creator c : creators) {
@@ -1910,5 +1973,751 @@ public class BrandService {
         result.put("commentsDeltaLastSync", commentsDeltaLastSync);
         result.put("snapshots", points);
         return result;
+    }
+
+    @Transactional
+    public Brand updateBrandWorkspaceSettings(UUID brandId, Map<String, Object> payload, String actor) {
+        Brand brand = getBrand(brandId);
+        if (payload == null) {
+            throw new IllegalArgumentException("Settings payload is required.");
+        }
+        if (payload.containsKey("targetViewsGoal")) {
+            Object raw = payload.get("targetViewsGoal");
+            if (raw == null || String.valueOf(raw).isBlank()) {
+                brand.setTargetViewsGoal(null);
+            } else {
+                long parsed;
+                try {
+                    String cleaned = String.valueOf(raw).replaceAll("[,\\s]", "").trim();
+                    parsed = Long.parseLong(cleaned);
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException("Target views goal must be a valid whole number.");
+                }
+                if (parsed < 0) {
+                    throw new IllegalArgumentException("Target views goal cannot be negative.");
+                }
+                brand.setTargetViewsGoal(parsed == 0L ? null : parsed);
+            }
+        }
+        brand.setUpdatedAt(Instant.now());
+        Brand saved = brandRepository.save(brand);
+        recordAudit(brandId, "SYSTEM", "Campaign Goal Updated", "Updated",
+                saved.getTargetViewsGoal() != null
+                        ? "Updated target views goal to " + InstagramGraphService.formatCompactNumber(saved.getTargetViewsGoal()) + "."
+                        : "Cleared target views goal.",
+                actor != null && !actor.isBlank() ? actor : "Brand Manager", "Campaign Goal");
+        return saved;
+    }
+
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> bulkImportDeliverables(UUID brandId, Map<String, Object> payload, Authentication auth) {
+        Brand brand = requireBrandAccess(brandId, auth);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        String actor = resolveActor(auth, scopedAgency.isPresent() ? "Agency Manager" : "Brand Manager");
+
+        if (payload == null || !(payload.get("items") instanceof List<?> rawItems) || rawItems.isEmpty()) {
+            throw new IllegalArgumentException("Paste at least one Instagram Reel or Post URL to import.");
+        }
+        if (rawItems.size() > 50) {
+            throw new IllegalArgumentException("Maximum 50 Instagram URLs can be imported in a single batch.");
+        }
+
+        Creator defaultCreator = null;
+        String defaultCreatorIdStr = strVal(payload.get("defaultCreatorId"));
+        if (!defaultCreatorIdStr.isEmpty()) {
+            UUID defaultId;
+            try {
+                defaultId = UUID.fromString(defaultCreatorIdStr);
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Invalid default creator selection.");
+            }
+            defaultCreator = creatorRepository.findById(defaultId)
+                    .orElseThrow(() -> new IllegalArgumentException("Selected creator not found."));
+            if (!brandId.equals(defaultCreator.getBrandId()) || !canCallerManageCreator(defaultCreator, scopedAgency)) {
+                throw new AccessDeniedException("You do not have permission to add deliverables to this creator.");
+            }
+        }
+
+        String defaultCampaignTag = trimToMax(strVal(payload.get("defaultCampaignTag")), 80);
+        Double defaultCost = parseNullablePositiveDouble(payload.get("defaultCostQuoted"));
+
+        Map<String, Creator> creatorCache = new LinkedHashMap<>();
+        for (Creator existing : creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId)) {
+            if (existing.getHandle() != null && !existing.getHandle().isBlank()) {
+                creatorCache.put(existing.getHandle().toLowerCase(Locale.ROOT), existing);
+            }
+        }
+        Map<UUID, Set<String>> seenShortcodes = new HashMap<>();
+        Map<UUID, Set<String>> seenUrls = new HashMap<>();
+
+        List<ReelDeliverable> added = new ArrayList<>();
+        List<Map<String, Object>> errors = new ArrayList<>();
+        Set<UUID> touchedCreatorIds = new LinkedHashSet<>();
+        int skippedDuplicates = 0;
+        int createdCreatorsCount = 0;
+        boolean rateLimitedHit = false;
+
+        for (int i = 0; i < rawItems.size(); i++) {
+            int rowNum = i + 1;
+            Object rawEntry = rawItems.get(i);
+            if (!(rawEntry instanceof Map<?, ?> entryMap)) {
+                errors.add(Map.of("row", rowNum, "reelUrl", "", "reason", "Malformed row format."));
+                continue;
+            }
+
+            String reelUrl = strVal(entryMap.get("reelUrl"));
+            String shortcode = InstagramGraphService.extractShortcode(reelUrl);
+            if (reelUrl.isEmpty() || shortcode == null) {
+                errors.add(Map.of("row", rowNum, "reelUrl", reelUrl, "reason", "Invalid public Instagram Reel or Post URL."));
+                continue;
+            }
+
+            String itemCampaignTag = trimToMax(strVal(entryMap.get("campaignTag")), 80);
+            if (itemCampaignTag.isEmpty()) itemCampaignTag = defaultCampaignTag;
+
+            Double itemCost = null;
+            if (entryMap.get("costQuoted") != null && !strVal(entryMap.get("costQuoted")).isEmpty()) {
+                try {
+                    itemCost = parseNullablePositiveDouble(entryMap.get("costQuoted"));
+                } catch (IllegalArgumentException badCost) {
+                    errors.add(Map.of("row", rowNum, "reelUrl", reelUrl, "reason", badCost.getMessage()));
+                    continue;
+                }
+            } else {
+                itemCost = defaultCost;
+            }
+
+            Creator targetCreator = null;
+            String rawHandle = strVal(entryMap.get("creatorHandle"));
+            if (rawHandle.isEmpty()) {
+                String extractedOwner = InstagramGraphService.extractUrlOwnerHandle(reelUrl);
+                if (extractedOwner != null) rawHandle = extractedOwner;
+            }
+
+            if (!rawHandle.isEmpty()) {
+                String normHandle = InstagramGraphService.normalizeHandle(rawHandle);
+                if (normHandle.isEmpty() || !InstagramGraphService.isValidHandle(normHandle)) {
+                    errors.add(Map.of("row", rowNum, "reelUrl", reelUrl, "reason", "Invalid creator handle: " + rawHandle));
+                    continue;
+                }
+                Creator existingCreator = creatorCache.get(normHandle.toLowerCase(Locale.ROOT));
+                if (existingCreator != null) {
+                    if (!canCallerManageCreator(existingCreator, scopedAgency)) {
+                        errors.add(Map.of("row", rowNum, "reelUrl", reelUrl, "reason", "Creator " + existingCreator.getHandle() + " is managed by a partner agency."));
+                        continue;
+                    }
+                    targetCreator = existingCreator;
+                } else {
+                    targetCreator = createAutoCreatorForImport(brand, scopedAgency, normHandle, itemCampaignTag, rateLimitedHit);
+                    creatorCache.put(normHandle.toLowerCase(Locale.ROOT), targetCreator);
+                    createdCreatorsCount++;
+                }
+            } else if (defaultCreator != null) {
+                targetCreator = defaultCreator;
+            } else {
+                errors.add(Map.of("row", rowNum, "reelUrl", reelUrl, "reason", "Creator @handle not found in URL; include @handle or pick a default creator."));
+                continue;
+            }
+
+            Creator finalTarget = targetCreator;
+            Set<String> scSet = seenShortcodes.computeIfAbsent(finalTarget.getId(), id -> {
+                Set<String> set = new HashSet<>();
+                for (ReelDeliverable r : reelRepository.findByCreatorIdOrderBySyncedAtDesc(id)) {
+                    String sc = r.getShortcode() != null && !r.getShortcode().isBlank()
+                            ? r.getShortcode()
+                            : InstagramGraphService.extractShortcode(r.getReelUrl());
+                    if (sc != null) set.add(sc.toLowerCase(Locale.ROOT));
+                }
+                return set;
+            });
+            Set<String> urlSet = seenUrls.computeIfAbsent(finalTarget.getId(), id -> {
+                Set<String> set = new HashSet<>();
+                for (ReelDeliverable r : reelRepository.findByCreatorIdOrderBySyncedAtDesc(id)) {
+                    set.add(normalizeReelUrl(r.getReelUrl()).toLowerCase(Locale.ROOT));
+                }
+                return set;
+            });
+
+            String normUrl = normalizeReelUrl(reelUrl).toLowerCase(Locale.ROOT);
+            if (scSet.contains(shortcode.toLowerCase(Locale.ROOT)) || urlSet.contains(normUrl)) {
+                skippedDuplicates++;
+                continue;
+            }
+
+            String title = trimToMax(strVal(entryMap.get("title")), 160);
+            if (title.isEmpty()) title = "Campaign Reel Deliverable";
+            if (itemCampaignTag.isEmpty() && finalTarget.getCampaignName() != null && !finalTarget.getCampaignName().isBlank()) {
+                itemCampaignTag = trimToMax(finalTarget.getCampaignName(), 80);
+            }
+
+            ReelDeliverable reel = new ReelDeliverable();
+            reel.setBrandId(brandId);
+            reel.setCreatorId(finalTarget.getId());
+            reel.setCreatorHandle(finalTarget.getHandle());
+            reel.setTitle(title);
+            reel.setReelUrl(reelUrl);
+            reel.setShortcode(shortcode);
+            reel.setCampaignTag(itemCampaignTag);
+            if (itemCost != null) {
+                reel.setCostQuoted(itemCost);
+            }
+
+            if (!rateLimitedHit && !finalTarget.isDemoData()) {
+                try {
+                    instagramGraphService.syncReelDeliverable(reel, finalTarget);
+                } catch (IllegalStateException rateEx) {
+                    if (rateEx.getMessage() != null && rateEx.getMessage().toLowerCase(Locale.ROOT).contains("rate limit")) {
+                        rateLimitedHit = true;
+                    }
+                    reel.setStatus("PENDING_META_SYNC");
+                    reel.setMetricsSource("RATE_LIMIT_DEFERRED");
+                }
+            } else {
+                reel.setStatus("PENDING_META_SYNC");
+            }
+
+            ReelDeliverable saved = reelRepository.save(reel);
+            recordDeliverableSnapshotIfChanged(saved, false);
+            scSet.add(shortcode.toLowerCase(Locale.ROOT));
+            urlSet.add(normUrl);
+            added.add(saved);
+            touchedCreatorIds.add(finalTarget.getId());
+        }
+
+        for (UUID cid : touchedCreatorIds) {
+            creatorRepository.findById(cid).ifPresent(this::rollUpCreatorMetrics);
+        }
+        if (scopedAgency.isPresent() && createdCreatorsCount > 0) {
+            Agency ag = scopedAgency.get();
+            ag.setCreatorsCount(creatorRepository.findByAgencyId(ag.getId()).size());
+            agencyRepository.save(ag);
+        }
+
+        if (!added.isEmpty() || createdCreatorsCount > 0) {
+            recordAudit(brandId, scopedAgency.map(Agency::getId).orElse(null), "REEL_AUDIT",
+                    "Bulk Reels Imported", "Imported",
+                    "Imported " + added.size() + " deliverable(s)"
+                            + (createdCreatorsCount > 0 ? " across " + createdCreatorsCount + " new creator(s)" : "")
+                            + (skippedDuplicates > 0 ? " (" + skippedDuplicates + " duplicate skipped)." : "."),
+                    actor, "Bulk Import");
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("addedCount", added.size());
+        out.put("skippedDuplicatesCount", skippedDuplicates);
+        out.put("failedCount", errors.size());
+        out.put("createdCreatorsCount", createdCreatorsCount);
+        out.put("deliverables", added);
+        out.put("errors", errors);
+        return out;
+    }
+
+    private Creator createAutoCreatorForImport(
+            Brand brand,
+            Optional<Agency> scopedAgency,
+            String normHandle,
+            String campaignTag,
+            boolean skipProfileSync) {
+        Creator creator = new Creator();
+        creator.setBrandId(brand.getId());
+        creator.setName(InstagramGraphService.stripAt(normHandle));
+        creator.setHandle(normHandle);
+        creator.setProfileUrl("https://www.instagram.com/" + InstagramGraphService.stripAt(normHandle) + "/");
+        if (scopedAgency.isPresent()) {
+            Agency ag = scopedAgency.get();
+            creator.setSourceType("AGENCY");
+            creator.setAgencyId(ag.getId());
+            creator.setAgencyName(ag.getName());
+            creator.setNiche(ag.getName());
+            creator.setCategory(ag.getName());
+        } else {
+            creator.setSourceType("DIRECT");
+            creator.setAgencyName("Direct / Independent");
+            creator.setNiche("Direct / Independent");
+            creator.setCategory("Direct / Independent");
+        }
+        creator.setCampaignName(campaignTag);
+        creator.setCostMode("COLLECTIVE");
+        creator.setFollowersDisplay("—");
+        creator.setStatus("ACTIVE_VERIFIED");
+        if (!skipProfileSync) {
+            try {
+                instagramGraphService.applyProfileIfAvailable(creator);
+            } catch (Exception ignored) {
+                // Non-fatal during bulk import; creator profile can sync later
+            }
+        }
+        instagramGraphService.evaluateCreatorQualification(creator);
+        return creatorRepository.save(creator);
+    }
+
+    private boolean canCallerManageCreator(Creator creator, Optional<Agency> scopedAgency) {
+        if (creator == null) return false;
+        if (scopedAgency.isPresent()) {
+            return creatorBelongsToAgency(creator, scopedAgency.get());
+        }
+        return !isAgencyManagedCreator(creator);
+    }
+
+    @Transactional
+    public Map<String, Object> seedDemoCampaign(UUID brandId, Authentication auth) {
+        Brand brand = requireBrandAccess(brandId, auth);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        String actor = resolveActor(auth, "Workspace Manager");
+
+        List<Creator> existingDemo = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
+                .filter(Creator::isDemoData)
+                .filter(c -> scopedAgency.isEmpty() || creatorBelongsToAgency(c, scopedAgency.get()))
+                .toList();
+        if (!existingDemo.isEmpty()) {
+            return Map.of("alreadyLoaded", true, "creatorsAdded", 0, "reelsAdded", 0);
+        }
+
+        Instant now = Instant.now();
+        List<Creator> createdCreators = new ArrayList<>();
+        Creator aanya = saveDemoCreator(brandId, scopedAgency, "Aanya Kapoor", "@aanya.kapoor_demo",
+                "Skincare & Beauty", "India", 284_000L, "284K", "PER_DELIVERABLE", 35_000.0,
+                "Summer Glow Drop", true);
+        Creator rohan = saveDemoCreator(brandId, scopedAgency, "Rohan Mehta", "@rohan.mehta_demo",
+                "Lifestyle & Grooming", "India", 412_000L, "412K", "PER_DELIVERABLE", 48_000.0,
+                "Summer Glow Drop", true);
+        Creator nisha = saveDemoCreator(brandId, scopedAgency, "Nisha Sharma", "@nisha.sharma_demo",
+                "Fashion & Daily Routines", "India", 165_000L, "165K", "COLLECTIVE", 55_000.0,
+                "Monsoon Creator Wave", false);
+        Creator kabir = saveDemoCreator(brandId, scopedAgency, "Kabir Verma", "@kabir.verma_demo",
+                "Fitness & Wellness", "India", 520_000L, "520K", "COLLECTIVE", 90_000.0,
+                "Summer Glow Drop", true);
+        Creator tara = saveDemoCreator(brandId, scopedAgency, "Tara Patel", "@tara.patel_demo",
+                "Clean Beauty Reviews", "India", 98_000L, "98K", "PER_DELIVERABLE", 18_000.0,
+                "Monsoon Creator Wave", false);
+        createdCreators.addAll(List.of(aanya, rohan, nisha, kabir, tara));
+
+        List<ReelDeliverable> createdReels = new ArrayList<>();
+        createdReels.add(saveDemoReel(aanya, "Morning Vitamin C Routine", "Summer Glow Drop", "C0DemoAanya01",
+                840_000L, 48_200L, 912L, 3_420L, 35_000.0, now.minusSeconds(9 * 86400L)));
+        createdReels.add(saveDemoReel(aanya, "7-Day Hydration Test", "Summer Glow Drop", "C0DemoAanya02",
+                310_000L, 19_400L, 418L, 1_290L, 35_000.0, now.minusSeconds(4 * 86400L)));
+        createdReels.add(saveDemoReel(rohan, "AM Grooming Essentials", "Summer Glow Drop", "C0DemoRohan01",
+                520_000L, 28_600L, 640L, 1_850L, 48_000.0, now.minusSeconds(11 * 86400L)));
+        createdReels.add(saveDemoReel(rohan, "Travel Kit Breakdown", "Monsoon Creator Wave", "C0DemoRohan02",
+                195_000L, 11_200L, 244L, 680L, 48_000.0, now.minusSeconds(3 * 86400L)));
+        createdReels.add(saveDemoReel(nisha, "Rain-Proof Skincare Layering", "Monsoon Creator Wave", "C0DemoNisha01",
+                245_000L, 16_800L, 530L, 1_940L, null, now.minusSeconds(6 * 86400L)));
+        createdReels.add(saveDemoReel(kabir, "Post-Workout Recovery Ritual", "Summer Glow Drop", "C0DemoKabir01",
+                218_000L, 12_900L, 310L, 820L, null, now.minusSeconds(8 * 86400L)));
+        createdReels.add(saveDemoReel(kabir, "Unboxing Brand Kit", "Summer Glow Drop", "C0DemoKabir02",
+                142_000L, 7_600L, 198L, 410L, null, now.minusSeconds(2 * 86400L)));
+        createdReels.add(saveDemoReel(tara, "Honest Texture & SPF Review", "Monsoon Creator Wave", "C0DemoTara01",
+                92_000L, 6_450L, 265L, 790L, 18_000.0, now.minusSeconds(1 * 86400L)));
+
+        for (Creator dc : createdCreators) {
+            rollUpCreatorMetrics(dc);
+        }
+        if (scopedAgency.isEmpty() && brand.getTargetViewsGoal() == null) {
+            brand.setTargetViewsGoal(3_000_000L);
+            brand.setUpdatedAt(now);
+            brandRepository.save(brand);
+        }
+        if (scopedAgency.isPresent()) {
+            Agency ag = scopedAgency.get();
+            ag.setCreatorsCount(creatorRepository.findByAgencyId(ag.getId()).size());
+            agencyRepository.save(ag);
+        }
+
+        recordAudit(brandId, scopedAgency.map(Agency::getId).orElse(null), "SYSTEM",
+                "Demo Campaign Loaded", "Demo Ready",
+                "Loaded sample campaign workspace (5 creators, 8 tracked Reels with snapshot growth curves).",
+                actor, "Sample Campaign");
+
+        return Map.of(
+                "alreadyLoaded", false,
+                "creatorsAdded", createdCreators.size(),
+                "reelsAdded", createdReels.size()
+        );
+    }
+
+    private Creator saveDemoCreator(
+            UUID brandId,
+            Optional<Agency> scopedAgency,
+            String name,
+            String handle,
+            String category,
+            String country,
+            long followers,
+            String followersDisplay,
+            String costMode,
+            Double costQuoted,
+            String campaignName,
+            boolean verified) {
+        Creator c = new Creator();
+        c.setBrandId(brandId);
+        if (scopedAgency.isPresent()) {
+            Agency ag = scopedAgency.get();
+            c.setSourceType("AGENCY");
+            c.setAgencyId(ag.getId());
+            c.setAgencyName(ag.getName());
+        } else {
+            c.setSourceType("DIRECT");
+            c.setAgencyName("Direct / Independent");
+        }
+        c.setName(name);
+        c.setHandle(handle);
+        c.setProfileUrl("https://www.instagram.com/" + InstagramGraphService.stripAt(handle) + "/");
+        c.setCategory(category);
+        c.setNiche(category);
+        c.setCountry(country);
+        c.setFollowersCount(followers);
+        c.setFollowersDisplay(followersDisplay);
+        c.setMediaCount(48);
+        c.setFollowsCount(320);
+        c.setCostMode(costMode);
+        c.setCostQuoted(costQuoted);
+        c.setCurrency("INR");
+        c.setCampaignName(campaignName);
+        c.setVerified(verified);
+        c.setPostedLast28Days(true);
+        c.setDemoData(true);
+        c.setStatus("ACTIVE_VERIFIED");
+        return creatorRepository.save(c);
+    }
+
+    private ReelDeliverable saveDemoReel(
+            Creator creator,
+            String title,
+            String campaignTag,
+            String shortcode,
+            long views,
+            long likes,
+            long comments,
+            long saves,
+            Double costQuoted,
+            Instant publishedAt) {
+        ReelDeliverable r = new ReelDeliverable();
+        r.setBrandId(creator.getBrandId());
+        r.setCreatorId(creator.getId());
+        r.setCreatorHandle(creator.getHandle());
+        r.setTitle(title);
+        r.setCampaignTag(campaignTag);
+        r.setShortcode(shortcode);
+        r.setReelUrl("https://www.instagram.com/reel/" + shortcode + "/");
+        r.setMediaType("REELS");
+        r.setCostQuoted(costQuoted);
+        r.setViewsCount(views);
+        r.setReachCount(views);
+        r.setLikesCount(likes);
+        r.setCommentsCount(comments);
+        r.setSavesCount(saves);
+        double er = views > 0 ? Math.round(((likes + comments) * 100.0 / views) * 100.0) / 100.0 : 0.0;
+        r.setEngagementRate(er);
+        r.setStatus("VERIFIED");
+        r.setMetricsSource("META_BUSINESS_DISCOVERY");
+        r.setPublishedAt(publishedAt);
+        r.setSyncedAt(Instant.now());
+        r.setDemoData(true);
+        ReelDeliverable saved = reelRepository.save(r);
+
+        if (reelSnapshotRepository != null) {
+            Instant now = Instant.now();
+            double[] ratios = {0.22, 0.44, 0.67, 0.89, 1.0};
+            long[] offsetsHours = {72, 48, 24, 6, 0};
+            for (int i = 0; i < ratios.length; i++) {
+                ReelSnapshot snap = new ReelSnapshot();
+                snap.setDeliverableId(saved.getId());
+                snap.setBrandId(saved.getBrandId());
+                snap.setCreatorId(saved.getCreatorId());
+                snap.setViewsCount(Math.round(views * ratios[i]));
+                snap.setLikesCount(Math.round(likes * ratios[i]));
+                snap.setCommentsCount(Math.round(comments * ratios[i]));
+                snap.setSavesCount(Math.round(saves * ratios[i]));
+                snap.setCapturedAt(now.minusSeconds(offsetsHours[i] * 3600L));
+                reelSnapshotRepository.save(snap);
+            }
+        }
+        return saved;
+    }
+
+    @Transactional
+    public Map<String, Object> clearDemoCampaign(UUID brandId, Authentication auth) {
+        Brand brand = requireBrandAccess(brandId, auth);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        String actor = resolveActor(auth, "Workspace Manager");
+
+        List<Creator> demoCreators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
+                .filter(Creator::isDemoData)
+                .filter(c -> scopedAgency.isEmpty() || creatorBelongsToAgency(c, scopedAgency.get()))
+                .toList();
+        Set<UUID> demoCreatorIds = new HashSet<>();
+        for (Creator dc : demoCreators) {
+            if (dc.getId() != null) demoCreatorIds.add(dc.getId());
+        }
+
+        List<ReelDeliverable> demoReels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId).stream()
+                .filter(r -> r.isDemoData() || (r.getCreatorId() != null && demoCreatorIds.contains(r.getCreatorId())))
+                .filter(r -> scopedAgency.isEmpty() || (r.getCreatorId() != null && demoCreatorIds.contains(r.getCreatorId())))
+                .toList();
+
+        if (reelSnapshotRepository != null) {
+            for (ReelDeliverable dr : demoReels) {
+                if (dr.getId() != null) {
+                    reelSnapshotRepository.deleteByDeliverableId(dr.getId());
+                }
+            }
+        }
+        if (!demoReels.isEmpty()) {
+            reelRepository.deleteAll(demoReels);
+        }
+        if (!demoCreators.isEmpty()) {
+            creatorRepository.deleteAll(demoCreators);
+        }
+        if (scopedAgency.isPresent()) {
+            Agency ag = scopedAgency.get();
+            ag.setCreatorsCount(creatorRepository.findByAgencyId(ag.getId()).size());
+            agencyRepository.save(ag);
+        }
+
+        recordAudit(brandId, scopedAgency.map(Agency::getId).orElse(null), "SYSTEM",
+                "Demo Campaign Cleared", "Cleared",
+                "Removed " + demoCreators.size() + " sample creator(s) and " + demoReels.size() + " sample reel(s).",
+                actor, "Sample Campaign");
+
+        return Map.of("removedCreators", demoCreators.size(), "removedReels", demoReels.size());
+    }
+
+    @Transactional
+    public SharedReport createSharedReport(UUID brandId, Map<String, Object> payload, Authentication auth) {
+        Brand brand = requireBrandAccess(brandId, auth);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        SharedReportRepository repo = requireSharedReportRepository();
+
+        String rawTitle = payload != null ? trimToMax(strVal(payload.get("title")), 140) : "";
+        String campaignFilter = payload != null ? trimToMax(strVal(payload.get("campaignFilter")), 80) : "ALL";
+        if (campaignFilter.isEmpty()) campaignFilter = "ALL";
+        boolean includeSpend = payload == null || payload.get("includeSpend") == null
+                || Boolean.parseBoolean(String.valueOf(payload.get("includeSpend")));
+
+        Instant expiresAt = null;
+        if (payload != null && payload.get("expiryDays") != null && !strVal(payload.get("expiryDays")).isEmpty()) {
+            try {
+                int days = Integer.parseInt(strVal(payload.get("expiryDays")));
+                if (days > 0) {
+                    expiresAt = Instant.now().plusSeconds(Math.min(days, 365) * 86400L);
+                }
+            } catch (NumberFormatException ignored) {
+                throw new IllegalArgumentException("Expiry days must be a valid positive number.");
+            }
+        }
+
+        SharedReport report = new SharedReport();
+        report.setBrandId(brandId);
+        report.setAgencyId(scopedAgency.map(Agency::getId).orElse(null));
+        report.setShareToken(generateRawActivationToken());
+        report.setTitle(rawTitle.isEmpty()
+                ? (scopedAgency.map(Agency::getName).orElse(brand.getName()) + " Campaign Report")
+                : rawTitle);
+        report.setCampaignFilter(campaignFilter);
+        report.setIncludeSpend(includeSpend);
+        report.setCreatedBy(resolveActor(auth, "Workspace Manager"));
+        report.setActive(true);
+        report.setExpiresAt(expiresAt);
+
+        SharedReport saved = repo.save(report);
+        recordAudit(brandId, scopedAgency.map(Agency::getId).orElse(null), "SYSTEM",
+                "Client Report Link Created", "Shared",
+                "Generated shareable client report link: " + saved.getTitle() + ".",
+                saved.getCreatedBy(), "Client Share");
+        return saved;
+    }
+
+    public List<SharedReport> listSharedReports(UUID brandId, Authentication auth) {
+        Brand brand = requireBrandAccess(brandId, auth);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        SharedReportRepository repo = requireSharedReportRepository();
+        return repo.findByBrandIdAndActiveTrueOrderByCreatedAtDesc(brandId).stream()
+                .filter(r -> r.getExpiresAt() == null || r.getExpiresAt().isAfter(Instant.now()))
+                .filter(r -> scopedAgency.isEmpty() || (r.getAgencyId() != null && r.getAgencyId().equals(scopedAgency.get().getId())))
+                .toList();
+    }
+
+    @Transactional
+    public void revokeSharedReport(UUID brandId, UUID reportId, Authentication auth) {
+        Brand brand = requireBrandAccess(brandId, auth);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        SharedReportRepository repo = requireSharedReportRepository();
+        SharedReport report = repo.findById(reportId)
+                .orElseThrow(() -> new IllegalArgumentException("Shared report not found."));
+        if (!brandId.equals(report.getBrandId())) {
+            throw new AccessDeniedException("Report does not belong to this workspace.");
+        }
+        if (scopedAgency.isPresent()
+                && (report.getAgencyId() == null || !report.getAgencyId().equals(scopedAgency.get().getId()))) {
+            throw new AccessDeniedException("You can only revoke report links created by your agency.");
+        }
+        report.setActive(false);
+        repo.save(report);
+    }
+
+    public Map<String, Object> getPublicSharedReport(String shareToken) {
+        if (shareToken == null || !shareToken.trim().matches("^[A-Za-z0-9_-]{16,128}$")) {
+            throw new IllegalArgumentException("This report link is invalid or has expired.");
+        }
+        SharedReportRepository repo = requireSharedReportRepository();
+        SharedReport report = repo.findByShareTokenAndActiveTrue(shareToken.trim())
+                .orElseThrow(() -> new IllegalArgumentException("This report link is invalid or has been revoked."));
+        if (report.getExpiresAt() != null && report.getExpiresAt().isBefore(Instant.now())) {
+            throw new IllegalArgumentException("This shared report link has expired.");
+        }
+
+        Brand brand = getBrand(report.getBrandId());
+        if ("DRAFT".equalsIgnoreCase(brand.getStatus())) {
+            throw new IllegalArgumentException("This workspace report is currently unavailable.");
+        }
+
+        Agency scopedAgency = report.getAgencyId() != null
+                ? agencyRepository.findById(report.getAgencyId()).orElse(null)
+                : null;
+        if (report.getAgencyId() != null && scopedAgency == null) {
+            throw new IllegalArgumentException("This agency report link is no longer active.");
+        }
+
+        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brand.getId()).stream()
+                .filter(c -> scopedAgency == null || creatorBelongsToAgency(c, scopedAgency))
+                .toList();
+        Map<UUID, Creator> creatorMap = new LinkedHashMap<>();
+        for (Creator c : creators) {
+            creatorMap.put(c.getId(), c);
+        }
+
+        List<ReelDeliverable> allScopedReels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brand.getId()).stream()
+                .filter(r -> scopedAgency == null || (r.getCreatorId() != null && creatorMap.containsKey(r.getCreatorId())))
+                .toList();
+
+        String campaignFilter = report.getCampaignFilter();
+        boolean hasCampaignFilter = campaignFilter != null && !campaignFilter.isBlank() && !"ALL".equalsIgnoreCase(campaignFilter);
+
+        List<ReelDeliverable> filteredReels = hasCampaignFilter
+                ? allScopedReels.stream()
+                        .filter(r -> effectiveCampaign(r, creatorMap.get(r.getCreatorId())).equalsIgnoreCase(campaignFilter))
+                        .toList()
+                : allScopedReels;
+
+        Map<UUID, List<ReelDeliverable>> reelsByCreator = new HashMap<>();
+        for (ReelDeliverable r : filteredReels) {
+            reelsByCreator.computeIfAbsent(r.getCreatorId(), k -> new ArrayList<>()).add(r);
+        }
+
+        List<Creator> filteredCreators = hasCampaignFilter
+                ? creators.stream()
+                        .filter(c -> creatorMatchesCampaign(c, reelsByCreator.getOrDefault(c.getId(), List.of()), campaignFilter))
+                        .toList()
+                : creators;
+
+        boolean includeSpend = report.isIncludeSpend();
+
+        Map<String, Object> safeBrand = new LinkedHashMap<>();
+        safeBrand.put("name", scopedAgency != null ? scopedAgency.getName() : brand.getName());
+        safeBrand.put("brandName", brand.getName());
+        safeBrand.put("slug", brand.getSlug());
+        safeBrand.put("currency", brand.getCurrency());
+        safeBrand.put("targetViewsGoal", (!hasCampaignFilter && scopedAgency == null) ? brand.getTargetViewsGoal() : null);
+
+        List<Map<String, Object>> safeCreators = filteredCreators.stream().map(c -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", c.getId());
+            m.put("name", c.getName());
+            m.put("handle", c.getHandle());
+            m.put("avatarUrl", c.getAvatarUrl());
+            m.put("profileUrl", c.getProfileUrl());
+            m.put("category", c.getCategory());
+            m.put("niche", c.getNiche());
+            m.put("country", c.getCountry());
+            m.put("followersDisplay", c.getFollowersDisplay());
+            m.put("followersCount", c.getFollowersCount());
+            m.put("verified", c.isVerified());
+            m.put("campaignName", c.getCampaignName());
+            m.put("sourceType", c.getSourceType());
+            m.put("agencyName", c.getAgencyName());
+            m.put("costMode", c.getCostMode());
+            m.put("costQuoted", includeSpend ? c.getCostQuoted() : null);
+            m.put("currency", c.getCurrency());
+            m.put("auditedReelsCount", c.getAuditedReelsCount());
+            m.put("engagementRate", c.getEngagementRate());
+            m.put("interactionRate90d", c.getInteractionRate90d());
+            return m;
+        }).toList();
+
+        List<Map<String, Object>> safeReels = filteredReels.stream().map(r -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", r.getId());
+            m.put("creatorId", r.getCreatorId());
+            m.put("creatorHandle", r.getCreatorHandle());
+            m.put("title", r.getTitle());
+            m.put("campaignTag", effectiveCampaign(r, creatorMap.get(r.getCreatorId())));
+            m.put("reelUrl", r.getReelUrl());
+            m.put("mediaType", r.getMediaType());
+            m.put("thumbnailUrl", r.getThumbnailUrl());
+            m.put("viewsCount", r.getViewsCount());
+            m.put("reachCount", r.getReachCount());
+            m.put("likesCount", r.getLikesCount());
+            m.put("commentsCount", r.getCommentsCount());
+            m.put("savesCount", r.getSavesCount());
+            m.put("sharesCount", r.getSharesCount());
+            m.put("engagementRate", r.getEngagementRate());
+            m.put("status", r.getStatus());
+            m.put("publishedAt", r.getPublishedAt());
+            m.put("syncedAt", r.getSyncedAt());
+            m.put("costQuoted", includeSpend ? r.getCostQuoted() : null);
+            return m;
+        }).toList();
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("report", Map.of(
+                "title", report.getTitle(),
+                "campaignFilter", campaignFilter,
+                "includeSpend", includeSpend,
+                "createdAt", report.getCreatedAt(),
+                "expiresAt", report.getExpiresAt() != null ? report.getExpiresAt().toString() : ""
+        ));
+        out.put("brand", safeBrand);
+        out.put("creators", safeCreators);
+        out.put("deliverables", safeReels);
+        out.put("reelDeltas", buildBrandReelDeltasMap(brand.getId(), filteredReels));
+        return out;
+    }
+
+    private SharedReportRepository requireSharedReportRepository() {
+        if (sharedReportRepository == null) {
+            throw new IllegalStateException("Shared reports feature is unavailable.");
+        }
+        return sharedReportRepository;
+    }
+
+    private String effectiveCampaign(ReelDeliverable reel, Creator creator) {
+        if (reel != null && reel.getCampaignTag() != null && !reel.getCampaignTag().isBlank()) {
+            return reel.getCampaignTag().trim();
+        }
+        if (creator != null && creator.getCampaignName() != null && !creator.getCampaignName().isBlank()) {
+            return creator.getCampaignName().trim();
+        }
+        return "";
+    }
+
+    private boolean creatorMatchesCampaign(Creator creator, List<ReelDeliverable> reels, String campaign) {
+        if (creator != null && creator.getCampaignName() != null
+                && creator.getCampaignName().trim().equalsIgnoreCase(campaign)) {
+            return true;
+        }
+        for (ReelDeliverable r : reels) {
+            if (effectiveCampaign(r, creator).equalsIgnoreCase(campaign)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String trimToMax(String val, int maxLen) {
+        if (val == null) return "";
+        String t = val.trim();
+        return t.length() > maxLen ? t.substring(0, maxLen) : t;
     }
 }

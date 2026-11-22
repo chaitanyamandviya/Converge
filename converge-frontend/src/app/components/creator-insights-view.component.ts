@@ -445,9 +445,10 @@ import { safeExternalUrl } from '../utils/url-safety';
           </div>
 
           @if (canManage) {
-            <form (ngSubmit)="submitReelForm()" class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border grid grid-cols-1 gap-2.5 items-center" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-6' : 'sm:grid-cols-5'">
+            <form (ngSubmit)="submitReelForm()" class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border grid grid-cols-1 gap-2.5 items-center" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-7' : 'sm:grid-cols-6'">
               <input [(ngModel)]="newReelTitle" name="reelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none"/>
               <input [(ngModel)]="newReelUrl" (ngModelChange)="duplicateReelNotice.set('')" name="reelUrl" placeholder="https://www.instagram.com/reel/..." required class="sm:col-span-2 h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none"/>
+              <input [(ngModel)]="newReelCampaign" name="reelCampaign" placeholder="Campaign tag (optional)" class="h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none"/>
               @if (roi.costMode === 'PER_DELIVERABLE') {
                 <input [(ngModel)]="newReelCost" name="reelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none tabular-nums"/>
               }
@@ -567,7 +568,14 @@ import { safeExternalUrl } from '../utils/url-safety';
                         <div class="w-12 h-12 rounded-[4px] bg-cv-control text-[#f54e26] font-headline text-xs font-bold flex items-center justify-center shrink-0">REEL</div>
                       }
                       <div class="min-w-0">
-                        <p class="text-sm font-bold text-cv-ink truncate hover:text-[#f54e26] transition-colors">{{ displayReelTitle(r) }}</p>
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <p class="text-sm font-bold text-cv-ink truncate hover:text-[#f54e26] transition-colors">{{ displayReelTitle(r) }}</p>
+                          @if (r.campaignTag || ic.campaignName) {
+                            <span class="px-1.5 py-0.5 rounded-[2px] bg-cv-card border border-cv-border text-[10px] font-medium text-cv-ink-muted shrink-0">
+                              {{ r.campaignTag || ic.campaignName }}
+                            </span>
+                          }
+                        </div>
                         <p class="text-xs text-cv-ink-muted truncate mt-0.5 tabular-nums">
                           {{ formatMediaLabel(r) }}
                           @if (r.publishedAt) {
@@ -635,8 +643,9 @@ import { safeExternalUrl } from '../utils/url-safety';
                   </div>
 
                   @if (canManage && editingDeliverableId() === r.id) {
-                    <form (ngSubmit)="saveDeliverableEdit(r.id)" class="mt-3 pt-3 border-t border-cv-border-soft grid grid-cols-1 gap-2.5 items-center animate-pop-in" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-5' : 'sm:grid-cols-4'">
+                    <form (ngSubmit)="saveDeliverableEdit(r.id)" class="mt-3 pt-3 border-t border-cv-border-soft grid grid-cols-1 gap-2.5 items-center animate-pop-in" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-6' : 'sm:grid-cols-5'">
                       <input [(ngModel)]="editDelTitle" name="editDelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-9 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink focus:border-[#f54e26] focus:outline-none"/>
+                      <input [(ngModel)]="editDelCampaign" name="editDelCampaign" placeholder="Campaign tag" class="h-9 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink focus:border-[#f54e26] focus:outline-none"/>
                       @if (roi.costMode === 'PER_DELIVERABLE') {
                         <input [(ngModel)]="editDelCost" name="editDelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-9 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink focus:border-[#f54e26] focus:outline-none tabular-nums"/>
                       }
@@ -668,8 +677,8 @@ export class CreatorInsightsViewComponent implements OnChanges {
   @Output() syncCreator = new EventEmitter<void>();
   @Output() saveProfile = new EventEmitter<Record<string, any>>();
   @Output() browseMedia = new EventEmitter<Creator>();
-  @Output() addReel = new EventEmitter<{ title: string; reelUrl: string; costQuoted?: string }>();
-  @Output() editDeliverable = new EventEmitter<{ id: string; title: string; costQuoted?: number | null }>();
+  @Output() addReel = new EventEmitter<{ title: string; reelUrl: string; costQuoted?: string; campaignTag?: string }>();
+  @Output() editDeliverable = new EventEmitter<{ id: string; title: string; costQuoted?: number | null; campaignTag?: string }>();
   @Output() syncReel = new EventEmitter<string>();
   @Output() openReel = new EventEmitter<ReelDeliverable>();
   @Output() openLiveMedia = new EventEmitter<any>();
@@ -690,8 +699,10 @@ export class CreatorInsightsViewComponent implements OnChanges {
   newReelTitle = '';
   newReelUrl = '';
   newReelCost = '';
+  newReelCampaign = '';
   editDelTitle = '';
   editDelCost = '';
+  editDelCampaign = '';
 
   form = {
     costMode: 'COLLECTIVE' as 'COLLECTIVE' | 'PER_DELIVERABLE',
@@ -1007,14 +1018,16 @@ export class CreatorInsightsViewComponent implements OnChanges {
     this.editingDeliverableId.set(r.id);
     this.editDelTitle = this.displayReelTitle(r);
     this.editDelCost = r.costQuoted ? String(r.costQuoted) : '';
+    this.editDelCampaign = r.campaignTag || '';
   }
 
   saveDeliverableEdit(deliverableId: string) {
     if (!this.canManage) return;
     const rawCost = String(this.editDelCost || '').trim();
-    const out: { id: string; title: string; costQuoted?: number | null } = {
+    const out: { id: string; title: string; costQuoted?: number | null; campaignTag?: string } = {
       id: deliverableId,
-      title: this.editDelTitle.trim()
+      title: this.editDelTitle.trim(),
+      campaignTag: this.editDelCampaign.trim()
     };
     if (this.computedRoi().costMode === 'PER_DELIVERABLE') {
       out.costQuoted = rawCost ? Number(rawCost) : null;
@@ -1050,11 +1063,13 @@ export class CreatorInsightsViewComponent implements OnChanges {
     this.addReel.emit({
       title: this.newReelTitle || 'Verified Campaign Reel',
       reelUrl: cleanUrl,
-      costQuoted: this.newReelCost ? String(this.newReelCost) : undefined
+      costQuoted: this.newReelCost ? String(this.newReelCost) : undefined,
+      campaignTag: this.newReelCampaign.trim() || undefined
     });
     this.newReelTitle = '';
     this.newReelUrl = '';
     this.newReelCost = '';
+    this.newReelCampaign = '';
   }
 
   isMediaAlreadyTracked(m: any): boolean {

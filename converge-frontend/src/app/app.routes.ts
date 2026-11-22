@@ -5,6 +5,7 @@ import { LegalComponent } from './pages/legal.component';
 import { AdminOnboardingComponent } from './pages/admin-onboarding.component';
 import { AdminBrandDetailsComponent } from './pages/admin-brand-details.component';
 import { WorkspaceComponent } from './pages/workspace.component';
+import { PublicReportComponent } from './pages/public-report.component';
 import { adminGuard, dashboardExitGuard, guestGuard, workspaceGuard } from './services/auth.guard';
 
 export const routes: Routes = [
@@ -15,6 +16,7 @@ export const routes: Routes = [
   { path: 'legal', component: LegalComponent },
   { path: 'privacy', redirectTo: 'legal', pathMatch: 'full' },
   { path: 'terms', redirectTo: 'legal', pathMatch: 'full' },
+  { path: 'report/:token', component: PublicReportComponent },
   { path: 'admin', component: AdminOnboardingComponent, canActivate: [adminGuard], canDeactivate: [dashboardExitGuard] },
   { path: 'admin/brands', component: AdminOnboardingComponent, canActivate: [adminGuard], canDeactivate: [dashboardExitGuard] },
   { path: 'admin/brands/:id', component: AdminBrandDetailsComponent, canActivate: [adminGuard], canDeactivate: [dashboardExitGuard] },

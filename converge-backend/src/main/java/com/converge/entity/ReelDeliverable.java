@@ -38,6 +38,8 @@ public class ReelDeliverable {
 
     private String duration = "0:45";
     private Double costQuoted;
+    private String campaignTag = "";
+    private Boolean demoData = false;
 
     private long viewsCount = 0;
     private long reachCount = 0;
@@ -84,6 +86,10 @@ public class ReelDeliverable {
     public void setDuration(String duration) { this.duration = duration; }
     public Double getCostQuoted() { return costQuoted; }
     public void setCostQuoted(Double costQuoted) { this.costQuoted = costQuoted; }
+    public String getCampaignTag() { return campaignTag != null ? campaignTag : ""; }
+    public void setCampaignTag(String campaignTag) { this.campaignTag = campaignTag != null ? campaignTag : ""; }
+    public boolean isDemoData() { return Boolean.TRUE.equals(demoData); }
+    public void setDemoData(Boolean demoData) { this.demoData = Boolean.TRUE.equals(demoData); }
     public long getViewsCount() { return viewsCount; }
     public void setViewsCount(long viewsCount) { this.viewsCount = viewsCount; }
     public long getReachCount() { return reachCount; }

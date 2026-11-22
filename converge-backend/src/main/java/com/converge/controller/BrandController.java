@@ -3,6 +3,7 @@ package com.converge.controller;
 import com.converge.entity.Agency;
 import com.converge.entity.Brand;
 import com.converge.entity.Creator;
+import com.converge.entity.SharedReport;
 import com.converge.service.BrandService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -139,12 +140,64 @@ public class BrandController {
     }
 
     @GetMapping("/{id}/export")
-    public ResponseEntity<String> exportCsv(@PathVariable UUID id, Authentication auth) {
+    public ResponseEntity<String> exportCsv(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String campaign,
+            Authentication auth) {
         brandService.requireBrandAccess(id, auth);
-        String csv = brandService.exportBrandCsv(id, auth);
+        String csv = brandService.exportBrandCsv(id, auth, campaign);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=converge-brand-report.csv")
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .body(csv);
+    }
+
+    @PatchMapping("/{id}/settings")
+    public Brand updateSettings(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> payload,
+            Authentication auth) {
+        brandService.requireBrandOwnerAccess(id, auth);
+        return brandService.updateBrandWorkspaceSettings(id, payload, brandService.resolveActor(auth, "Brand Manager"));
+    }
+
+    @PostMapping("/{id}/deliverables/bulk")
+    public Map<String, Object> bulkImportDeliverables(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> payload,
+            Authentication auth) {
+        return brandService.bulkImportDeliverables(id, payload, auth);
+    }
+
+    @PostMapping("/{id}/demo-campaign")
+    public Map<String, Object> seedDemoCampaign(@PathVariable UUID id, Authentication auth) {
+        return brandService.seedDemoCampaign(id, auth);
+    }
+
+    @DeleteMapping("/{id}/demo-campaign")
+    public Map<String, Object> clearDemoCampaign(@PathVariable UUID id, Authentication auth) {
+        return brandService.clearDemoCampaign(id, auth);
+    }
+
+    @GetMapping("/{id}/share-reports")
+    public List<SharedReport> listSharedReports(@PathVariable UUID id, Authentication auth) {
+        return brandService.listSharedReports(id, auth);
+    }
+
+    @PostMapping("/{id}/share-reports")
+    public SharedReport createSharedReport(
+            @PathVariable UUID id,
+            @RequestBody(required = false) Map<String, Object> payload,
+            Authentication auth) {
+        return brandService.createSharedReport(id, payload, auth);
+    }
+
+    @DeleteMapping("/{id}/share-reports/{reportId}")
+    public Map<String, Object> revokeSharedReport(
+            @PathVariable UUID id,
+            @PathVariable UUID reportId,
+            Authentication auth) {
+        brandService.revokeSharedReport(id, reportId, auth);
+        return Map.of("revoked", true);
     }
 }

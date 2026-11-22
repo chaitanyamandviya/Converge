@@ -728,4 +728,51 @@ class BrandServiceAndControllerTest {
         assertEquals("SYNCED", manualRes.get("status"));
         assertEquals(2000L, reel.getViewsCount());
     }
+
+    @Test
+    void demoCampaignBulkImportAndSettingsWorkSafely() {
+        UUID brandId = UUID.randomUUID();
+        Brand brand = new Brand();
+        brand.setId(brandId);
+        brand.setName("Aura");
+        brand.setStatus("ACTIVE");
+        brand.setManagerEmail("brand@aura.test");
+
+        when(brandRepository.findById(brandId)).thenReturn(Optional.of(brand));
+        when(brandRepository.save(any(Brand.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId)).thenReturn(List.of());
+        when(creatorRepository.save(any())).thenAnswer(inv -> {
+            Creator c = inv.getArgument(0);
+            if (c.getId() == null) c.setId(UUID.randomUUID());
+            return c;
+        });
+        when(reelRepository.save(any())).thenAnswer(inv -> {
+            com.converge.entity.ReelDeliverable r = inv.getArgument(0);
+            if (r.getId() == null) r.setId(UUID.randomUUID());
+            return r;
+        });
+
+        TestingAuthenticationToken auth = new TestingAuthenticationToken("brand@aura.test", "", "ROLE_BRAND_MANAGER");
+        auth.setAuthenticated(true);
+
+        // Update brand view target goal
+        Brand updatedGoal = brandService.updateBrandWorkspaceSettings(brandId, Map.of("targetViewsGoal", "2500000"), "brand@aura.test");
+        assertEquals(2500000L, updatedGoal.getTargetViewsGoal());
+
+        // Bulk import handles auto-detected URL owner, duplicate skipping, and invalid rows cleanly
+        Map<String, Object> bulkRes = brandService.bulkImportDeliverables(brandId, Map.of(
+                "defaultCampaignTag", "Summer Launch",
+                "defaultCostQuoted", 15000,
+                "items", List.of(
+                        Map.of("reelUrl", "https://www.instagram.com/aman.gulabani/reel/C0TestReel01/"),
+                        Map.of("reelUrl", "https://www.instagram.com/aman.gulabani/reel/C0TestReel01/"), // duplicate inside same batch
+                        Map.of("reelUrl", "https://not-instagram.com/bad") // invalid
+                )
+        ), auth);
+
+        assertEquals(1, bulkRes.get("addedCount"));
+        assertEquals(1, bulkRes.get("skippedDuplicatesCount"));
+        assertEquals(1, bulkRes.get("failedCount"));
+        assertEquals(1, bulkRes.get("createdCreatorsCount"));
+    }
 }

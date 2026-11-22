@@ -45,6 +45,8 @@ public class Brand {
     @JsonIgnore
     private String activationToken;
 
+    private Long targetViewsGoal;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -87,6 +89,8 @@ public class Brand {
     public void setManagerRoleTitle(String managerRoleTitle) { this.managerRoleTitle = managerRoleTitle; }
     public String getActivationToken() { return activationToken; }
     public void setActivationToken(String activationToken) { this.activationToken = activationToken; }
+    public Long getTargetViewsGoal() { return targetViewsGoal; }
+    public void setTargetViewsGoal(Long targetViewsGoal) { this.targetViewsGoal = targetViewsGoal; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
