@@ -127,6 +127,36 @@ public class BrandService {
         return reel;
     }
 
+    public static boolean isAgencyManagedCreator(Creator creator) {
+        return creator != null
+                && ("AGENCY".equalsIgnoreCase(creator.getSourceType()) || creator.getAgencyId() != null);
+    }
+
+    /**
+     * Deliverables and creator profile settings for agency-added creators are managed solely
+     * by the partner agency. Brand Managers and Admins retain view and delete access only.
+     */
+    public Creator requireCreatorManagementAccess(UUID creatorId, Authentication auth) {
+        Creator creator = requireCreatorAccess(creatorId, auth);
+        if (isAgencyManagedCreator(creator)) {
+            Brand brand = getBrand(creator.getBrandId());
+            Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+            if (scopedAgency.isEmpty()) {
+                throw new AccessDeniedException(
+                        "Deliverables and creator settings for agency-added creators are managed by the partner agency. Brand access is view and delete only.");
+            }
+        }
+        return creator;
+    }
+
+    public ReelDeliverable requireDeliverableManagementAccess(UUID deliverableId, Authentication auth) {
+        ReelDeliverable reel = requireDeliverableAccess(deliverableId, auth);
+        if (reel.getCreatorId() != null) {
+            requireCreatorManagementAccess(reel.getCreatorId(), auth);
+        }
+        return reel;
+    }
+
     private Optional<Agency> resolveScopedAgencyForCaller(Brand brand, Authentication auth) {
         if (brand == null || brand.getId() == null
                 || auth == null || !auth.isAuthenticated() || auth.getName() == null || auth.getName().isBlank()) {
@@ -1297,7 +1327,9 @@ public class BrandService {
         Brand brand = getBrand(brandId);
         Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
         List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
-                .filter(c -> scopedAgency.isEmpty() || creatorBelongsToAgency(c, scopedAgency.get()))
+                .filter(c -> scopedAgency.isPresent()
+                        ? creatorBelongsToAgency(c, scopedAgency.get())
+                        : (auth == null || !isAgencyManagedCreator(c)))
                 .toList();
         Map<UUID, Creator> creatorMap = new LinkedHashMap<>();
         for (Creator c : creators) {
@@ -1307,7 +1339,7 @@ public class BrandService {
         }
 
         List<ReelDeliverable> reels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId).stream()
-                .filter(r -> scopedAgency.isEmpty() || (r.getCreatorId() != null && creatorMap.containsKey(r.getCreatorId())))
+                .filter(r -> (scopedAgency.isEmpty() && auth == null) || (r.getCreatorId() != null && creatorMap.containsKey(r.getCreatorId())))
                 .toList();
         Map<UUID, List<ReelDeliverable>> reelsByCreator = new LinkedHashMap<>();
         int verifiedCount = 0;

@@ -283,13 +283,106 @@ class WebSecurityIntegrationTest {
                         .header("Authorization", "Bearer " + activeAgencyToken))
                 .andExpect(status().isForbidden());
 
-        mockMvc.perform(post("/api/brands/{id}/creators", brandA.getId())
+        var agencyCreatorResult = mockMvc.perform(post("/api/brands/{id}/creators", brandA.getId())
                         .header("Authorization", "Bearer " + activeAgencyToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Agency Creator\",\"handle\":\"@agency_star\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sourceType").value("AGENCY"))
-                .andExpect(jsonPath("$.agencyName").value("North Collective"));
+                .andExpect(jsonPath("$.agencyName").value("North Collective"))
+                .andReturn();
+        String agencyCreatorId = objectMapper.readTree(agencyCreatorResult.getResponse().getContentAsString())
+                .get("id").asText();
+
+        // Agency Manager CAN add, edit, sync deliverables and update/sync their agency creator
+        var deliverableResult = mockMvc.perform(post("/api/creators/{creatorId}/deliverables", agencyCreatorId)
+                        .header("Authorization", "Bearer " + activeAgencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Agency Reel 1\",\"reelUrl\":\"https://www.instagram.com/reel/C8xK2pLm123/\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Agency Reel 1"))
+                .andReturn();
+        String agencyDeliverableId = objectMapper.readTree(deliverableResult.getResponse().getContentAsString())
+                .get("id").asText();
+
+        mockMvc.perform(put("/api/creators/deliverables/{deliverableId}", agencyDeliverableId)
+                        .header("Authorization", "Bearer " + activeAgencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Agency Reel 1 Edited\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Agency Reel 1 Edited"));
+
+        mockMvc.perform(post("/api/instagram/deliverables/{deliverableId}/sync", agencyDeliverableId)
+                        .header("Authorization", "Bearer " + activeAgencyToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/creators/{creatorId}/insights-profile", agencyCreatorId)
+                        .header("Authorization", "Bearer " + activeAgencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"campaignName\":\"Summer Drop\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/creators/{creatorId}/sync-instagram", agencyCreatorId)
+                        .header("Authorization", "Bearer " + activeAgencyToken))
+                .andExpect(status().isOk());
+
+        // Brand Manager A has VIEW & DELETE ONLY for agency-added creators and their deliverables
+        mockMvc.perform(get("/api/creators/{creatorId}/insights", agencyCreatorId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/creators/{creatorId}/deliverables", agencyCreatorId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+        mockMvc.perform(get("/api/creators/deliverables/{deliverableId}/insights", agencyDeliverableId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/creators/{creatorId}/deliverables", agencyCreatorId)
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Brand Hijack Reel\",\"reelUrl\":\"https://www.instagram.com/reel/C8xK2pLm999/\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/creators/deliverables/{deliverableId}", agencyDeliverableId)
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Brand Edit\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/instagram/deliverables/{deliverableId}/sync", agencyDeliverableId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/creators/{creatorId}/insights-profile", agencyCreatorId)
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"campaignName\":\"Brand Edit\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/creators/{creatorId}/sync-instagram", agencyCreatorId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/instagram/creators/{creatorId}/sync", agencyCreatorId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isForbidden());
+
+        // Brand Manager A CAN delete deliverables of an agency-added creator, and still manages DIRECT creators
+        mockMvc.perform(delete("/api/creators/deliverables/{deliverableId}", agencyDeliverableId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deleted").value(true));
+        mockMvc.perform(post("/api/creators/{creatorId}/deliverables", agencyCreatorId)
+                        .header("Authorization", "Bearer " + activeAgencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Agency Reel Retained\",\"reelUrl\":\"https://www.instagram.com/reel/AgencyKeep1/\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/creators/{creatorId}/deliverables", creatorA.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Direct Brand Reel\",\"reelUrl\":\"https://www.instagram.com/reel/DirectReel1/\"}"))
+                .andExpect(status().isOk());
+        // Brand-wide sync only syncs Brand's DIRECT creator deliverables (skips Agency-managed deliverables)
+        mockMvc.perform(post("/api/brands/{id}/sync", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.syncedCount").value(1));
 
         // Brand Manager A adds another agency and a direct creator; North Collective must not see those audit logs
         mockMvc.perform(post("/api/brands/{id}/agencies", brandA.getId())

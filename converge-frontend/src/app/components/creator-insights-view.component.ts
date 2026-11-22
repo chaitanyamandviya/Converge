@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signa
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from '../services/api.service';
-import { formatReelDisplayTitle } from '../utils/reel-format';
+import { formatPublishedDateLabel, formatReelDisplayTitle } from '../utils/reel-format';
 import { safeExternalUrl } from '../utils/url-safety';
 
 @Component({
@@ -77,19 +77,25 @@ import { safeExternalUrl } from '../utils/url-safety';
           </div>
 
           <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <button type="button" (click)="editMode.set(!editMode()); pricingMenuOpen.set(false)"
-                    class="h-9 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-cv-ink text-xs font-medium cursor-pointer transition-colors">
-              {{ editMode() ? 'Done Editing' : 'Edit Cost & Tags' }}
-            </button>
-            <button type="button" (click)="syncCreator.emit()" [disabled]="syncing"
-                    class="h-9 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer transition-colors disabled:opacity-60">
-              {{ syncing ? 'SYNCING IG...' : 'SYNC INSTAGRAM ↻' }}
-            </button>
+            @if (canManage) {
+              <button type="button" (click)="editMode.set(!editMode()); pricingMenuOpen.set(false)"
+                      class="h-9 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-cv-ink text-xs font-medium cursor-pointer transition-colors">
+                {{ editMode() ? 'Done Editing' : 'Edit Cost & Tags' }}
+              </button>
+              <button type="button" (click)="syncCreator.emit()" [disabled]="syncing"
+                      class="h-9 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer transition-colors disabled:opacity-60">
+                {{ syncing ? 'SYNCING IG...' : 'SYNC INSTAGRAM ↻' }}
+              </button>
+            } @else {
+              <span class="px-3 py-1.5 rounded-[4px] bg-cv-well border border-cv-border text-cv-ink-muted text-xs font-medium">
+                Managed by {{ ic.agencyName || 'Partner Agency' }} · View &amp; Delete Only
+              </span>
+            }
           </div>
         </div>
 
         <!-- Inline Edit Commercial Rate & CRM Tags (IG metrics & Category strictly read-only) -->
-        @if (editMode()) {
+        @if (editMode() && canManage) {
           @if (pricingMenuOpen()) {
             <div class="fixed inset-0 z-20" (click)="pricingMenuOpen.set(false)"></div>
           }
@@ -219,7 +225,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                 </div>
                 <div class="space-y-2.5 text-center sm:text-left">
                   <p class="text-xs text-cv-ink-muted leading-relaxed">{{ chart.emptyReason }}</p>
-                  @if (igStatus?.configured && !showReelPicker()) {
+                  @if (canManage && igStatus?.configured && !showReelPicker()) {
                     <button type="button" (click)="toggleReelPicker(ic)" class="h-8 px-3.5 rounded-[4px] bg-cv-control hover:bg-[#f54e26] border border-cv-border hover:border-[#f54e26] text-cv-ink hover:text-[#111111] text-xs font-semibold cursor-pointer transition-colors">
                       + Pick from IG ({{ drawerMedia.length || ic.mediaCount || 0 }})
                     </button>
@@ -426,28 +432,33 @@ import { safeExternalUrl } from '../utils/url-safety';
               <h2 class="font-headline uppercase text-lg font-bold text-cv-ink tracking-[0.02em]">TRACKED REELS &amp; DELIVERABLES</h2>
               <span class="px-2.5 py-0.5 rounded-[3px] bg-cv-well border border-cv-border text-xs font-semibold text-cv-ink-muted tabular-nums">{{ reels.length }} Tracked</span>
             </div>
-            @if (igStatus?.configured) {
+            @if (canManage && igStatus?.configured) {
               <button type="button" (click)="toggleReelPicker(ic)"
                       class="h-8.5 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-cv-ink text-xs font-semibold cursor-pointer transition-colors self-start sm:self-center">
                 {{ showReelPicker() ? 'Hide IG Picker' : (loadingMedia ? 'Loading IG Posts...' : '+ Pick from IG (' + onlyReelsFromFeed().length + ' Reels / ' + (drawerMedia.length || ic.mediaCount || 0) + ' Posts)') }}
               </button>
+            } @else if (!canManage) {
+              <span class="px-2.5 py-0.5 rounded-[3px] bg-cv-well border border-cv-border text-[11px] font-medium text-cv-ink-muted self-start sm:self-center">
+                Agency Managed • View &amp; Delete Only
+              </span>
             }
           </div>
 
-          <form (ngSubmit)="submitReelForm()" class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border grid grid-cols-1 gap-2.5 items-center" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-6' : 'sm:grid-cols-5'">
-            <input [(ngModel)]="newReelTitle" name="reelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none"/>
-            <input [(ngModel)]="newReelUrl" (ngModelChange)="duplicateReelNotice.set('')" name="reelUrl" placeholder="https://www.instagram.com/reel/..." required class="sm:col-span-2 h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none"/>
-            @if (roi.costMode === 'PER_DELIVERABLE') {
-              <input [(ngModel)]="newReelCost" name="reelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none tabular-nums"/>
+          @if (canManage) {
+            <form (ngSubmit)="submitReelForm()" class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border grid grid-cols-1 gap-2.5 items-center" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-6' : 'sm:grid-cols-5'">
+              <input [(ngModel)]="newReelTitle" name="reelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none"/>
+              <input [(ngModel)]="newReelUrl" (ngModelChange)="duplicateReelNotice.set('')" name="reelUrl" placeholder="https://www.instagram.com/reel/..." required class="sm:col-span-2 h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none"/>
+              @if (roi.costMode === 'PER_DELIVERABLE') {
+                <input [(ngModel)]="newReelCost" name="reelCost" type="number" min="0" step="100" placeholder="Deliverable Cost ₹" class="h-10 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none tabular-nums"/>
+              }
+              <button type="submit" class="h-10 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer transition-colors">VERIFY &amp; ADD REEL</button>
+            </form>
+            @if (duplicateReelNotice()) {
+              <p class="text-xs font-semibold text-cv-danger-ink bg-cv-danger-bg border border-[#ff5c5c]/40 rounded-[4px] px-3.5 py-2">{{ duplicateReelNotice() }}</p>
             }
-            <button type="submit" class="h-10 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer transition-colors">VERIFY &amp; ADD REEL</button>
-          </form>
-          @if (duplicateReelNotice()) {
-            <p class="text-xs font-semibold text-cv-danger-ink bg-cv-danger-bg border border-[#ff5c5c]/40 rounded-[4px] px-3.5 py-2">{{ duplicateReelNotice() }}</p>
-          }
 
-          <!-- On-Demand IG Reel & Post Picker -->
-          @if (showReelPicker()) {
+            <!-- On-Demand IG Reel & Post Picker -->
+            @if (showReelPicker()) {
             @let igReels = onlyReelsFromFeed();
             @let feedVideos = feedVideosFromFeed();
             @let pickerItems = displayedPickerMedia();
@@ -506,7 +517,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                                   [ngClass]="isReelMedia(m) ? 'bg-[#f54e26]/20 text-[#f54e26]' : (isFeedVideoMedia(m) ? 'bg-[#5738af]/25 text-cv-periwinkle' : 'bg-cv-hover-pill text-cv-ink-muted')">
                               {{ isReelMedia(m) ? 'Reel' : (isFeedVideoMedia(m) ? 'Video' : (m.mediaType === 'CAROUSEL_ALBUM' ? 'Carousel' : 'Photo')) }}
                             </span>
-                            <p class="font-medium text-cv-ink truncate tabular-nums">{{ m.shortcode || (isReelMedia(m) ? 'Instagram Reel' : (isFeedVideoMedia(m) ? 'Video Post' : 'Instagram Post')) }}</p>
+                            <p class="font-medium text-cv-ink truncate">{{ isReelMedia(m) ? 'Instagram Reel' : (isFeedVideoMedia(m) ? 'Video Post' : 'Instagram Post') }}</p>
                           </div>
                           <p class="text-[11px] text-cv-ink-muted truncate mt-0.5 tabular-nums">
                             @if (isReelMedia(m) || (m.viewsCount || 0) > 0) {
@@ -536,9 +547,14 @@ import { safeExternalUrl } from '../utils/url-safety';
               }
             </div>
           }
+          }
 
           @if (reels.length === 0) {
-            <p class="text-xs text-cv-ink-muted py-6 text-center bg-cv-well rounded-[4px] border border-dashed border-cv-border">No Reels added for tracking yet. Paste an Instagram Reel URL above or click "+ Pick from IG" to choose one.</p>
+            <p class="text-xs text-cv-ink-muted py-6 text-center bg-cv-well rounded-[4px] border border-dashed border-cv-border">
+              {{ canManage
+                ? 'No Reels added for tracking yet. Paste an Instagram Reel URL above or click "+ Pick from IG" to choose one.'
+                : ('No Reels added for tracking yet. Deliverables for this creator are managed by ' + (ic.agencyName || 'the partner agency') + '.') }}
+            </p>
           } @else {
             <div class="space-y-3">
               @for (r of reels; track r.id) {
@@ -555,14 +571,14 @@ import { safeExternalUrl } from '../utils/url-safety';
                         <p class="text-xs text-cv-ink-muted truncate mt-0.5 tabular-nums">
                           {{ formatMediaLabel(r) }}
                           @if (r.publishedAt) {
-                            <span> • Published {{ r.publishedAt | date:'MMM y' }}</span>
+                            <span> • Published {{ r.publishedAt | date:'MMM d, y' }}</span>
                           }
                           @if (roi.costMode === 'PER_DELIVERABLE') {
                             @if ((r.costQuoted || 0) > 0) {
                               <span class="font-semibold text-cv-gold"> • {{ formatInr(r.costQuoted || 0, 0) }}</span>
                             } @else if ((roi.baseRate || 0) > 0) {
                               <span class="font-medium text-cv-gold"> • {{ formatInr(roi.baseRate || 0, 0) }} (rate)</span>
-                            } @else {
+                            } @else if (canManage) {
                               <button type="button" (click)="$event.stopPropagation(); startEditDeliverable(r)" class="ml-1.5 text-[#f54e26] hover:underline font-semibold cursor-pointer">• + Set cost ₹</button>
                             }
                           }
@@ -603,12 +619,14 @@ import { safeExternalUrl } from '../utils/url-safety';
                             View ↗
                           </a>
                         }
-                        <button type="button" (click)="startEditDeliverable(r)" class="h-8 px-3 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-xs font-medium text-cv-ink cursor-pointer transition-colors">
-                          Edit
-                        </button>
-                        <button type="button" (click)="syncReel.emit(r.id)" class="h-8 px-3 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-xs font-medium text-cv-ink cursor-pointer transition-colors">
-                          Sync
-                        </button>
+                        @if (canManage) {
+                          <button type="button" (click)="startEditDeliverable(r)" class="h-8 px-3 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-xs font-medium text-cv-ink cursor-pointer transition-colors">
+                            Edit
+                          </button>
+                          <button type="button" (click)="syncReel.emit(r.id)" class="h-8 px-3 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-xs font-medium text-cv-ink cursor-pointer transition-colors">
+                            Sync
+                          </button>
+                        }
                         <button type="button" (click)="requestDeleteReel.emit(r)" class="h-8 px-3 rounded-[4px] bg-cv-danger-bg hover:bg-cv-danger-hover border border-[#ff5c5c]/40 text-xs font-medium text-cv-danger-ink cursor-pointer transition-colors">
                           Delete
                         </button>
@@ -616,7 +634,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                     </div>
                   </div>
 
-                  @if (editingDeliverableId() === r.id) {
+                  @if (canManage && editingDeliverableId() === r.id) {
                     <form (ngSubmit)="saveDeliverableEdit(r.id)" class="mt-3 pt-3 border-t border-cv-border-soft grid grid-cols-1 gap-2.5 items-center animate-pop-in" [ngClass]="roi.costMode === 'PER_DELIVERABLE' ? 'sm:grid-cols-5' : 'sm:grid-cols-4'">
                       <input [(ngModel)]="editDelTitle" name="editDelTitle" placeholder="Deliverable title" required class="sm:col-span-2 h-9 px-3 rounded-[4px] bg-cv-card border border-cv-border text-xs text-cv-ink focus:border-[#f54e26] focus:outline-none"/>
                       @if (roi.costMode === 'PER_DELIVERABLE') {
@@ -641,6 +659,7 @@ export class CreatorInsightsViewComponent implements OnChanges {
   @Input() reels: ReelDeliverable[] = [];
   @Input() drawerMedia: any[] = [];
   @Input() igStatus: InstagramStatus | null = null;
+  @Input() canManage = true;
   @Input() loadingMedia = false;
   @Input() syncing = false;
   @Input() savingProfile = false;
@@ -683,6 +702,12 @@ export class CreatorInsightsViewComponent implements OnChanges {
   };
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (!this.canManage) {
+      this.editMode.set(false);
+      this.pricingMenuOpen.set(false);
+      this.showReelPicker.set(false);
+      this.editingDeliverableId.set(null);
+    }
     if (changes['reels']) {
       this.pendingTrackKeys.set(new Set());
       this.duplicateReelNotice.set('');
@@ -864,8 +889,10 @@ export class CreatorInsightsViewComponent implements OnChanges {
       }
       unitLabel = 'Tracked Views';
       emptyReason = this.reels.length > 0
-        ? 'No video views recorded on tracked items yet. Try switching to Interactions or sync a Video Reel.'
-        : 'Add or pick a Video Reel below to visualize views distribution.';
+        ? 'No video views recorded on tracked items yet. Try switching to Interactions.'
+        : (this.canManage
+          ? 'Add or pick a Video Reel below to visualize views distribution.'
+          : 'No video Reels tracked yet. Deliverables are managed by the partner agency.');
     } else if (mode === 'interactions') {
       const sorted = [...this.reels]
         .map(r => ({ reel: r, total: (r.likesCount || 0) + (r.commentsCount || 0) }))
@@ -908,7 +935,9 @@ export class CreatorInsightsViewComponent implements OnChanges {
         });
       }
       unitLabel = 'Engagement Mix';
-      emptyReason = 'Track Reels below to compare Likes vs Comments share.';
+      emptyReason = this.canManage
+        ? 'Track Reels below to compare Likes vs Comments share.'
+        : 'No engagement mix available yet — deliverables are managed by the partner agency.';
     }
 
     const total = items.reduce((s, i) => s + i.value, 0);
@@ -955,6 +984,7 @@ export class CreatorInsightsViewComponent implements OnChanges {
   }
 
   submitEdit() {
+    if (!this.canManage) return;
     const costNum = String(this.form.costQuoted || '').trim();
     const payload: Record<string, any> = {
       costMode: this.form.costMode,
@@ -969,6 +999,7 @@ export class CreatorInsightsViewComponent implements OnChanges {
   }
 
   startEditDeliverable(r: ReelDeliverable) {
+    if (!this.canManage) return;
     if (this.editingDeliverableId() === r.id) {
       this.editingDeliverableId.set(null);
       return;
@@ -979,6 +1010,7 @@ export class CreatorInsightsViewComponent implements OnChanges {
   }
 
   saveDeliverableEdit(deliverableId: string) {
+    if (!this.canManage) return;
     const rawCost = String(this.editDelCost || '').trim();
     const out: { id: string; title: string; costQuoted?: number | null } = {
       id: deliverableId,
@@ -992,7 +1024,7 @@ export class CreatorInsightsViewComponent implements OnChanges {
   }
 
   selectMediaForTrack(m: any) {
-    if (!m?.permalink || this.isMediaAlreadyTracked(m)) return;
+    if (!this.canManage || !m?.permalink || this.isMediaAlreadyTracked(m)) return;
     const keys = new Set(this.pendingTrackKeys());
     if (m.id) keys.add(String(m.id));
     if (m.shortcode) keys.add(String(m.shortcode).toLowerCase());
@@ -1001,11 +1033,13 @@ export class CreatorInsightsViewComponent implements OnChanges {
     this.pendingTrackKeys.set(keys);
 
     const kind = this.isReelMedia(m) ? 'Instagram Reel' : (this.isFeedVideoMedia(m) ? 'Video Post' : 'Instagram Post');
-    const title = m.shortcode ? `${kind} · ${m.shortcode}` : kind;
+    const publishedLabel = formatPublishedDateLabel(m.timestamp);
+    const title = publishedLabel ? `${kind} · ${publishedLabel}` : kind;
     this.addReel.emit({ title, reelUrl: m.permalink });
   }
 
   submitReelForm() {
+    if (!this.canManage) return;
     const cleanUrl = this.newReelUrl.trim();
     if (!cleanUrl) return;
     if (this.isUrlAlreadyTracked(cleanUrl)) {

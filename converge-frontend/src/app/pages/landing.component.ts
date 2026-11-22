@@ -252,15 +252,17 @@ interface SampleCreatorReel {
                             Sync #{{ hoveredBarIdx() + 1 }}: +{{ formatCompact(reel.bars[hoveredBarIdx()] * 180) }} views
                           </span>
                         </div>
-                        <div class="grid grid-cols-7 gap-2 items-end h-14">
+                        <div class="flex items-end gap-2 h-14">
                           @for (val of reel.bars; track $index) {
                             <button type="button"
                                     (mouseenter)="hoveredBarIdx.set($index)"
                                     (click)="hoveredBarIdx.set($index)"
-                                    class="w-full rounded-t-[2px] transition-all duration-150 cursor-pointer"
-                                    [style.height.%]="val"
-                                    [style.backgroundColor]="hoveredBarIdx() === $index ? '#f54e26' : (reel.accent + '88')"
+                                    class="group flex-1 h-full flex items-end cursor-pointer focus:outline-none"
                                     [attr.aria-label]="'Sync snapshot ' + ($index + 1) + ' momentum'">
+                              <span class="w-full block rounded-t-[2px] transition-all duration-150"
+                                    [style.height.px]="val > 0 ? (val * 0.56 < 8 ? 8 : (val * 0.56)) : 8"
+                                    [style.backgroundColor]="hoveredBarIdx() === $index ? '#f54e26' : (reel.accent + '88')">
+                              </span>
                             </button>
                           }
                         </div>

@@ -16,7 +16,8 @@ import { AppHeaderComponent } from '../components/app-header.component';
 import { AppFooterComponent } from '../components/app-footer.component';
 import { ThemeToggleComponent } from '../components/theme-toggle.component';
 import { formatAuditSummary, formatAuditTitle } from '../utils/audit-format';
-import { formatReelDisplayTitle } from '../utils/reel-format';
+import { formatPublishedDateLabel, formatReelDisplayTitle, formatReelMetaLabel } from '../utils/reel-format';
+import { computeAxisBarScale, formatShortAxisDate, formatSyncAxisLabel } from '../utils/chart-axis';
 import { safeExternalUrl } from '../utils/url-safety';
 
 @Component({
@@ -138,6 +139,7 @@ import { safeExternalUrl } from '../utils/url-safety';
             [creator]="selectedReelCreator()"
             [bundle]="selectedReelBundle()"
             [isLivePreview]="selectedReelIsLive()"
+            [canManage]="canManageCreatorDeliverables(selectedReelCreator())"
             [syncing]="syncingSingleReel()"
             [tracking]="trackingLiveReel()"
             (back)="closeReelInsights()"
@@ -152,6 +154,7 @@ import { safeExternalUrl } from '../utils/url-safety';
             [reels]="creatorReels()"
             [drawerMedia]="drawerMedia()"
             [igStatus]="igStatus()"
+            [canManage]="canManageCreatorDeliverables(ic)"
             [loadingMedia]="loadingCreatorMedia()"
             [syncing]="syncingCreator()"
             [savingProfile]="savingInsightsProfile()"
@@ -440,11 +443,11 @@ import { safeExternalUrl } from '../utils/url-safety';
                                 </div>
                                 <div class="flex items-center justify-between gap-2 text-[10px] text-cv-ink-subtle tabular-nums">
                                   @if (m.timestamp) {
-                                    <span>{{ m.timestamp | date:'MMM d, y' }}</span>
+                                    <span>Published {{ m.timestamp | date:'MMM d, y' }}</span>
+                                  } @else {
+                                    <span>Instagram {{ isLookupReel(m) ? 'Reel' : 'Post' }}</span>
                                   }
-                                  @if (m.shortcode) {
-                                    <span class="truncate">{{ m.shortcode }}</span>
-                                  }
+                                  <span>{{ isLookupReel(m) ? 'Instagram Reel' : (m.mediaType === 'VIDEO' ? 'Video Post' : 'Instagram Post') }}</span>
                                 </div>
                               </div>
                               <div class="flex items-center justify-between pt-2 border-t border-cv-border-faint text-[11px]" (click)="$event.stopPropagation()">
@@ -556,18 +559,20 @@ import { safeExternalUrl } from '../utils/url-safety';
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-[4px] bg-cv-well border border-cv-border-soft">
                           <div class="flex items-center gap-2 min-w-0 text-xs">
                             <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="sr.status === 'VERIFIED' ? 'bg-cv-green' : 'bg-cv-gold'"></span>
-                            <span class="text-cv-ink font-medium truncate">{{ shortReelUrl(sr.reelUrl) }}</span>
+                            <span class="text-cv-ink font-medium truncate">{{ reelMetaLabel(sr) }}</span>
                           </div>
                           <div class="flex items-center gap-1.5 shrink-0">
-                            <button type="button"
-                                    (click)="refreshSpotlightReel(sr.id)"
-                                    [disabled]="syncingSpotlightReel()"
-                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-cv-control hover:bg-[#f54e26] hover:text-[#111111] text-cv-ink text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50">
-                              <svg class="w-3 h-3" [class.animate-spin]="syncingSpotlightReel()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
-                              </svg>
-                              <span>{{ syncingSpotlightReel() ? 'Updating...' : 'Refresh Reel' }}</span>
-                            </button>
+                            @if (canManageCreatorDeliverables(sc)) {
+                              <button type="button"
+                                      (click)="refreshSpotlightReel(sr.id)"
+                                      [disabled]="syncingSpotlightReel()"
+                                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-cv-control hover:bg-[#f54e26] hover:text-[#111111] text-cv-ink text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50">
+                                <svg class="w-3 h-3" [class.animate-spin]="syncingSpotlightReel()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                  <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
+                                </svg>
+                                <span>{{ syncingSpotlightReel() ? 'Updating...' : 'Refresh Reel' }}</span>
+                              </button>
+                            }
                             <button type="button"
                                     (click)="openDeliverableInsights(sr)"
                                     class="px-2.5 py-1 rounded-[3px] bg-cv-control hover:bg-cv-ink hover:text-cv-ink-inverse text-cv-ink-muted text-[11px] font-semibold transition-colors cursor-pointer">
@@ -619,10 +624,10 @@ import { safeExternalUrl } from '../utils/url-safety';
                         </div>
 
                         <!-- Real Momentum Bar Chart (Snapshots or Tracked Reels) -->
-                        <div class="px-3.5 py-3 rounded-[4px] bg-cv-well border border-cv-border-soft space-y-2">
+                        <div class="px-3.5 py-3 rounded-[4px] bg-cv-well border border-cv-border-soft space-y-2.5">
                           <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-cv-ink-muted">
                             <div class="flex items-center gap-2">
-                              <span>{{ barChart.mode === 'snapshots' ? 'Hover bars to inspect sync snapshot growth' : 'Hover bars to compare tracked Reel views' }}</span>
+                              <span>{{ barChart.subtitle }}</span>
                               @if ((deltaInfo?.snapshots?.length || 0) >= 2 && deliverables().length > 1) {
                                 <div class="inline-flex items-center p-0.5 rounded-[3px] bg-cv-card border border-cv-border-soft text-[10px]">
                                   <button type="button" (click)="setSpotlightChartMode('snapshots')"
@@ -639,8 +644,8 @@ import { safeExternalUrl } from '../utils/url-safety';
                               }
                             </div>
                             @if (barChart.activeBar; as ab) {
-                              <span class="text-cv-ink font-medium tabular-nums truncate max-w-[260px]">
-                                {{ ab.label }}: {{ formatNum(ab.value) }} views
+                              <span class="text-cv-ink font-medium tabular-nums truncate max-w-[300px]">
+                                {{ ab.label }} · {{ formatNum(ab.value) }} {{ barChart.unit }}
                                 @if ((ab.delta || 0) > 0) {
                                   <span class="text-cv-green">(+{{ formatNum(ab.delta!) }})</span>
                                 }
@@ -648,26 +653,59 @@ import { safeExternalUrl } from '../utils/url-safety';
                             }
                           </div>
                           @if (barChart.items.length > 0) {
-                            <div class="grid gap-2 items-end h-14" [style.gridTemplateColumns]="'repeat(' + Math.max(barChart.items.length, 3) + ', minmax(0, 1fr))'">
-                              @for (bar of barChart.items; track $index) {
-                                <button type="button"
-                                        (mouseenter)="hoveredSpotlightBarIdx.set($index)"
-                                        (click)="onSpotlightBarClick($index, bar)"
-                                        class="w-full rounded-t-[2px] transition-all duration-150 cursor-pointer"
-                                        [style.height.%]="bar.pct"
-                                        [style.backgroundColor]="barChart.activeIdx === $index ? '#f54e26' : '#f54e2677'"
-                                        [attr.aria-label]="bar.label">
-                                </button>
-                              }
+                            <div class="flex items-stretch gap-2 pt-0.5">
+                              <!-- Y-Axis -->
+                              <div class="w-12 shrink-0 h-[68px] flex flex-col justify-between text-right pr-2 border-r border-cv-border text-[10px] leading-none text-cv-ink-subtle tabular-nums select-none">
+                                <span>{{ barChart.yMaxLabel }}</span>
+                                <span>{{ barChart.yMidLabel }}</span>
+                                <span>{{ barChart.yMinLabel }}</span>
+                              </div>
+                              <!-- Plot Gridlines, Bars & X-Axis -->
+                              <div class="flex-1 min-w-0 flex flex-col">
+                                <div class="relative h-[68px] flex items-end gap-2 px-1 border-b border-cv-border">
+                                  <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-cv-border-faint"></div>
+                                  <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-cv-border-faint"></div>
+                                  @for (bar of barChart.items; track $index) {
+                                    <button type="button"
+                                            (mouseenter)="hoveredSpotlightBarIdx.set($index)"
+                                            (click)="onSpotlightBarClick($index, bar)"
+                                            class="relative z-10 group flex-1 h-full flex items-end justify-center cursor-pointer focus:outline-none"
+                                            [attr.title]="bar.label + ' — ' + formatNum(bar.value) + ' ' + barChart.unit"
+                                            [attr.aria-label]="bar.label">
+                                      <span class="w-full max-w-[64px] block rounded-t-[2px] transition-all duration-150"
+                                            [style.height.px]="bar.px"
+                                            [style.backgroundColor]="barChart.activeIdx === $index ? '#f54e26' : '#f54e2666'">
+                                      </span>
+                                    </button>
+                                  }
+                                </div>
+                                <div class="flex items-start gap-2 px-1 pt-1.5">
+                                  @for (bar of barChart.items; track $index) {
+                                    <button type="button"
+                                            (mouseenter)="hoveredSpotlightBarIdx.set($index)"
+                                            (click)="onSpotlightBarClick($index, bar)"
+                                            class="flex-1 min-w-0 text-center text-[10px] leading-tight truncate cursor-pointer transition-colors"
+                                            [ngClass]="barChart.activeIdx === $index ? 'text-cv-ink font-semibold' : 'text-cv-ink-subtle hover:text-cv-ink'">
+                                      {{ bar.xLabel }}
+                                    </button>
+                                  }
+                                </div>
+                              </div>
                             </div>
                           }
                         </div>
                       </div>
                     } @else {
                       <div class="py-5 px-4 rounded-[4px] bg-cv-well border border-cv-border-soft flex flex-wrap items-center justify-between gap-3">
-                        <p class="text-xs text-cv-ink-muted">No Reels tracked yet for <span class="text-cv-ink font-medium">{{ sc.handle }}</span>. Track a Reel to inspect live stats and snapshot momentum.</p>
+                        <p class="text-xs text-cv-ink-muted">
+                          @if (canManageCreatorDeliverables(sc)) {
+                            No Reels tracked yet for <span class="text-cv-ink font-medium">{{ sc.handle }}</span>. Track a Reel to inspect live stats and snapshot momentum.
+                          } @else {
+                            No Reels tracked yet for <span class="text-cv-ink font-medium">{{ sc.handle }}</span>. Deliverables are managed by {{ sc.agencyName || 'the partner agency' }}.
+                          }
+                        </p>
                         <button type="button" (click)="inspectCreator(sc)" class="h-8 px-3.5 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase text-sm font-bold cursor-pointer transition-colors">
-                          OPEN CREATOR &amp; PICK REELS →
+                          {{ canManageCreatorDeliverables(sc) ? 'OPEN CREATOR & PICK REELS →' : 'VIEW CREATOR →' }}
                         </button>
                       </div>
                     }
@@ -1031,7 +1069,9 @@ import { safeExternalUrl } from '../utils/url-safety';
                           <span>Insights &amp; Reels ({{ c.auditedReelsCount }}) →</span>
                         </button>
                         <div class="flex items-center gap-2.5">
-                          <button (click)="syncCreatorRow(c)" class="text-[11px] font-medium text-cv-ink-muted hover:text-cv-ink cursor-pointer">Refresh</button>
+                          @if (canManageCreatorDeliverables(c)) {
+                            <button (click)="syncCreatorRow(c)" class="text-[11px] font-medium text-cv-ink-muted hover:text-cv-ink cursor-pointer">Refresh</button>
+                          }
                           <button (click)="creatorToDelete.set(c)" class="text-[11px] font-medium text-cv-red-soft hover:underline cursor-pointer">Remove</button>
                         </div>
                       </div>
@@ -1359,6 +1399,20 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     return this.agencies().find(a => a.contactEmail?.trim().toLowerCase() === email && a.status !== 'DRAFT') || null;
   });
 
+  isAgencyManagedCreator(c: Creator | null | undefined): boolean {
+    return !!c && (c.sourceType === 'AGENCY' || !!c.agencyId);
+  }
+
+  canManageCreatorDeliverables(c: Creator | null | undefined): boolean {
+    if (!c) return false;
+    // Live lookup previews without a persisted creator record are not agency-owned yet.
+    if (!c.id) return true;
+    if (this.isAgencyManagedCreator(c)) {
+      return !!this.currentPartnerAgency();
+    }
+    return !this.currentPartnerAgency();
+  }
+
   readonly Math = Math;
 
   spotlightCreator = computed(() => {
@@ -1394,40 +1448,83 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     const useSnapshots = (pref === 'snapshots' && snaps.length > 0)
       || (pref === 'auto' && snaps.length >= 2);
 
-    type BarItem = { label: string; value: number; pct: number; delta?: number; reel?: ReelDeliverable };
+    type BarItem = { label: string; xLabel: string; value: number; px: number; delta?: number; reel?: ReelDeliverable };
     let items: BarItem[] = [];
     const mode: 'snapshots' | 'reels' = useSnapshots ? 'snapshots' : 'reels';
+    let unit = 'views';
+    let subtitle = useSnapshots ? 'Hover or click bars to inspect sync growth' : 'Hover or click bars to compare tracked Reel views';
+    let scale = computeAxisBarScale([], 68);
 
     if (useSnapshots) {
       const slice = snaps.slice(-7);
-      const maxVal = Math.max(1, ...slice.map(s => s.viewsCount || 0));
+      const hasSnapViews = slice.some(s => (s.viewsCount || 0) > 0);
+      unit = hasSnapViews ? 'views' : 'interactions';
+      subtitle = hasSnapViews
+        ? 'Hover bars to inspect sync view growth'
+        : 'Hover bars to inspect sync engagement growth';
+      const vals = slice.map(s => hasSnapViews ? (s.viewsCount || 0) : ((s.likesCount || 0) + (s.commentsCount || 0)));
+      scale = computeAxisBarScale(vals, 68);
+      const dayLabels = new Set(slice.map(s => formatShortAxisDate(s.capturedAt)).filter(Boolean));
+      const sameDay = dayLabels.size <= 1;
       items = slice.map((s, idx) => ({
         label: `Sync #${idx + 1}`,
-        value: s.viewsCount || 0,
-        pct: (s.viewsCount || 0) > 0 ? Math.max(18, Math.round(((s.viewsCount || 0) / maxVal) * 100)) : 14,
-        delta: s.deltaViews || 0
+        xLabel: formatSyncAxisLabel(idx, s.capturedAt, sameDay),
+        value: vals[idx],
+        px: scale.heightsPx[idx],
+        delta: hasSnapViews ? (s.deltaViews || 0) : 0
       }));
     } else {
       const sourceReels = this.spotlightCreatorReels().length > 1
         ? this.spotlightCreatorReels()
         : this.deliverables();
       const topReels = sourceReels.slice(0, 7);
-      const maxVal = Math.max(1, ...topReels.map(r => r.viewsCount || 0));
-      items = topReels.map(r => ({
-        label: `${r.creatorHandle || ''} • ${this.displayReelTitle(r)}`.replace(/^\s*•\s*/, ''),
-        value: r.viewsCount || 0,
-        pct: (r.viewsCount || 0) > 0 ? Math.max(18, Math.round(((r.viewsCount || 0) / maxVal) * 100)) : 14,
-        delta: this.reelDeltas()[r.id]?.viewsDeltaLastSync || 0,
-        reel: r
-      }));
+      const hasViews = topReels.some(r => (r.viewsCount || 0) > 0);
+      unit = hasViews ? 'views' : 'interactions';
+      subtitle = hasViews
+        ? 'Hover or click bars to switch between tracked Reels'
+        : 'Hover or click bars to compare Post likes & comments';
+      const vals = topReels.map(r => hasViews ? (r.viewsCount || 0) : ((r.likesCount || 0) + (r.commentsCount || 0)));
+      scale = computeAxisBarScale(vals, 68);
+      const distinctCreators = new Set(topReels.map(r => r.creatorHandle).filter(Boolean)).size;
+      items = topReels.map((r, idx) => {
+        const dt = formatShortAxisDate(r.publishedAt || r.syncedAt);
+        const xLabel = distinctCreators > 1
+          ? (r.creatorHandle || `#${idx + 1}`)
+          : (dt || `Item ${idx + 1}`);
+        return {
+          label: `${r.creatorHandle || ''} • ${this.displayReelTitle(r)}`.replace(/^\s*•\s*/, ''),
+          xLabel,
+          value: vals[idx],
+          px: scale.heightsPx[idx],
+          delta: hasViews ? (this.reelDeltas()[r.id]?.viewsDeltaLastSync || 0) : 0,
+          reel: r
+        };
+      });
     }
 
     const hovered = this.hoveredSpotlightBarIdx();
-    const activeIdx = (hovered !== null && hovered >= 0 && hovered < items.length)
-      ? hovered
-      : Math.max(0, items.length - 1);
+    const activeReelId = this.activeSpotlightReel()?.id;
+    let activeIdx = 0;
+    if (hovered !== null && hovered >= 0 && hovered < items.length) {
+      activeIdx = hovered;
+    } else if (mode === 'reels' && activeReelId) {
+      const matched = items.findIndex(i => i.reel?.id === activeReelId);
+      activeIdx = matched >= 0 ? matched : 0;
+    } else if (items.length > 0) {
+      activeIdx = items.length - 1;
+    }
     const activeBar = items.length > 0 ? items[activeIdx] : null;
-    return { mode, items, activeIdx, activeBar };
+    return {
+      mode,
+      unit,
+      subtitle,
+      yMinLabel: scale.yMinLabel,
+      yMidLabel: scale.yMidLabel,
+      yMaxLabel: scale.yMaxLabel,
+      items,
+      activeIdx,
+      activeBar
+    };
   });
 
   csvRecapRows = computed(() => {
@@ -2150,12 +2247,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     const eng = denom > 0 ? Math.round(((likes + cmts) * 100.0 / denom) * 100) / 100 : 0;
 
     const kind = this.isLookupReel(m) ? 'Instagram Reel' : (m.mediaType === 'VIDEO' ? 'Video Post' : 'Instagram Post');
+    const publishedLabel = formatPublishedDateLabel(m.timestamp);
     const previewReel: ReelDeliverable & { publishedAt?: string } = {
       id: m.id,
       brandId: creator.brandId,
       creatorId: creator.id,
       creatorHandle: creator.handle,
-      title: m.shortcode ? `${kind} · ${m.shortcode}` : kind,
+      title: publishedLabel ? `${kind} · ${publishedLabel}` : kind,
       reelUrl: m.permalink || '',
       igMediaId: m.id,
       shortcode: m.shortcode || '',
@@ -2539,14 +2637,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  shortReelUrl(url?: string): string {
-    if (!url) return 'instagram.com/reel';
-    return url.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, '');
-  }
-
   cleanAuditTitle = formatAuditTitle;
   cleanAuditSummary = formatAuditSummary;
   readonly displayReelTitle = formatReelDisplayTitle;
+  readonly reelMetaLabel = formatReelMetaLabel;
   readonly safeExternalUrl = safeExternalUrl;
 
   isLookupReel(m: any): boolean {

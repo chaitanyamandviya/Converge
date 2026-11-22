@@ -76,7 +76,7 @@ public class InstagramController {
 
     @PostMapping("/creators/{creatorId}/sync")
     public Map<String, Object> syncCreator(@PathVariable UUID creatorId, Authentication auth) {
-        brandService.requireCreatorAccess(creatorId, auth);
+        brandService.requireCreatorManagementAccess(creatorId, auth);
         return brandService.syncCreatorFromInstagram(
                 creatorId,
                 brandService.isAdmin(auth),
@@ -87,14 +87,14 @@ public class InstagramController {
 
     @PostMapping("/deliverables/{deliverableId}/sync")
     public ReelDeliverable syncDeliverable(@PathVariable UUID deliverableId, Authentication auth) {
-        brandService.requireDeliverableAccess(deliverableId, auth);
+        brandService.requireDeliverableManagementAccess(deliverableId, auth);
         return brandService.syncDeliverableFromInstagram(deliverableId);
     }
 
     @PostMapping("/brands/{brandId}/sync")
     public Map<String, Object> syncBrand(@PathVariable UUID brandId, Authentication auth) {
         brandService.requireBrandAccess(brandId, auth);
-        return brandService.syncBrandDeliverables(brandId, brandService.resolveActor(auth, "Workspace Manager"));
+        return brandService.syncBrandDeliverables(brandId, brandService.resolveActor(auth, "Workspace Manager"), auth);
     }
 
     @GetMapping("/oauth/authorize-url")
@@ -113,7 +113,7 @@ public class InstagramController {
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Invalid creatorId parameter.");
         }
-        brandService.requireCreatorAccess(parsedCreatorId, auth);
+        brandService.requireCreatorManagementAccess(parsedCreatorId, auth);
         String signedState = jwtService.generateInstagramOAuthState(parsedCreatorId, auth.getName());
         return instagramGraphService.buildOAuthAuthorizeUrl(signedState);
     }
@@ -135,7 +135,7 @@ public class InstagramController {
                 auth.getName(),
                 brandService.isAdmin(auth)
         );
-        brandService.requireCreatorAccess(verifiedCreatorId, auth);
+        brandService.requireCreatorManagementAccess(verifiedCreatorId, auth);
 
         Map<String, Object> oauthResult = instagramGraphService.exchangeCodeForLongLivedToken(code);
         Creator updated = brandService.attachCreatorOAuthProfile(verifiedCreatorId, oauthResult);

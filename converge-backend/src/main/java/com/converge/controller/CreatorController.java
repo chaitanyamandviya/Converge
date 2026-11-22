@@ -42,7 +42,7 @@ public class CreatorController {
             @PathVariable UUID creatorId,
             @RequestBody Map<String, Object> payload,
             Authentication auth) {
-        brandService.requireCreatorAccess(creatorId, auth);
+        brandService.requireCreatorManagementAccess(creatorId, auth);
         return brandService.updateCreatorInsightsProfile(
                 creatorId,
                 payload,
@@ -54,7 +54,7 @@ public class CreatorController {
 
     @PostMapping("/{creatorId}/sync-instagram")
     public Map<String, Object> syncCreator(@PathVariable UUID creatorId, Authentication auth) {
-        brandService.requireCreatorAccess(creatorId, auth);
+        brandService.requireCreatorManagementAccess(creatorId, auth);
         return brandService.syncCreatorFromInstagram(
                 creatorId,
                 brandService.isAdmin(auth),
@@ -81,7 +81,7 @@ public class CreatorController {
             @PathVariable UUID creatorId,
             @RequestBody Map<String, String> payload,
             Authentication auth) {
-        brandService.requireCreatorAccess(creatorId, auth);
+        brandService.requireCreatorManagementAccess(creatorId, auth);
         return brandService.addReelDeliverable(creatorId, payload, brandService.resolveActor(auth, "Brand Manager"));
     }
 
@@ -97,7 +97,7 @@ public class CreatorController {
             @PathVariable UUID deliverableId,
             @RequestBody Map<String, Object> payload,
             Authentication auth) {
-        brandService.requireDeliverableAccess(deliverableId, auth);
+        brandService.requireDeliverableManagementAccess(deliverableId, auth);
         return brandService.updateDeliverable(deliverableId, payload, brandService.resolveActor(auth, "Workspace Manager"));
     }
 

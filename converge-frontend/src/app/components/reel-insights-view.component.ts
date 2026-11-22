@@ -1,7 +1,8 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services/api.service';
-import { formatReelDisplayTitle } from '../utils/reel-format';
+import { formatReelDisplayTitle, formatReelMetaLabel } from '../utils/reel-format';
+import { computeAxisBarScale, formatShortAxisDate, formatSyncAxisLabel } from '../utils/chart-axis';
 import { safeExternalUrl } from '../utils/url-safety';
 
 @Component({
@@ -27,8 +28,8 @@ import { safeExternalUrl } from '../utils/url-safety';
                 [ngClass]="reel.status === 'VERIFIED' ? 'bg-[#007656] text-[#fff6e8]' : (reel.status === 'LIVE_PREVIEW' ? 'bg-cv-well border border-cv-border text-[#f54e26]' : 'bg-[#fabf29] text-[#111111]')">
                 {{ reel.status }}
               </span>
-              @if (reel.shortcode) {
-                <span class="text-xs text-cv-ink-muted tabular-nums">{{ reel.shortcode }}</span>
+              @if (reel.publishedAt) {
+                <span class="text-xs text-cv-ink-muted tabular-nums">Published {{ reel.publishedAt | date:'MMM d, y' }}</span>
               }
             </div>
             <h1 class="font-headline uppercase text-2xl sm:text-3xl font-bold text-cv-ink tracking-[0.02em] leading-none truncate mt-1">{{ displayReelTitle(reel) }}</h1>
@@ -37,14 +38,20 @@ import { safeExternalUrl } from '../utils/url-safety';
 
         <div class="flex flex-wrap items-center gap-2 shrink-0">
           @if (isLivePreview) {
-            <button
-              type="button"
-              (click)="trackLiveReel.emit(reel)"
-              [disabled]="tracking"
-              class="h-9 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer transition-colors disabled:opacity-60">
-              {{ tracking ? 'TRACKING...' : '+ TRACK AS DELIVERABLE' }}
-            </button>
-          } @else {
+            @if (canManage) {
+              <button
+                type="button"
+                (click)="trackLiveReel.emit(reel)"
+                [disabled]="tracking"
+                class="h-9 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer transition-colors disabled:opacity-60">
+                {{ tracking ? 'TRACKING...' : '+ TRACK AS DELIVERABLE' }}
+              </button>
+            } @else {
+              <span class="px-3 py-1.5 rounded-[4px] bg-cv-well border border-cv-border text-cv-ink-muted text-xs font-medium">
+                Agency Managed · View Only
+              </span>
+            }
+          } @else if (canManage) {
             <button
               type="button"
               (click)="syncReel.emit(reel.id)"
@@ -75,11 +82,11 @@ import { safeExternalUrl } from '../utils/url-safety';
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:items-start">
         <div class="lg:col-span-4 bg-cv-card rounded-[4px] p-4 border border-cv-border flex flex-col gap-3">
           @if (reel.thumbnailUrl) {
-            <img [src]="reel.thumbnailUrl" [alt]="reel.title" (error)="reel.thumbnailUrl = ''" class="w-full aspect-[4/5] max-h-[360px] object-cover rounded-[4px] bg-cv-well border border-cv-border-soft"/>
+            <img [src]="reel.thumbnailUrl" [alt]="displayReelTitle(reel)" (error)="reel.thumbnailUrl = ''" class="w-full aspect-[4/5] max-h-[360px] object-cover rounded-[4px] bg-cv-well border border-cv-border-soft"/>
           } @else {
             <div class="w-full aspect-[4/5] max-h-[340px] rounded-[4px] bg-cv-well border border-cv-border-soft flex flex-col items-center justify-center text-cv-ink-muted text-xs gap-1">
               <span class="font-headline uppercase font-bold text-lg text-[#f54e26]">{{ reel.mediaType || 'REELS' }}</span>
-              <span>{{ reel.shortcode || 'Instagram Reel' }}</span>
+              <span>{{ reel.publishedAt ? (reel.publishedAt | date:'MMM d, y') : 'Instagram Reel' }}</span>
             </div>
           }
 
@@ -87,9 +94,9 @@ import { safeExternalUrl } from '../utils/url-safety';
           <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-[4px] bg-cv-well border border-cv-border-soft">
             <div class="flex items-center gap-2 min-w-0 text-xs">
               <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="reel.status === 'VERIFIED' ? 'bg-cv-green' : 'bg-[#fabf29]'"></span>
-              <span class="text-cv-ink font-medium truncate">{{ shortReelUrl(reel.reelUrl) }}</span>
+              <span class="text-cv-ink font-medium truncate">{{ reelMetaLabel(reel) }}</span>
             </div>
-            @if (!isLivePreview) {
+            @if (!isLivePreview && canManage) {
               <button
                 type="button"
                 (click)="syncReel.emit(reel.id)"
@@ -121,26 +128,57 @@ import { safeExternalUrl } from '../utils/url-safety';
                 <div class="flex items-center justify-between text-[10px] text-cv-ink-muted tabular-nums">
                   <span>Sync #{{ activeSnapIndex + 1 }} · {{ snap.capturedAt | date:'MMM d, h:mm a' }}</span>
                   <span class="text-cv-ink font-semibold">
-                    {{ snap.viewsCount.toLocaleString('en-IN') }} views
-                    @if (snap.deltaViews > 0) {
-                      <span class="text-cv-green">(+{{ formatCompact(snap.deltaViews) }})</span>
+                    @if (hasSnapshotViews) {
+                      {{ snap.viewsCount.toLocaleString('en-IN') }} views
+                      @if (snap.deltaViews > 0) {
+                        <span class="text-cv-green">(+{{ formatCompact(snap.deltaViews) }})</span>
+                      }
+                    } @else {
+                      {{ ((snap.likesCount || 0) + (snap.commentsCount || 0)).toLocaleString('en-IN') }} interactions
                     }
                   </span>
                 </div>
               }
 
-              <div class="grid grid-cols-7 gap-1.5 items-end h-11 pt-1">
-                @for (s of snaps; track $index) {
-                  <button
-                    type="button"
-                    (mouseenter)="hoveredSnapIdx = $index"
-                    (click)="hoveredSnapIdx = $index"
-                    class="w-full rounded-t-[2px] transition-all duration-150 cursor-pointer"
-                    [style.height.%]="snapshotBarPct(s.viewsCount)"
-                    [style.backgroundColor]="activeSnapIndex === $index ? '#f54e26' : '#f54e2677'"
-                    [attr.aria-label]="'Sync snapshot ' + ($index + 1)">
-                  </button>
-                }
+              @let snapChart = snapshotChartData;
+              <div class="flex items-stretch gap-1.5 pt-1">
+                <div class="w-10 shrink-0 h-[52px] flex flex-col justify-between text-right pr-1.5 border-r border-cv-border text-[9px] leading-none text-cv-ink-subtle tabular-nums select-none">
+                  <span>{{ snapChart.yMaxLabel }}</span>
+                  <span>{{ snapChart.yMidLabel }}</span>
+                  <span>{{ snapChart.yMinLabel }}</span>
+                </div>
+                <div class="flex-1 min-w-0 flex flex-col">
+                  <div class="relative h-[52px] flex items-end gap-1.5 px-1 border-b border-cv-border">
+                    <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-cv-border-faint"></div>
+                    <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-cv-border-faint"></div>
+                    @for (bar of snapChart.bars; track $index) {
+                      <button
+                        type="button"
+                        (mouseenter)="hoveredSnapIdx = $index"
+                        (click)="hoveredSnapIdx = $index"
+                        class="relative z-10 flex-1 h-full flex items-end justify-center cursor-pointer focus:outline-none"
+                        [attr.aria-label]="'Sync snapshot ' + ($index + 1)">
+                        <span
+                          class="w-full max-w-[44px] block rounded-t-[2px] transition-all duration-150"
+                          [style.height.px]="bar.px"
+                          [style.backgroundColor]="activeSnapIndex === $index ? '#f54e26' : '#f54e2677'">
+                        </span>
+                      </button>
+                    }
+                  </div>
+                  <div class="flex items-start gap-1.5 px-1 pt-1">
+                    @for (bar of snapChart.bars; track $index) {
+                      <button
+                        type="button"
+                        (mouseenter)="hoveredSnapIdx = $index"
+                        (click)="hoveredSnapIdx = $index"
+                        class="flex-1 min-w-0 text-center text-[9px] leading-tight truncate cursor-pointer transition-colors"
+                        [ngClass]="activeSnapIndex === $index ? 'text-cv-ink font-semibold' : 'text-cv-ink-subtle'">
+                        {{ bar.xLabel }}
+                      </button>
+                    }
+                  </div>
+                </div>
               </div>
               @if (snaps.length === 1) {
                 <p class="text-[10px] text-cv-ink-subtle">Sync again later to plot view growth across checks.</p>
@@ -284,6 +322,7 @@ export class ReelInsightsViewComponent {
   @Input() creator: Creator | null = null;
   @Input() bundle: DeliverableInsightsBundle | null = null;
   @Input() isLivePreview = false;
+  @Input() canManage = true;
   @Input() syncing = false;
   @Input() tracking = false;
 
@@ -313,16 +352,32 @@ export class ReelInsightsViewComponent {
     return list.length > 0 ? list[this.activeSnapIndex] : null;
   }
 
-  snapshotBarPct(views: number): number {
-    const list = this.snapshotList;
-    const max = Math.max(1, ...list.map(s => s.viewsCount || 0));
-    if (views <= 0) return 14;
-    return Math.max(18, Math.round((views / max) * 100));
+  get hasSnapshotViews(): boolean {
+    return this.snapshotList.some(s => (s.viewsCount || 0) > 0);
   }
 
-  shortReelUrl(url?: string): string {
-    if (!url) return 'instagram.com/reel';
-    return url.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, '');
+  get snapshotChartData() {
+    const list = this.snapshotList;
+    const useViews = this.hasSnapshotViews;
+    const vals = list.map(s =>
+      useViews ? (s.viewsCount || 0) : ((s.likesCount || 0) + (s.commentsCount || 0))
+    );
+    const scale = computeAxisBarScale(vals, 52);
+    const dayKeys = new Set(
+      list
+        .map(s => formatShortAxisDate(s.capturedAt))
+        .filter((d): d is string => Boolean(d))
+    );
+    const sameDay = dayKeys.size <= 1;
+    return {
+      yMinLabel: scale.yMinLabel,
+      yMidLabel: scale.yMidLabel,
+      yMaxLabel: scale.yMaxLabel,
+      bars: list.map((s, idx) => ({
+        px: scale.heightsPx[idx],
+        xLabel: formatSyncAxisLabel(idx, s.capturedAt, sameDay),
+      })),
+    };
   }
 
   get derived() {
@@ -376,6 +431,7 @@ export class ReelInsightsViewComponent {
 
   readonly safeExternalUrl = safeExternalUrl;
   readonly displayReelTitle = formatReelDisplayTitle;
+  readonly reelMetaLabel = formatReelMetaLabel;
 
   formatInr(n: number, decimals = 0): string {
     if (!n || n <= 0) return '—';

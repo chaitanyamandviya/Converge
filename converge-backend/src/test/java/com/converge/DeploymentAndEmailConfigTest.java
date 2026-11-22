@@ -25,13 +25,24 @@ class DeploymentAndEmailConfigTest {
     }
 
     @Test
-    void emailServiceDefaultsBlankUrlToProductionCloudflarePages() {
-        EmailService emailService = new EmailService("", "noreply@converge.run.place", "Converge", "   ");
-
+    void emailServiceDefaultsBlankUnreachableAndHostedLocalhostUrlsToProductionPages() {
+        EmailService blankService = new EmailService("", "noreply@converge.run.place", "Converge", "   ");
         assertEquals(
                 "https://converge-etp.pages.dev/auth?mode=signin",
-                emailService.buildAuthUrl("signin", null)
+                blankService.buildAuthUrl("signin", null)
         );
+        assertEquals("https://converge-etp.pages.dev/converge-logo.png", blankService.getLogoUrl());
+
+        EmailService unreachableService = new EmailService("", "noreply@converge.run.place", "Converge", "https://converge.run.place");
+        assertEquals(
+                "https://converge-etp.pages.dev/auth?mode=signin&email=alice%40brand.com",
+                unreachableService.buildAuthUrl("signin", "alice@brand.com")
+        );
+        assertEquals("https://converge-etp.pages.dev/converge-logo.png", unreachableService.getLogoUrl());
+
+        assertEquals("https://converge-etp.pages.dev", EmailService.normalizeFrontendUrl("http://localhost:4200", true));
+        EmailService localService = new EmailService("", "noreply@converge.run.place", "Converge", "http://localhost:4200");
+        assertEquals("https://converge-etp.pages.dev/converge-logo.png", localService.getLogoUrl());
     }
 
     @Test
