@@ -1,8 +1,9 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services/api.service';
 import { formatReelDisplayTitle, formatReelMetaLabel } from '../utils/reel-format';
 import { computeAxisBarScale, formatShortAxisDate, formatSyncAxisLabel } from '../utils/chart-axis';
+import { computeReelSnapshotMetrics } from '../utils/reel-metrics';
 import { safeExternalUrl } from '../utils/url-safety';
 
 @Component({
@@ -147,7 +148,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                   <span>{{ snapChart.yMidLabel }}</span>
                   <span>{{ snapChart.yMinLabel }}</span>
                 </div>
-                <div class="flex-1 min-w-0 flex flex-col">
+                <div class="flex-1 min-w-0 flex flex-col" (mouseleave)="hoveredSnapIdx = null">
                   <div class="relative h-[52px] flex items-end gap-1.5 px-1 border-b border-cv-border">
                     <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-cv-border-faint"></div>
                     <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-cv-border-faint"></div>
@@ -155,8 +156,9 @@ import { safeExternalUrl } from '../utils/url-safety';
                       <button
                         type="button"
                         (mouseenter)="hoveredSnapIdx = $index"
-                        (click)="hoveredSnapIdx = $index"
+                        (click)="togglePinSnap($index)"
                         class="relative z-10 flex-1 h-full flex items-end justify-center cursor-pointer focus:outline-none"
+                        [attr.title]="'Sync #' + ($index + 1) + ' — ' + bar.xLabel"
                         [attr.aria-label]="'Sync snapshot ' + ($index + 1)">
                         <span
                           class="w-full max-w-[44px] block rounded-t-[2px] transition-all duration-150"
@@ -171,7 +173,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                       <button
                         type="button"
                         (mouseenter)="hoveredSnapIdx = $index"
-                        (click)="hoveredSnapIdx = $index"
+                        (click)="togglePinSnap($index)"
                         class="flex-1 min-w-0 text-center text-[9px] leading-tight truncate cursor-pointer transition-colors"
                         [ngClass]="activeSnapIndex === $index ? 'text-cv-ink font-semibold' : 'text-cv-ink-subtle'">
                         {{ bar.xLabel }}
@@ -222,46 +224,61 @@ import { safeExternalUrl } from '../utils/url-safety';
           }
 
           <!-- Reel Performance Metrics -->
+          @let dm = displayedMetrics;
           <div class="bg-cv-card rounded-[4px] p-5 border border-cv-border space-y-3">
-            <h2 class="font-headline uppercase text-lg font-bold text-cv-ink tracking-[0.02em]">REEL PERFORMANCE METRICS</h2>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h2 class="font-headline uppercase text-lg font-bold text-cv-ink tracking-[0.02em]">REEL PERFORMANCE METRICS</h2>
+              @if (dm.isSnapshotPreview && activeSnapshot; as snap) {
+                <div class="flex items-center gap-2 text-[11px] tabular-nums">
+                  <span class="px-2 py-0.5 rounded-[3px] bg-cv-well border border-[#f54e26] text-[#f54e26] font-semibold">
+                    Sync #{{ activeSnapIndex + 1 }} · {{ snap.capturedAt | date:'MMM d, h:mm a' }}
+                  </span>
+                  @if (pinnedSnapIdx !== null) {
+                    <button type="button" (click)="pinnedSnapIdx = null" class="text-[11px] font-semibold text-cv-ink-muted hover:text-cv-ink underline cursor-pointer">
+                      Latest
+                    </button>
+                  }
+                </div>
+              }
+            </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 tabular-nums">
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
-                <p class="font-headline text-2xl font-bold text-[#f54e26] leading-none">{{ reel.viewsCount > 0 ? reel.viewsCount.toLocaleString('en-IN') : (reel.mediaType === 'IMAGE' || reel.mediaType === 'CAROUSEL_ALBUM' || reel.mediaType === 'FEED' ? 'Photo' : '0') }}</p>
+                <p class="font-headline text-2xl font-bold text-[#f54e26] leading-none">{{ dm.viewsCount > 0 ? dm.viewsCount.toLocaleString('en-IN') : (reel.mediaType === 'IMAGE' || reel.mediaType === 'CAROUSEL_ALBUM' || reel.mediaType === 'FEED' ? 'Photo' : '0') }}</p>
                 <p class="text-[11px] font-semibold text-cv-ink mt-1">Reel views</p>
                 <p class="text-[10px] text-cv-ink-subtle">
-                  {{ reel.viewsCount > 0 ? 'Instagram Reel views' : (reel.mediaType === 'IMAGE' || reel.mediaType === 'CAROUSEL_ALBUM' || reel.mediaType === 'FEED' ? 'No views on photo posts' : 'Instagram Reel views') }}
+                  {{ dm.viewsCount > 0 ? 'Instagram Reel views' : (reel.mediaType === 'IMAGE' || reel.mediaType === 'CAROUSEL_ALBUM' || reel.mediaType === 'FEED' ? 'No views on photo posts' : 'Instagram Reel views') }}
                 </p>
               </div>
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
-                <p class="font-headline text-2xl font-bold text-cv-ink leading-none">{{ reel.likesCount.toLocaleString('en-IN') }}</p>
+                <p class="font-headline text-2xl font-bold text-cv-ink leading-none">{{ dm.likesCount.toLocaleString('en-IN') }}</p>
                 <p class="text-[11px] font-semibold text-cv-ink mt-1">Likes</p>
                 <p class="text-[10px] text-cv-ink-subtle">Post likes</p>
               </div>
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
-                <p class="font-headline text-2xl font-bold text-cv-gold leading-none">{{ reel.commentsCount.toLocaleString('en-IN') }}</p>
+                <p class="font-headline text-2xl font-bold text-cv-gold leading-none">{{ dm.commentsCount.toLocaleString('en-IN') }}</p>
                 <p class="text-[11px] font-semibold text-cv-ink mt-1">Comments</p>
                 <p class="text-[10px] text-cv-ink-subtle">Audience comments</p>
               </div>
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
-                <p class="font-headline text-2xl font-bold text-cv-green leading-none">{{ reel.engagementRate > 0 ? reel.engagementRate + '%' : '—' }}</p>
+                <p class="font-headline text-2xl font-bold text-cv-green leading-none">{{ dm.engagementRate > 0 ? dm.engagementRate + '%' : '—' }}</p>
                 <p class="text-[11px] font-semibold text-cv-ink mt-1">Engagement rate</p>
-                @if (derived.engagementVsCreatorAvgPct !== 0) {
-                  <p class="text-[10px]" [ngClass]="derived.engagementVsCreatorAvgPct >= 0 ? 'text-cv-green' : 'text-cv-ink-muted'">
-                    {{ derived.engagementVsCreatorAvgPct >= 0 ? '+' : '' }}{{ derived.engagementVsCreatorAvgPct }}% vs creator avg
+                @if (dm.engagementVsCreatorAvgPct !== 0) {
+                  <p class="text-[10px]" [ngClass]="dm.engagementVsCreatorAvgPct >= 0 ? 'text-cv-green' : 'text-cv-ink-muted'">
+                    {{ dm.engagementVsCreatorAvgPct >= 0 ? '+' : '' }}{{ dm.engagementVsCreatorAvgPct }}% vs creator avg
                   </p>
                 } @else {
                   <p class="text-[10px] text-cv-ink-subtle">Likes + Comments ratio</p>
                 }
               </div>
             </div>
-            @if ((reel.reachCount || 0) > 0 || (reel.savesCount || 0) > 0 || (reel.sharesCount || 0) > 0 || (reel.avgWatchTimeMs || 0) > 0) {
+            @if ((reel.reachCount || 0) > 0 || dm.savesCount > 0 || (reel.sharesCount || 0) > 0 || (reel.avgWatchTimeMs || 0) > 0) {
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-cv-border-faint tabular-nums">
                 <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
                   <p class="font-headline text-xl font-bold text-cv-ink leading-none">{{ (reel.reachCount || 0) > 0 ? (reel.reachCount || 0).toLocaleString('en-IN') : '—' }}</p>
                   <p class="text-[10px] uppercase font-semibold text-cv-ink-muted mt-1">Accounts Reached</p>
                 </div>
                 <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
-                  <p class="font-headline text-xl font-bold text-cv-blush leading-none">{{ (reel.savesCount || 0).toLocaleString('en-IN') }}</p>
+                  <p class="font-headline text-xl font-bold text-cv-blush leading-none">{{ dm.savesCount.toLocaleString('en-IN') }}</p>
                   <p class="text-[10px] uppercase font-semibold text-cv-ink-muted mt-1">Saves</p>
                 </div>
                 <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
@@ -282,32 +299,32 @@ import { safeExternalUrl } from '../utils/url-safety';
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs tabular-nums">
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
                 <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">Total Interactions</span>
-                <p class="font-headline text-xl font-bold text-cv-ink mt-1 leading-none">{{ derived.totalInteractions.toLocaleString('en-IN') }}</p>
+                <p class="font-headline text-xl font-bold text-cv-ink mt-1 leading-none">{{ dm.totalInteractions.toLocaleString('en-IN') }}</p>
                 <p class="text-[10px] text-cv-ink-subtle mt-1">Likes + Comments</p>
               </div>
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
                 <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">Like-to-View Rate</span>
-                <p class="font-headline text-xl font-bold text-cv-ink mt-1 leading-none">{{ derived.likeRatePct > 0 ? derived.likeRatePct + '%' : '—' }}</p>
+                <p class="font-headline text-xl font-bold text-cv-ink mt-1 leading-none">{{ dm.likeRatePct > 0 ? dm.likeRatePct + '%' : '—' }}</p>
                 <p class="text-[10px] text-cv-ink-subtle mt-1">Likes / Views</p>
               </div>
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
                 <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">Comment Rate</span>
-                <p class="font-headline text-xl font-bold text-cv-ink mt-1 leading-none">{{ derived.commentRatePct > 0 ? derived.commentRatePct + '%' : '—' }}</p>
+                <p class="font-headline text-xl font-bold text-cv-ink mt-1 leading-none">{{ dm.commentRatePct > 0 ? dm.commentRatePct + '%' : '—' }}</p>
                 <p class="text-[10px] text-cv-ink-subtle mt-1">Comments / Views</p>
               </div>
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
                 <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">View / Follower Ratio</span>
-                <p class="font-headline text-xl font-bold text-cv-green mt-1 leading-none">{{ derived.viewToFollowerRatioPct > 0 ? derived.viewToFollowerRatioPct + '%' : '—' }}</p>
+                <p class="font-headline text-xl font-bold text-cv-green mt-1 leading-none">{{ dm.viewToFollowerRatioPct > 0 ? dm.viewToFollowerRatioPct + '%' : '—' }}</p>
                 <p class="text-[10px] text-cv-ink-subtle mt-1">Views / Followers</p>
               </div>
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
                 <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">CPV (Cost Per View)</span>
-                <p class="font-headline text-xl font-bold text-[#f54e26] mt-1 leading-none">{{ derived.costPerView ? formatInr(derived.costPerView, 2) : '—' }}</p>
-                <p class="text-[10px] text-cv-ink-subtle mt-1">{{ derived.costQuoted ? formatInr(derived.costQuoted, 0) + (derived.costLabel ? ' • ' + derived.costLabel : '') : (derived.costLabel || 'Set cost on creator or reel') }}</p>
+                <p class="font-headline text-xl font-bold text-[#f54e26] mt-1 leading-none">{{ dm.costPerView ? formatInr(dm.costPerView, 2) : '—' }}</p>
+                <p class="text-[10px] text-cv-ink-subtle mt-1">{{ dm.costQuoted ? formatInr(dm.costQuoted, 0) + (dm.costLabel ? ' • ' + dm.costLabel : '') : (dm.costLabel || 'Set cost on creator or reel') }}</p>
               </div>
               <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
                 <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">CPE (Cost / Interaction)</span>
-                <p class="font-headline text-xl font-bold text-cv-gold mt-1 leading-none">{{ derived.costPerInteraction ? formatInr(derived.costPerInteraction, 1) : '—' }}</p>
+                <p class="font-headline text-xl font-bold text-cv-gold mt-1 leading-none">{{ dm.costPerInteraction ? formatInr(dm.costPerInteraction, 1) : '—' }}</p>
                 <p class="text-[10px] text-cv-ink-subtle mt-1">Per like or comment</p>
               </div>
             </div>
@@ -317,7 +334,7 @@ import { safeExternalUrl } from '../utils/url-safety';
     </section>
   `
 })
-export class ReelInsightsViewComponent {
+export class ReelInsightsViewComponent implements OnChanges {
   @Input({ required: true }) reel!: ReelDeliverable & { publishedAt?: string };
   @Input() creator: Creator | null = null;
   @Input() bundle: DeliverableInsightsBundle | null = null;
@@ -332,6 +349,20 @@ export class ReelInsightsViewComponent {
   @Output() copyUrl = new EventEmitter<string>();
 
   hoveredSnapIdx: number | null = null;
+  pinnedSnapIdx: number | null = null;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    const prevId = changes['reel']?.previousValue?.id;
+    const nextId = changes['reel']?.currentValue?.id;
+    if (changes['reel'] && prevId !== nextId) {
+      this.hoveredSnapIdx = null;
+      this.pinnedSnapIdx = null;
+    }
+  }
+
+  togglePinSnap(idx: number): void {
+    this.pinnedSnapIdx = this.pinnedSnapIdx === idx ? null : idx;
+  }
 
   get snapshotList() {
     const raw = this.bundle?.snapshots || [];
@@ -344,6 +375,9 @@ export class ReelInsightsViewComponent {
     if (this.hoveredSnapIdx !== null && this.hoveredSnapIdx >= 0 && this.hoveredSnapIdx < list.length) {
       return this.hoveredSnapIdx;
     }
+    if (this.pinnedSnapIdx !== null && this.pinnedSnapIdx >= 0 && this.pinnedSnapIdx < list.length) {
+      return this.pinnedSnapIdx;
+    }
     return list.length - 1;
   }
 
@@ -354,6 +388,18 @@ export class ReelInsightsViewComponent {
 
   get hasSnapshotViews(): boolean {
     return this.snapshotList.some(s => (s.viewsCount || 0) > 0);
+  }
+
+  get displayedMetrics() {
+    const list = this.snapshotList;
+    const isLatest = list.length === 0 || this.activeSnapIndex === list.length - 1;
+    return computeReelSnapshotMetrics({
+      reel: this.reel,
+      creator: this.creator,
+      snapshot: this.activeSnapshot,
+      isLatest,
+      bundleDerived: this.bundle?.derived || null
+    });
   }
 
   get snapshotChartData() {
@@ -382,37 +428,27 @@ export class ReelInsightsViewComponent {
 
   get derived() {
     if (this.bundle?.derived) return this.bundle.derived;
-    const views = this.reel?.viewsCount || 0;
-    const likes = this.reel?.likesCount || 0;
-    const comments = this.reel?.commentsCount || 0;
-    const totalInt = likes + comments;
-    const followers = this.creator?.followersCount || 0;
-    const creatorAvg = this.creator?.interactionRate90d || 0;
-    const eng = this.reel?.engagementRate || ((views > 0 ? views : followers) > 0 && totalInt > 0
-      ? Math.round((totalInt * 100.0 / (views > 0 ? views : followers)) * 100) / 100
-      : 0);
-    const mode: 'COLLECTIVE' | 'PER_DELIVERABLE' =
-      this.creator?.costMode === 'PER_DELIVERABLE' ? 'PER_DELIVERABLE' : 'COLLECTIVE';
-    const cost = mode === 'PER_DELIVERABLE'
-      ? (this.reel?.costQuoted || this.creator?.costQuoted || null)
-      : (this.creator?.costQuoted || null);
-
+    const base = computeReelSnapshotMetrics({
+      reel: this.reel,
+      creator: this.creator,
+      isLatest: true
+    });
     return {
-      totalInteractions: totalInt,
-      likeRatePct: views > 0 ? Math.round((likes * 100.0 / views) * 100) / 100 : 0,
-      commentRatePct: views > 0 ? Math.round((comments * 100.0 / views) * 100) / 100 : 0,
-      viewToFollowerRatioPct: followers > 0 && views > 0 ? Math.round((views * 100.0 / followers) * 10) / 10 : 0,
-      shareOfCreatorViewsPct: 0,
-      engagementVsCreatorAvgPct: creatorAvg > 0 ? Math.round((eng - creatorAvg) * 10) / 10 : 0,
+      totalInteractions: base.totalInteractions,
+      likeRatePct: base.likeRatePct,
+      commentRatePct: base.commentRatePct,
+      viewToFollowerRatioPct: base.viewToFollowerRatioPct,
+      shareOfCreatorViewsPct: base.shareOfCreatorViewsPct,
+      engagementVsCreatorAvgPct: base.engagementVsCreatorAvgPct,
       viewsDeltaLastSync: 0,
       likesDeltaLastSync: 0,
       commentsDeltaLastSync: 0,
       snapshotCount: 0,
-      costMode: mode,
-      costLabel: mode === 'PER_DELIVERABLE' ? (this.reel?.costQuoted ? 'Deliverable cost' : 'Per-deliverable rate') : 'Fixed creator cost',
-      costQuoted: cost,
-      costPerView: cost && views > 0 ? Math.round((cost / views) * 100) / 100 : null,
-      costPerInteraction: cost && totalInt > 0 ? Math.round((cost / totalInt) * 100) / 100 : null
+      costMode: base.costMode,
+      costLabel: base.costLabel,
+      costQuoted: base.costQuoted,
+      costPerView: base.costPerView,
+      costPerInteraction: base.costPerInteraction
     };
   }
 

@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { ApiService, Agency, AuditLog, Brand, Creator, CreatorInsightsBundle, DeliverableInsightsBundle, InstagramStatus, ReelDeliverable, ReelDeltaSummary } from '../services/api.service';
+import { ApiService, Agency, AuditLog, Brand, Creator, CreatorInsightsBundle, DeliverableInsightsBundle, InstagramStatus, ReelDeliverable, ReelDeltaSummary, ReelSnapshotPoint } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { DashboardExitAware, DashboardExitController } from '../services/auth.guard';
 import { ConfirmModalComponent } from '../components/confirm-modal.component';
@@ -18,6 +18,7 @@ import { ThemeToggleComponent } from '../components/theme-toggle.component';
 import { formatAuditSummary, formatAuditTitle } from '../utils/audit-format';
 import { formatPublishedDateLabel, formatReelDisplayTitle, formatReelMetaLabel } from '../utils/reel-format';
 import { computeAxisBarScale, formatShortAxisDate, formatSyncAxisLabel } from '../utils/chart-axis';
+import { computeReelSnapshotMetrics } from '../utils/reel-metrics';
 import { safeExternalUrl } from '../utils/url-safety';
 
 @Component({
@@ -551,20 +552,20 @@ import { safeExternalUrl } from '../utils/url-safety';
                       </div>
                     }
 
-                    @if (activeSpotlightReel(); as sr) {
+                    @if (spotlightDisplay(); as disp) {
                       @let deltaInfo = activeSpotlightDelta();
                       @let barChart = spotlightMomentumBars();
                       <div class="space-y-4">
                         <!-- Public URL Bar + Inline Refresh Button -->
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-[4px] bg-cv-well border border-cv-border-soft">
                           <div class="flex items-center gap-2 min-w-0 text-xs">
-                            <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="sr.status === 'VERIFIED' ? 'bg-cv-green' : 'bg-cv-gold'"></span>
-                            <span class="text-cv-ink font-medium truncate">{{ reelMetaLabel(sr) }}</span>
+                            <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="disp.reel.status === 'VERIFIED' ? 'bg-cv-green' : 'bg-cv-gold'"></span>
+                            <span class="text-cv-ink font-medium truncate">{{ reelMetaLabel(disp.reel) }}</span>
                           </div>
                           <div class="flex items-center gap-1.5 shrink-0">
-                            @if (canManageCreatorDeliverables(sc)) {
+                            @if (canManageCreatorDeliverables(disp.creator)) {
                               <button type="button"
-                                      (click)="refreshSpotlightReel(sr.id)"
+                                      (click)="refreshSpotlightReel(disp.reel.id)"
                                       [disabled]="syncingSpotlightReel()"
                                       class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-cv-control hover:bg-[#f54e26] hover:text-[#111111] text-cv-ink text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50">
                                 <svg class="w-3 h-3" [class.animate-spin]="syncingSpotlightReel()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -574,7 +575,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                               </button>
                             }
                             <button type="button"
-                                    (click)="openDeliverableInsights(sr)"
+                                    (click)="openDeliverableInsights(disp.reel)"
                                     class="px-2.5 py-1 rounded-[3px] bg-cv-control hover:bg-cv-ink hover:text-cv-ink-inverse text-cv-ink-muted text-[11px] font-semibold transition-colors cursor-pointer">
                               Insights →
                             </button>
@@ -584,16 +585,27 @@ import { safeExternalUrl } from '../utils/url-safety';
                         <!-- Campaign / Title + Real Sync Delta -->
                         <div class="flex flex-wrap items-center justify-between gap-3">
                           <div class="min-w-0">
-                            <span class="text-[11px] uppercase tracking-wider text-cv-ink-muted block truncate">{{ sc.campaignName || sc.handle }}</span>
-                            <h3 class="font-headline uppercase text-2xl font-bold text-cv-ink tracking-[0.015em] truncate">{{ displayReelTitle(sr) }}</h3>
+                            <span class="text-[11px] uppercase tracking-wider text-cv-ink-muted block truncate">{{ disp.subLabel }}</span>
+                            <h3 class="font-headline uppercase text-2xl font-bold text-cv-ink tracking-[0.015em] truncate">{{ displayReelTitle(disp.reel) }}</h3>
                           </div>
-                          @if ((deltaInfo?.viewsDeltaLastSync || 0) > 0) {
+                          @if (disp.metrics.isSnapshotPreview && disp.snapshotLabel) {
+                            <div class="flex items-center gap-2 shrink-0">
+                              <span class="px-2 py-0.5 rounded-[3px] bg-cv-well border border-[#f54e26] text-[#f54e26] text-[11px] font-bold uppercase tracking-wide tabular-nums">
+                                {{ disp.snapshotLabel }}
+                              </span>
+                              @if (disp.isPinnedSnapshot) {
+                                <button type="button" (click)="pinnedSpotlightSnapIdx.set(null)" class="text-[11px] font-semibold text-cv-ink-muted hover:text-cv-ink underline cursor-pointer">
+                                  Latest
+                                </button>
+                              }
+                            </div>
+                          } @else if (disp.metrics.viewsDelta > 0) {
                             <span class="px-2.5 py-0.5 rounded-[3px] bg-[#f54e26] text-[#111111] text-[11px] font-bold uppercase tracking-wide shrink-0 tabular-nums">
-                              +{{ formatNum(deltaInfo!.viewsDeltaLastSync) }} LAST SYNC
+                              +{{ formatNum(disp.metrics.viewsDelta) }} LAST SYNC
                             </span>
                           } @else {
                             <span class="text-[11px] font-medium text-cv-green shrink-0">
-                              {{ sr.status === 'VERIFIED' ? 'Live Reel numbers' : 'Saved URL · sync pending' }}
+                              {{ disp.reel.status === 'VERIFIED' ? 'Live Reel numbers' : 'Saved URL · sync pending' }}
                             </span>
                           }
                         </div>
@@ -602,23 +614,23 @@ import { safeExternalUrl } from '../utils/url-safety';
                         <div class="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-cv-divide rounded-[4px] bg-cv-well border border-cv-border tabular-nums">
                           <div class="px-3.5 py-3">
                             <span class="text-[11px] text-cv-ink-muted block">Views</span>
-                            <span class="font-headline text-2xl font-bold text-cv-ink">{{ formatNum(sr.viewsCount || 0) }}</span>
+                            <span class="font-headline text-2xl font-bold text-cv-ink">{{ disp.metrics.viewsCount.toLocaleString('en-IN') }}</span>
                           </div>
                           <div class="px-3.5 py-3">
                             <span class="text-[11px] text-cv-ink-muted block">Likes</span>
-                            <span class="font-headline text-2xl font-bold text-cv-gold">{{ formatNum(sr.likesCount || 0) }}</span>
+                            <span class="font-headline text-2xl font-bold text-cv-gold">{{ disp.metrics.likesCount.toLocaleString('en-IN') }}</span>
                           </div>
                           <div class="px-3.5 py-3">
                             <span class="text-[11px] text-cv-ink-muted block">Comments</span>
-                            <span class="font-headline text-2xl font-bold text-cv-green">{{ (sr.commentsCount || 0).toLocaleString('en-IN') }}</span>
+                            <span class="font-headline text-2xl font-bold text-cv-green">{{ disp.metrics.commentsCount.toLocaleString('en-IN') }}</span>
                           </div>
                           <div class="px-3.5 py-3">
-                            @if (sr.metricsSource === 'META_GRAPH_INSIGHTS' || (sr.savesCount || 0) > 0) {
+                            @if (disp.reel.metricsSource === 'META_GRAPH_INSIGHTS' || disp.metrics.savesCount > 0) {
                               <span class="text-[11px] text-cv-ink-muted block">Saves (OAuth)</span>
-                              <span class="font-headline text-2xl font-bold text-cv-blush">{{ formatNum(sr.savesCount || 0) }}</span>
+                              <span class="font-headline text-2xl font-bold text-cv-blush">{{ disp.metrics.savesCount.toLocaleString('en-IN') }}</span>
                             } @else {
                               <span class="text-[11px] text-cv-ink-muted block">Eng. Rate</span>
-                              <span class="font-headline text-2xl font-bold text-cv-blush">{{ sr.engagementRate > 0 ? sr.engagementRate + '%' : '—' }}</span>
+                              <span class="font-headline text-2xl font-bold text-cv-blush">{{ disp.metrics.engagementRate > 0 ? disp.metrics.engagementRate + '%' : '—' }}</span>
                             }
                           </div>
                         </div>
@@ -644,8 +656,8 @@ import { safeExternalUrl } from '../utils/url-safety';
                               }
                             </div>
                             @if (barChart.activeBar; as ab) {
-                              <span class="text-cv-ink font-medium tabular-nums truncate max-w-[300px]">
-                                {{ ab.label }} · {{ formatNum(ab.value) }} {{ barChart.unit }}
+                              <span class="text-cv-ink font-medium tabular-nums truncate max-w-[320px]">
+                                {{ ab.label }} · {{ ab.value.toLocaleString('en-IN') }} {{ barChart.unit }}
                                 @if ((ab.delta || 0) > 0) {
                                   <span class="text-cv-green">(+{{ formatNum(ab.delta!) }})</span>
                                 }
@@ -661,7 +673,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                                 <span>{{ barChart.yMinLabel }}</span>
                               </div>
                               <!-- Plot Gridlines, Bars & X-Axis -->
-                              <div class="flex-1 min-w-0 flex flex-col">
+                              <div class="flex-1 min-w-0 flex flex-col" (mouseleave)="hoveredSpotlightBarIdx.set(null)">
                                 <div class="relative h-[68px] flex items-end gap-2 px-1 border-b border-cv-border">
                                   <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-cv-border-faint"></div>
                                   <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-cv-border-faint"></div>
@@ -670,7 +682,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                                             (mouseenter)="hoveredSpotlightBarIdx.set($index)"
                                             (click)="onSpotlightBarClick($index, bar)"
                                             class="relative z-10 group flex-1 h-full flex items-end justify-center cursor-pointer focus:outline-none"
-                                            [attr.title]="bar.label + ' — ' + formatNum(bar.value) + ' ' + barChart.unit"
+                                            [attr.title]="bar.label + ' — ' + bar.value.toLocaleString('en-IN') + ' ' + barChart.unit"
                                             [attr.aria-label]="bar.label">
                                       <span class="w-full max-w-[64px] block rounded-t-[2px] transition-all duration-150"
                                             [style.height.px]="bar.px"
@@ -1315,6 +1327,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   spotlightReelId = signal<string>('');
   spotlightChartMode = signal<'auto' | 'snapshots' | 'reels'>('auto');
   hoveredSpotlightBarIdx = signal<number | null>(null);
+  pinnedSpotlightSnapIdx = signal<number | null>(null);
   syncingSpotlightReel = signal(false);
   syncing = signal(false);
   igFetching = signal(false);
@@ -1448,7 +1461,16 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     const useSnapshots = (pref === 'snapshots' && snaps.length > 0)
       || (pref === 'auto' && snaps.length >= 2);
 
-    type BarItem = { label: string; xLabel: string; value: number; px: number; delta?: number; reel?: ReelDeliverable };
+    type BarItem = {
+      label: string;
+      xLabel: string;
+      value: number;
+      px: number;
+      delta?: number;
+      reel?: ReelDeliverable;
+      snapshot?: ReelSnapshotPoint;
+      isLatest?: boolean;
+    };
     let items: BarItem[] = [];
     const mode: 'snapshots' | 'reels' = useSnapshots ? 'snapshots' : 'reels';
     let unit = 'views';
@@ -1471,7 +1493,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
         xLabel: formatSyncAxisLabel(idx, s.capturedAt, sameDay),
         value: vals[idx],
         px: scale.heightsPx[idx],
-        delta: hasSnapViews ? (s.deltaViews || 0) : 0
+        delta: hasSnapViews ? (s.deltaViews || 0) : 0,
+        snapshot: s,
+        isLatest: idx === slice.length - 1
       }));
     } else {
       const sourceReels = this.spotlightCreatorReels().length > 1
@@ -1503,10 +1527,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     }
 
     const hovered = this.hoveredSpotlightBarIdx();
+    const pinnedSnap = mode === 'snapshots' ? this.pinnedSpotlightSnapIdx() : null;
     const activeReelId = this.activeSpotlightReel()?.id;
     let activeIdx = 0;
     if (hovered !== null && hovered >= 0 && hovered < items.length) {
       activeIdx = hovered;
+    } else if (pinnedSnap !== null && pinnedSnap >= 0 && pinnedSnap < items.length) {
+      activeIdx = pinnedSnap;
     } else if (mode === 'reels' && activeReelId) {
       const matched = items.findIndex(i => i.reel?.id === activeReelId);
       activeIdx = matched >= 0 ? matched : 0;
@@ -1524,6 +1551,65 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
       items,
       activeIdx,
       activeBar
+    };
+  });
+
+  spotlightDisplay = computed(() => {
+    const sc = this.spotlightCreator();
+    const sr = this.activeSpotlightReel();
+    if (!sc || !sr) return null;
+
+    const barChart = this.spotlightMomentumBars();
+    const activeBar = barChart.activeBar;
+
+    if (barChart.mode === 'reels' && activeBar?.reel) {
+      const displayReel = activeBar.reel;
+      const displayCreator = this.creators().find(c => c.id === displayReel.creatorId) || sc;
+      const deltaInfo = displayReel.id ? (this.reelDeltas()[displayReel.id] || null) : null;
+      const metrics = computeReelSnapshotMetrics({
+        reel: displayReel,
+        creator: displayCreator,
+        isLatest: true,
+        viewsDeltaLastSync: deltaInfo?.viewsDeltaLastSync || 0
+      });
+      const subLabel = displayCreator.id !== sc.id
+        ? (displayCreator.handle || displayReel.creatorHandle)
+        : (displayCreator.campaignName || displayCreator.handle);
+      return {
+        reel: displayReel,
+        creator: displayCreator,
+        subLabel,
+        metrics,
+        snapshotLabel: '',
+        isPinnedSnapshot: false
+      };
+    }
+
+    const deltaInfo = this.activeSpotlightDelta();
+    const isLatest = barChart.mode !== 'snapshots' || !activeBar?.snapshot || !!activeBar.isLatest;
+    const metrics = computeReelSnapshotMetrics({
+      reel: sr,
+      creator: sc,
+      snapshot: activeBar?.snapshot || null,
+      isLatest,
+      viewsDeltaLastSync: deltaInfo?.viewsDeltaLastSync || 0
+    });
+    const stamp = activeBar?.xLabel.replace(/^#\d+\s*(?:·\s*)?/, '').trim() || '';
+    const snapshotLabel = metrics.isSnapshotPreview && activeBar
+      ? (stamp ? `${activeBar.label} · ${stamp}` : activeBar.label)
+      : '';
+    const isPinnedSnapshot = barChart.mode === 'snapshots'
+      && this.hoveredSpotlightBarIdx() === null
+      && this.pinnedSpotlightSnapIdx() !== null
+      && !isLatest;
+
+    return {
+      reel: sr,
+      creator: sc,
+      subLabel: sc.campaignName || sc.handle,
+      metrics,
+      snapshotLabel,
+      isPinnedSnapshot
     };
   });
 
@@ -2600,25 +2686,31 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     this.spotlightReelId.set('');
     this.spotlightChartMode.set('auto');
     this.hoveredSpotlightBarIdx.set(null);
+    this.pinnedSpotlightSnapIdx.set(null);
   }
 
   selectSpotlightReel(reelId: string) {
     this.spotlightReelId.set(reelId);
     this.spotlightChartMode.set('auto');
     this.hoveredSpotlightBarIdx.set(null);
+    this.pinnedSpotlightSnapIdx.set(null);
   }
 
   setSpotlightChartMode(mode: 'snapshots' | 'reels') {
     this.spotlightChartMode.set(mode);
     this.hoveredSpotlightBarIdx.set(null);
+    this.pinnedSpotlightSnapIdx.set(null);
   }
 
-  onSpotlightBarClick(index: number, bar: { reel?: ReelDeliverable }) {
-    this.hoveredSpotlightBarIdx.set(index);
+  onSpotlightBarClick(index: number, bar: { reel?: ReelDeliverable; snapshot?: ReelSnapshotPoint }) {
     if (bar.reel) {
+      this.hoveredSpotlightBarIdx.set(null);
+      this.pinnedSpotlightSnapIdx.set(null);
       this.spotlightCreatorId.set(bar.reel.creatorId);
       this.spotlightReelId.set(bar.reel.id);
+      return;
     }
+    this.pinnedSpotlightSnapIdx.update(cur => cur === index ? null : index);
   }
 
   refreshSpotlightReel(deliverableId: string) {
