@@ -33,6 +33,11 @@ public class Campaign {
     @Column(columnDefinition = "TEXT")
     private String briefNotes = "";
 
+    @Column(length = 400)
+    private String requiredHashtags;
+
+    private Boolean requireDisclosure;
+
     private Boolean demoData = false;
 
     @Column(nullable = false, updatable = false)
@@ -59,6 +64,13 @@ public class Campaign {
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
     public String getBriefNotes() { return briefNotes != null ? briefNotes : ""; }
     public void setBriefNotes(String briefNotes) { this.briefNotes = briefNotes != null ? briefNotes : ""; }
+
+    public String getRequiredHashtags() { return requiredHashtags != null ? requiredHashtags : ""; }
+    public void setRequiredHashtags(String requiredHashtags) { this.requiredHashtags = requiredHashtags != null ? requiredHashtags.trim() : null; }
+
+    public boolean isRequireDisclosure() { return Boolean.TRUE.equals(requireDisclosure); }
+    public Boolean getRequireDisclosure() { return requireDisclosure; }
+    public void setRequireDisclosure(Boolean requireDisclosure) { this.requireDisclosure = requireDisclosure; }
     public boolean isDemoData() { return Boolean.TRUE.equals(demoData); }
     public void setDemoData(Boolean demoData) { this.demoData = Boolean.TRUE.equals(demoData); }
     public Instant getCreatedAt() { return createdAt; }

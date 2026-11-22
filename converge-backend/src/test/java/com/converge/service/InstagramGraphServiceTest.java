@@ -1,6 +1,7 @@
 package com.converge.service;
 
 import com.converge.config.InstagramProperties;
+import com.converge.entity.Campaign;
 import com.converge.entity.Creator;
 import com.converge.entity.ReelDeliverable;
 import org.junit.jupiter.api.BeforeEach;
@@ -646,5 +647,83 @@ class InstagramGraphServiceTest {
         assertNull(InstagramGraphService.normalizeMetaSkipRatePct(0.0));
 
         mockServer.verify();
+    }
+
+    @Test
+    void extractsHashtagsEvaluatesComplianceAndAggregatesHashtagAnalytics() {
+        List<String> tags = InstagramGraphService.extractHashtags(
+                "Morning glow ✨ #SummerGlow, #Vitamin_C! #summerglow #ad #x foo#bar");
+        assertEquals(List.of("#SummerGlow", "#Vitamin_C", "#ad"), tags);
+
+        assertEquals("#summerglow, #BrandIndia",
+                InstagramGraphService.normalizeRequiredHashtagsString("summerglow, ##BrandIndia, #SUMMERGLOW, !"));
+
+        assertTrue(InstagramGraphService.hasAdDisclosure("Full review #PaidPartnership"));
+        assertTrue(InstagramGraphService.hasAdDisclosure("Try it today #ad"));
+        assertFalse(InstagramGraphService.hasAdDisclosure("Love #adobe tools and #skincare"));
+
+        Campaign unconfigured = new Campaign();
+        ReelDeliverable missingCap = new ReelDeliverable();
+        missingCap.setId(UUID.randomUUID());
+        assertEquals("UNCONFIGURED", InstagramGraphService.evaluateReelHashtagCompliance(missingCap, unconfigured).get("status"));
+        assertTrue((Boolean) InstagramGraphService.evaluateReelHashtagCompliance(missingCap, unconfigured).get("compliant"));
+
+        Campaign strictCamp = new Campaign();
+        strictCamp.setRequiredHashtags("#SummerGlow, #GlowRoutine");
+        strictCamp.setRequireDisclosure(true);
+
+        assertEquals("NO_CAPTION", InstagramGraphService.evaluateReelHashtagCompliance(missingCap, strictCamp).get("status"));
+
+        UUID c1 = UUID.randomUUID();
+        UUID c2 = UUID.randomUUID();
+
+        ReelDeliverable compliantReel = new ReelDeliverable();
+        compliantReel.setId(UUID.randomUUID());
+        compliantReel.setCreatorId(c1);
+        compliantReel.setCaption("Daily routine #summerglow #GLOWROUTINE #VitaminC #ad");
+        compliantReel.setViewsCount(400_000L);
+        compliantReel.setLikesCount(20_000L);
+        compliantReel.setCommentsCount(400L);
+        compliantReel.setHookRatePct(50.0);
+
+        ReelDeliverable partialReel = new ReelDeliverable();
+        partialReel.setId(UUID.randomUUID());
+        partialReel.setCreatorId(c2);
+        partialReel.setCaption("No disclosure yet #SummerGlow #Skincare");
+        partialReel.setViewsCount(100_000L);
+        partialReel.setLikesCount(4_000L);
+        partialReel.setCommentsCount(100L);
+        partialReel.setHookRatePct(40.0);
+
+        var compliantEval = InstagramGraphService.evaluateReelHashtagCompliance(compliantReel, strictCamp);
+        assertEquals("COMPLIANT", compliantEval.get("status"));
+        assertTrue((Boolean) compliantEval.get("compliant"));
+
+        var partialEval = InstagramGraphService.evaluateReelHashtagCompliance(partialReel, strictCamp);
+        assertEquals("MISSING_BOTH", partialEval.get("status"));
+        assertFalse((Boolean) partialEval.get("compliant"));
+        assertEquals(List.of("#GlowRoutine"), partialEval.get("missingTags"));
+        assertEquals(true, partialEval.get("disclosureMissing"));
+
+        var rollup = InstagramGraphService.buildCampaignCompliance(strictCamp, List.of(compliantReel, partialReel, missingCap));
+        assertEquals(true, rollup.summary().get("hasRules"));
+        assertEquals(1, rollup.summary().get("compliantCount"));
+        assertEquals(1, rollup.summary().get("nonCompliantCount"));
+        assertEquals(1, rollup.summary().get("noCaptionCount"));
+        assertEquals(50.0, rollup.summary().get("complianceRatePct"));
+
+        // Hashtag leaderboard excludes disclosure-only tags like #ad and ranks by views descending
+        var leaderboard = InstagramGraphService.buildHashtagAnalytics(List.of(compliantReel, partialReel));
+        assertEquals(4, leaderboard.size());
+        assertEquals("#SummerGlow", leaderboard.get(0).get("hashtag"));
+        assertEquals(2, leaderboard.get(0).get("reelsCount"));
+        assertEquals(2, leaderboard.get(0).get("creatorsCount"));
+        assertEquals(500_000L, leaderboard.get(0).get("totalViews"));
+        assertEquals(250_000L, leaderboard.get(0).get("avgViews"));
+        assertEquals(48.0, leaderboard.get(0).get("avgHookRatePct"));
+        assertTrue(leaderboard.stream().noneMatch(r -> "#ad".equalsIgnoreCase(String.valueOf(r.get("hashtag")))));
+
+        var creatorTags = InstagramGraphService.buildCreatorHashtagMap(List.of(compliantReel, partialReel));
+        assertEquals(List.of("#GLOWROUTINE", "#summerglow", "#VitaminC"), creatorTags.get(c1));
     }
 }

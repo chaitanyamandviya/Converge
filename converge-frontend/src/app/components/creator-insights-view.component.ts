@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signa
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CampaignSummary, Creator, CreatorInsightsBundle, InstagramStatus, ReelDeliverable } from '../services/api.service';
-import { computeViewWeightedHookRate, describeHookRate } from '../utils/campaign-analytics';
+import { computeHashtagLeaderboard, computeViewWeightedHookRate, describeHookRate, evaluateCaptionCompliance, extractCaptionHashtags, isDisclosureOnlyHashtag, matchCampaignsByCaption } from '../utils/campaign-analytics';
 import { formatPublishedDateLabel, formatReelDisplayTitle } from '../utils/reel-format';
 import { safeExternalUrl } from '../utils/url-safety';
 
@@ -66,10 +66,13 @@ import { safeExternalUrl } from '../utils/url-safety';
                     <span>• {{ ic.country }}</span>
                   }
                 </div>
-                @if (traitsList().length > 0) {
+                @if (traitsList().length > 0 || creatorHashtagPills().length > 0) {
                   <div class="flex flex-wrap gap-1.5 mt-2">
                     @for (trait of traitsList(); track trait) {
                       <span class="px-2 py-0.5 rounded-[3px] bg-cv-card border border-cv-border text-cv-ink text-[10px] font-medium">{{ trait }}</span>
+                    }
+                    @for (ht of creatorHashtagPills(); track ht) {
+                      <span class="px-2 py-0.5 rounded-[3px] bg-[#f54e26]/10 border border-[#f54e26]/25 text-[#f54e26] text-[10px] font-medium">{{ ht }}</span>
                     }
                   </div>
                 }
@@ -599,7 +602,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                             }
                             {{ formatCount(m.likeCount || 0) }} likes • {{ formatCount(m.commentsCount || 0) }} cmts
                           </p>
-                          <div class="flex items-center gap-1.5 text-[10px] text-cv-ink-subtle mt-0.5 tabular-nums">
+                          <div class="flex items-center gap-1.5 text-[10px] text-cv-ink-subtle mt-0.5 tabular-nums flex-wrap">
                             @if (m.timestamp) {
                               <span>{{ m.timestamp | date:'MMM d, y' }}</span>
                             }
@@ -607,7 +610,20 @@ import { safeExternalUrl } from '../utils/url-safety';
                               <span>•</span>
                               <a [href]="safeMediaUrl" target="_blank" rel="noopener noreferrer" class="text-cv-ink-muted hover:text-[#f54e26] hover:underline">View ↗</a>
                             }
+                            @for (cm of mediaCampaignMatches(m); track cm.id) {
+                              <span class="px-1.5 py-0.2 rounded-[2px] bg-[#fabf29]/20 border border-[#fabf29]/40 text-cv-gold font-semibold">
+                                Matches {{ cm.name }}
+                              </span>
+                            }
                           </div>
+                          @let mTags = captionTags(m.caption).slice(0, 3);
+                          @if (mTags.length > 0) {
+                            <div class="flex flex-wrap gap-1 mt-1">
+                              @for (tag of mTags; track tag) {
+                                <span class="text-[10px] text-cv-ink-subtle">{{ tag }}</span>
+                              }
+                            </div>
+                          }
                         </div>
                       </div>
                       @if (alreadyTracked) {
@@ -647,6 +663,24 @@ import { safeExternalUrl } from '../utils/url-safety';
                             <span class="px-1.5 py-0.5 rounded-[2px] bg-cv-card border border-cv-border text-[10px] font-medium text-cv-ink-muted shrink-0">
                               {{ r.campaignTag || ic.campaignName }}
                             </span>
+                          }
+                          @let comp = getDeliverableCompliance(r);
+                          @if (comp.hasRules) {
+                            @if (comp.status === 'COMPLIANT') {
+                              <span class="px-1.5 py-0.5 rounded-[2px] bg-[#007656]/20 border border-[#007656]/30 text-cv-green text-[10px] font-bold uppercase tracking-wide shrink-0">✓ Compliant</span>
+                            } @else if (comp.status === 'NO_CAPTION') {
+                              <span class="px-1.5 py-0.5 rounded-[2px] bg-cv-card border border-cv-border text-cv-ink-subtle text-[10px] font-medium shrink-0">Caption pending sync</span>
+                            } @else {
+                              <span class="px-1.5 py-0.5 rounded-[2px] bg-[#fabf29]/20 border border-[#fabf29]/40 text-cv-gold text-[10px] font-bold shrink-0">
+                                @if (comp.disclosureMissing && comp.missingTags.length > 0) {
+                                  Missing #ad &amp; {{ comp.missingTags.join(', ') }}
+                                } @else if (comp.disclosureMissing) {
+                                  Missing #ad
+                                } @else {
+                                  Missing {{ comp.missingTags.join(', ') }}
+                                }
+                              </span>
+                            }
                           }
                         </div>
                         <p class="text-xs text-cv-ink-muted truncate mt-0.5 tabular-nums">
@@ -767,7 +801,7 @@ export class CreatorInsightsViewComponent implements OnChanges {
   @Output() syncCreator = new EventEmitter<void>();
   @Output() saveProfile = new EventEmitter<Record<string, any>>();
   @Output() browseMedia = new EventEmitter<Creator>();
-  @Output() addReel = new EventEmitter<{ title: string; reelUrl: string; costQuoted?: string; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }>();
+  @Output() addReel = new EventEmitter<{ title: string; reelUrl: string; caption?: string; costQuoted?: string; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }>();
   @Output() editDeliverable = new EventEmitter<{ id: string; title: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: number | null }>();
   @Output() syncReel = new EventEmitter<string>();
   @Output() openReel = new EventEmitter<ReelDeliverable>();
@@ -1163,12 +1197,19 @@ export class CreatorInsightsViewComponent implements OnChanges {
     const kind = this.isReelMedia(m) ? 'Instagram Reel' : (this.isFeedVideoMedia(m) ? 'Video Post' : 'Instagram Post');
     const publishedLabel = formatPublishedDateLabel(m.timestamp);
     const title = publishedLabel ? `${kind} · ${publishedLabel}` : kind;
-    const chosenCamp = this.newReelCampaignId
+    let chosenCamp = this.newReelCampaignId
       ? this.campaigns.find(c => c.id === this.newReelCampaignId)
       : null;
+    if (!chosenCamp) {
+      const matches = this.mediaCampaignMatches(m);
+      if (matches.length === 1) {
+        chosenCamp = this.campaigns.find(c => c.id === matches[0].id) || null;
+      }
+    }
     this.addReel.emit({
       title,
       reelUrl: m.permalink,
+      caption: typeof m.caption === 'string' && m.caption.trim() ? m.caption.trim() : undefined,
       campaignId: chosenCamp ? chosenCamp.id : undefined,
       campaignTag: chosenCamp ? chosenCamp.name : undefined
     });
@@ -1324,5 +1365,45 @@ export class CreatorInsightsViewComponent implements OnChanges {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
     });
+  }
+
+  readonly captionTags = extractCaptionHashtags;
+
+  creatorHashtagPills(): string[] {
+    const trackedRows = computeHashtagLeaderboard(this.reels || []);
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const row of trackedRows) {
+      const lower = row.hashtag.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        out.push(row.hashtag);
+        if (out.length >= 6) return out;
+      }
+    }
+    for (const m of this.drawerMedia || []) {
+      for (const tag of extractCaptionHashtags(m?.caption)) {
+        if (isDisclosureOnlyHashtag(tag)) continue;
+        const lower = tag.toLowerCase();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          out.push(tag);
+          if (out.length >= 6) return out;
+        }
+      }
+    }
+    return out;
+  }
+
+  mediaCampaignMatches(m: any): Array<{ id: string; name: string; matchedTags: string[] }> {
+    return matchCampaignsByCaption(m?.caption, this.campaigns || []);
+  }
+
+  getDeliverableCompliance(r: ReelDeliverable) {
+    const camp = (this.campaigns || []).find((c) =>
+      (r.campaignId && c.id === r.campaignId)
+      || (r.campaignTag && c.name.toLowerCase() === r.campaignTag.trim().toLowerCase())
+    );
+    return evaluateCaptionCompliance(r.caption, camp?.requiredHashtags, camp?.requireDisclosure);
   }
 }

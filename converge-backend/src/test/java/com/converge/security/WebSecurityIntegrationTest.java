@@ -734,4 +734,97 @@ class WebSecurityIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.deliverables.length()").value(1));
     }
+
+    @Test
+    void enforcesCampaignHashtagRulesAndAgencyScopedHashtagAnalytics() throws Exception {
+        String tokenA = jwtService.generateToken(managerA);
+
+        mockMvc.perform(post("/api/brands/{id}/agencies", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Pulse Agency\",\"contactName\":\"Pulse Lead\",\"contactEmail\":\"pulse@agency.test\",\"status\":\"CONNECTED\"}"))
+                .andExpect(status().isOk());
+
+        User agencyUser = new User();
+        agencyUser.setName("Pulse Lead");
+        agencyUser.setEmail("pulse@agency.test");
+        agencyUser.setRole("BRAND_MANAGER");
+        agencyUser.setVerified(true);
+        agencyUser.setPasswordHash(passwordEncoder.encode("AgencyPass9!"));
+        agencyUser = userRepository.save(agencyUser);
+        String agencyToken = jwtService.generateToken(agencyUser);
+
+        var campRes = mockMvc.perform(post("/api/brands/{id}/campaigns", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Glow Compliance Wave\",\"status\":\"ACTIVE\",\"requiredHashtags\":\"SummerDrop, ##BrandIndia\",\"requireDisclosure\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.campaign.requiredHashtags").value("#SummerDrop, #BrandIndia"))
+                .andExpect(jsonPath("$.campaign.requireDisclosure").value(true))
+                .andReturn();
+        String campId = objectMapper.readTree(campRes.getResponse().getContentAsString())
+                .get("campaign").get("id").asText();
+
+        // Partner Agency cannot mutate campaign hashtag compliance rules
+        mockMvc.perform(patch("/api/campaigns/{cid}", campId)
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"requiredHashtags\":\"#FakeTag\",\"requireDisclosure\":false}"))
+                .andExpect(status().isForbidden());
+
+        var agencyCreatorRes = mockMvc.perform(post("/api/brands/{id}/creators", brandA.getId())
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Agency Creator\",\"handle\":\"@agency_tagger\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String agencyCreatorId = objectMapper.readTree(agencyCreatorRes.getResponse().getContentAsString())
+                .get("id").asText();
+
+        // Brand-direct compliant deliverable
+        var brandDelRes = mockMvc.perform(post("/api/creators/{id}/deliverables", creatorA.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Compliant Launch\",\"reelUrl\":\"https://www.instagram.com/reel/C9HashComp01/\",\"campaignTag\":\"Glow Compliance Wave\",\"caption\":\"Routine #SummerDrop #BrandIndia #BrandExclusive #ad\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String brandDelId = objectMapper.readTree(brandDelRes.getResponse().getContentAsString())
+                .get("id").asText();
+
+        // Agency non-compliant deliverable (missing #BrandIndia and #ad disclosure)
+        var agencyDelRes = mockMvc.perform(post("/api/creators/{id}/deliverables", agencyCreatorId)
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Agency Post\",\"reelUrl\":\"https://www.instagram.com/reel/C9HashAgency01/\",\"campaignTag\":\"Glow Compliance Wave\",\"caption\":\"Try this #SummerDrop #AgencyStyle\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String agencyDelId = objectMapper.readTree(agencyDelRes.getResponse().getContentAsString())
+                .get("id").asText();
+
+        // Brand Manager sees both deliverables in campaign detail + 50% compliance
+        mockMvc.perform(get("/api/campaigns/{cid}", campId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.complianceSummary.hasRules").value(true))
+                .andExpect(jsonPath("$.complianceSummary.compliantCount").value(1))
+                .andExpect(jsonPath("$.complianceSummary.nonCompliantCount").value(1))
+                .andExpect(jsonPath("$.complianceSummary.complianceRatePct").value(50.0))
+                .andExpect(jsonPath("$.deliverableCompliance['" + brandDelId + "'].status").value("COMPLIANT"))
+                .andExpect(jsonPath("$.deliverableCompliance['" + agencyDelId + "'].status").value("MISSING_BOTH"));
+
+        // Partner Agency sees strictly agency-scoped hashtagAnalytics & compliance in overview and campaign detail
+        mockMvc.perform(get("/api/campaigns/{cid}", campId)
+                        .header("Authorization", "Bearer " + agencyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deliverables.length()").value(1))
+                .andExpect(jsonPath("$.complianceSummary.nonCompliantCount").value(1))
+                .andExpect(content().string(not(containsString("#BrandExclusive"))));
+
+        mockMvc.perform(get("/api/brands/{id}", brandA.getId())
+                        .header("Authorization", "Bearer " + agencyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hashtagAnalytics.length()").value(2))
+                .andExpect(content().string(containsString("#AgencyStyle")))
+                .andExpect(content().string(not(containsString("#BrandExclusive"))));
+    }
 }

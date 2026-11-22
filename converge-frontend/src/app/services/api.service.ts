@@ -229,6 +229,45 @@ export interface ReelDeliverable {
   syncedAt: string;
 }
 
+export interface HashtagPerfRow {
+  hashtag: string;
+  normalizedHashtag?: string;
+  reelsCount: number;
+  creatorsCount: number;
+  totalViews: number;
+  avgViews: number;
+  totalInteractions: number;
+  engagementRate: number;
+  avgHookRatePct?: number | null;
+}
+
+export interface DeliverableComplianceStatus {
+  hashtags: string[];
+  hasDisclosure: boolean;
+  hasRules: boolean;
+  captionPresent: boolean;
+  requiredTags: string[];
+  missingTags: string[];
+  requireDisclosure: boolean;
+  disclosureMissing: boolean;
+  compliant: boolean;
+  status: 'UNCONFIGURED' | 'NO_CAPTION' | 'COMPLIANT' | 'MISSING_DISCLOSURE' | 'MISSING_TAGS' | 'MISSING_BOTH';
+}
+
+export interface CampaignComplianceSummary {
+  hasRules: boolean;
+  requiredTags: string[];
+  requireDisclosure: boolean;
+  totalReels: number;
+  evaluableReels: number;
+  compliantCount: number;
+  nonCompliantCount: number;
+  missingDisclosureCount: number;
+  missingTagsCount: number;
+  noCaptionCount: number;
+  complianceRatePct?: number | null;
+}
+
 export interface CampaignSummary {
   id: string;
   brandId: string;
@@ -239,6 +278,9 @@ export interface CampaignSummary {
   startDate?: string | null;
   endDate?: string | null;
   briefNotes?: string;
+  requiredHashtags?: string;
+  requireDisclosure?: boolean;
+  complianceSummary?: CampaignComplianceSummary;
   demoData?: boolean;
   createdAt: string;
   creatorsCount: number;
@@ -262,6 +304,8 @@ export interface Campaign {
   startDate?: string | null;
   endDate?: string | null;
   briefNotes?: string;
+  requiredHashtags?: string;
+  requireDisclosure?: boolean;
   demoData?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -298,6 +342,9 @@ export interface CampaignDetailBundle {
   assignedCreators: CampaignCreatorEntry[];
   deliverables: ReelDeliverable[];
   reelDeltas?: Record<string, ReelDeltaSummary>;
+  complianceSummary?: CampaignComplianceSummary;
+  deliverableCompliance?: Record<string, DeliverableComplianceStatus>;
+  hashtagAnalytics?: HashtagPerfRow[];
   stats: {
     viewsDelivered: number;
     totalInteractions: number;
@@ -405,6 +452,8 @@ export class ApiService {
     recentReels: ReelDeliverable[];
     deliverables?: ReelDeliverable[];
     campaigns?: CampaignSummary[];
+    hashtagAnalytics?: HashtagPerfRow[];
+    creatorHashtags?: Record<string, string[]>;
     reelDeltas?: Record<string, ReelDeltaSummary>;
     stats: {
       totalReels: number;
@@ -471,7 +520,7 @@ export class ApiService {
     return this.http.get<ReelDeliverable[]>(`/api/creators/${creatorId}/deliverables`);
   }
 
-  addReelDeliverable(creatorId: string, payload: { title: string; reelUrl: string; costQuoted?: string | number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }): Observable<ReelDeliverable> {
+  addReelDeliverable(creatorId: string, payload: { title: string; reelUrl: string; caption?: string; costQuoted?: string | number | null; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }): Observable<ReelDeliverable> {
     return this.http.post<ReelDeliverable>(`/api/creators/${creatorId}/deliverables`, payload);
   }
 
@@ -613,6 +662,8 @@ export class ApiService {
     startDate?: string | null;
     endDate?: string | null;
     briefNotes?: string;
+    requiredHashtags?: string;
+    requireDisclosure?: boolean;
   }): Observable<CampaignDetailBundle> {
     return this.http.post<CampaignDetailBundle>(`/api/brands/${brandId}/campaigns`, payload);
   }
@@ -629,6 +680,8 @@ export class ApiService {
     startDate?: string | null;
     endDate?: string | null;
     briefNotes?: string;
+    requiredHashtags?: string;
+    requireDisclosure?: boolean;
   }): Observable<CampaignDetailBundle> {
     return this.http.patch<CampaignDetailBundle>(`/api/campaigns/${campaignId}`, payload);
   }

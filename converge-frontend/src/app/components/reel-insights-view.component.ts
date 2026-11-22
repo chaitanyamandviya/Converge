@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services/api.service';
 import { formatReelDisplayTitle, formatReelMetaLabel } from '../utils/reel-format';
 import { computeAxisBarScale, formatShortAxisDate, formatSyncAxisLabel } from '../utils/chart-axis';
-import { describeHookRate } from '../utils/campaign-analytics';
+import { describeHookRate, extractCaptionHashtags, isDisclosureOnlyHashtag } from '../utils/campaign-analytics';
 import { computeReelSnapshotMetrics } from '../utils/reel-metrics';
 import { safeExternalUrl } from '../utils/url-safety';
 
@@ -313,6 +313,29 @@ import { safeExternalUrl } from '../utils/url-safety';
             }
           </div>
 
+          @if (reel.caption) {
+            @let captionTags = captionHashtags(reel.caption);
+            <div class="bg-cv-card rounded-[4px] p-4 border border-cv-border space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <h2 class="font-headline uppercase text-base font-bold text-cv-ink tracking-[0.02em]">CAPTION &amp; HASHTAGS</h2>
+                @if (captionTags.length > 0) {
+                  <span class="text-[11px] text-cv-ink-muted">{{ captionTags.length }} tag{{ captionTags.length === 1 ? '' : 's' }} detected</span>
+                }
+              </div>
+              <p class="text-xs text-cv-ink-muted leading-relaxed whitespace-pre-line">{{ reel.caption }}</p>
+              @if (captionTags.length > 0) {
+                <div class="flex flex-wrap gap-1.5 pt-1">
+                  @for (tag of captionTags; track tag) {
+                    <span class="px-2 py-0.5 rounded-[3px] text-[11px] font-medium"
+                          [ngClass]="isDisclosureTag(tag) ? 'bg-[#007656]/20 text-cv-green border border-[#007656]/30' : 'bg-cv-well border border-cv-border text-cv-ink'">
+                      {{ tag }}
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          }
+
           <!-- Official Ratio & Cost Efficiency Signals -->
           <div class="bg-cv-card rounded-[4px] p-5 border border-cv-border space-y-3">
             <h2 class="font-headline uppercase text-lg font-bold text-cv-ink tracking-[0.02em]">REEL RATIOS &amp; COST ROI</h2>
@@ -492,6 +515,11 @@ export class ReelInsightsViewComponent implements OnChanges {
   readonly displayReelTitle = formatReelDisplayTitle;
   readonly reelMetaLabel = formatReelMetaLabel;
   readonly hookBadge = describeHookRate;
+  readonly isDisclosureTag = isDisclosureOnlyHashtag;
+
+  captionHashtags(caption?: string | null): string[] {
+    return extractCaptionHashtags(caption);
+  }
 
   formatInr(n: number, decimals = 0): string {
     if (!n || n <= 0) return '—';

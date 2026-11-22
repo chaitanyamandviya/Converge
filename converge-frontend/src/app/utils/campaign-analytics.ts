@@ -1,4 +1,4 @@
-import type { Creator, ReelDeliverable } from '../services/api.service';
+import type { Creator, DeliverableComplianceStatus, HashtagPerfRow, ReelDeliverable } from '../services/api.service';
 
 export interface CampaignBreakdownRow {
   campaign: string;
@@ -420,4 +420,172 @@ export function describeHookRate(hookRate: number | null | undefined): {
   if (hookRate >= 40) return { label: 'Strong Hook', tone: 'green' };
   if (hookRate >= 25) return { label: 'Avg Hook', tone: 'gold' };
   return { label: 'Weak Hook', tone: 'vermilion' };
+}
+
+const CAPTION_HASHTAG_RE = /(?<![A-Za-z0-9_])#([A-Za-z0-9_]{2,60})/g;
+const DISCLOSURE_CAPTION_RE = /(?<![A-Za-z0-9_])(#ad\b|#paidpartnership\b|paid\s+partnership|#sponsored\b|#collab\b|#brandpartner\b)/i;
+const DISCLOSURE_ONLY_HASHTAGS = new Set(['#ad', '#paidpartnership', '#sponsored', '#collab', '#brandpartner']);
+
+export function extractCaptionHashtags(caption?: string | null): string[] {
+  if (!caption || !caption.trim()) return [];
+  const seen = new Map<string, string>();
+  CAPTION_HASHTAG_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = CAPTION_HASHTAG_RE.exec(caption)) !== null) {
+    const tag = `#${match[1]}`;
+    const lower = tag.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.set(lower, tag);
+    }
+  }
+  return Array.from(seen.values());
+}
+
+export function parseRequiredHashtags(raw?: string | null): string[] {
+  if (!raw || !raw.trim()) return [];
+  const seen = new Map<string, string>();
+  for (const token of raw.split(/[,\s;]+/)) {
+    const clean = token.trim().replace(/^#+/, '');
+    if (/^[A-Za-z0-9_]{2,60}$/.test(clean)) {
+      const tag = `#${clean}`;
+      const lower = tag.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.set(lower, tag);
+        if (seen.size >= 15) break;
+      }
+    }
+  }
+  return Array.from(seen.values());
+}
+
+export function hasDisclosureInCaption(caption?: string | null): boolean {
+  return !!caption && caption.trim().length > 0 && DISCLOSURE_CAPTION_RE.test(caption);
+}
+
+export function isDisclosureOnlyHashtag(tag?: string | null): boolean {
+  return !!tag && DISCLOSURE_ONLY_HASHTAGS.has(tag.trim().toLowerCase());
+}
+
+export function evaluateCaptionCompliance(
+  caption: string | null | undefined,
+  requiredHashtags?: string | null,
+  requireDisclosure?: boolean
+): DeliverableComplianceStatus {
+  const hashtags = extractCaptionHashtags(caption);
+  const presentLower = new Set(hashtags.map((h) => h.toLowerCase()));
+  const requiredTags = parseRequiredHashtags(requiredHashtags);
+  const reqDisc = !!requireDisclosure;
+  const hasRules = requiredTags.length > 0 || reqDisc;
+  const captionPresent = !!(caption && caption.trim().length > 0);
+  const missingTags = requiredTags.filter((req) => !presentLower.has(req.toLowerCase()));
+  const hasDisclosure = hasDisclosureInCaption(caption);
+  const disclosureMissing = reqDisc && !hasDisclosure;
+  const compliant = !hasRules || (captionPresent && missingTags.length === 0 && !disclosureMissing);
+
+  let status: DeliverableComplianceStatus['status'] = 'UNCONFIGURED';
+  if (hasRules) {
+    if (!captionPresent) status = 'NO_CAPTION';
+    else if (compliant) status = 'COMPLIANT';
+    else if (disclosureMissing && missingTags.length > 0) status = 'MISSING_BOTH';
+    else if (disclosureMissing) status = 'MISSING_DISCLOSURE';
+    else status = 'MISSING_TAGS';
+  }
+
+  return {
+    hashtags,
+    hasDisclosure,
+    hasRules,
+    captionPresent,
+    requiredTags,
+    missingTags,
+    requireDisclosure: reqDisc,
+    disclosureMissing,
+    compliant,
+    status,
+  };
+}
+
+export function computeHashtagLeaderboard(reels: ReelDeliverable[]): HashtagPerfRow[] {
+  if (!reels || reels.length === 0) return [];
+  const accMap = new Map<string, {
+    normalized: string;
+    display: string;
+    reelsCount: number;
+    creators: Set<string>;
+    totalViews: number;
+    totalInteractions: number;
+    hookWeightedSum: number;
+    hookViews: number;
+  }>();
+
+  for (const r of reels) {
+    const tags = extractCaptionHashtags(r.caption);
+    if (tags.length === 0) continue;
+    const views = Math.max(0, Number(r.viewsCount) || 0);
+    const interactions = Math.max(0, Number(r.likesCount) || 0) + Math.max(0, Number(r.commentsCount) || 0);
+    const hookRate = r.hookRatePct;
+
+    for (const tag of tags) {
+      if (isDisclosureOnlyHashtag(tag)) continue;
+      const lower = tag.toLowerCase();
+      let acc = accMap.get(lower);
+      if (!acc) {
+        acc = {
+          normalized: lower,
+          display: tag,
+          reelsCount: 0,
+          creators: new Set<string>(),
+          totalViews: 0,
+          totalInteractions: 0,
+          hookWeightedSum: 0,
+          hookViews: 0,
+        };
+        accMap.set(lower, acc);
+      } else if (tag !== tag.toLowerCase() && acc.display === acc.display.toLowerCase()) {
+        acc.display = tag;
+      }
+      acc.reelsCount += 1;
+      if (r.creatorId) acc.creators.add(r.creatorId);
+      acc.totalViews += views;
+      acc.totalInteractions += interactions;
+      if (hookRate != null && hookRate > 0 && views > 0) {
+        acc.hookWeightedSum += hookRate * views;
+        acc.hookViews += views;
+      }
+    }
+  }
+
+  return Array.from(accMap.values())
+    .sort((a, b) => (b.totalViews - a.totalViews) || (b.reelsCount - a.reelsCount) || a.normalized.localeCompare(b.normalized))
+    .slice(0, 30)
+    .map((a) => ({
+      hashtag: a.display,
+      normalizedHashtag: a.normalized,
+      reelsCount: a.reelsCount,
+      creatorsCount: a.creators.size,
+      totalViews: a.totalViews,
+      avgViews: a.reelsCount > 0 ? Math.round(a.totalViews / a.reelsCount) : 0,
+      totalInteractions: a.totalInteractions,
+      engagementRate: a.totalViews > 0 ? Math.round((a.totalInteractions * 10000) / a.totalViews) / 100 : 0,
+      avgHookRatePct: a.hookViews > 0 ? Math.round((a.hookWeightedSum / a.hookViews) * 10) / 10 : null,
+    }));
+}
+
+export function matchCampaignsByCaption(
+  caption: string | null | undefined,
+  campaigns: Array<{ id: string; name: string; status?: string; requiredHashtags?: string | null }>
+): Array<{ id: string; name: string; matchedTags: string[] }> {
+  const tags = extractCaptionHashtags(caption);
+  if (tags.length === 0 || !campaigns || campaigns.length === 0) return [];
+  const lowerSet = new Set(tags.map((t) => t.toLowerCase()));
+  const matches: Array<{ id: string; name: string; matchedTags: string[] }> = [];
+  for (const camp of campaigns) {
+    const reqs = parseRequiredHashtags(camp.requiredHashtags);
+    if (reqs.length === 0) continue;
+    const hit = reqs.filter((r) => lowerSet.has(r.toLowerCase()));
+    if (hit.length > 0) {
+      matches.push({ id: camp.id, name: camp.name, matchedTags: hit });
+    }
+  }
+  return matches;
 }

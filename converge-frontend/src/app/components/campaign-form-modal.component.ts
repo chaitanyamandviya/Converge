@@ -12,6 +12,8 @@ export interface CampaignFormPayload {
   startDate: string | null;
   endDate: string | null;
   briefNotes: string;
+  requiredHashtags: string;
+  requireDisclosure: boolean;
 }
 
 @Component({
@@ -98,6 +100,24 @@ export interface CampaignFormPayload {
                         class="w-full p-3 rounded-[4px] bg-cv-well border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none leading-relaxed"></textarea>
             </div>
 
+            <div class="p-3 rounded-[4px] bg-cv-well/70 border border-cv-border space-y-2.5">
+              <div>
+                <label class="block font-medium text-cv-ink mb-1">Required Campaign Hashtags <span class="text-cv-ink-subtle font-normal">(optional compliance check)</span></label>
+                <input type="text" [ngModel]="requiredHashtags()" (ngModelChange)="requiredHashtags.set($event)" name="campReqTags"
+                       placeholder="e.g. #SummerDrop, #BrandIndia"
+                       class="w-full h-9 px-3 rounded-[4px] bg-cv-surface border border-cv-border text-xs text-cv-ink placeholder:text-cv-ink-subtle focus:border-[#f54e26] focus:outline-none">
+                <p class="mt-1 text-[10px] text-cv-ink-subtle">Reels linked to this campaign will be verified automatically against these caption hashtags.</p>
+              </div>
+              <label class="flex items-start gap-2.5 cursor-pointer select-none pt-0.5">
+                <input type="checkbox" [ngModel]="requireDisclosure()" (ngModelChange)="requireDisclosure.set(!!$event)" name="campReqDisc"
+                       class="mt-0.5 h-4 w-4 accent-[#f54e26] rounded-[3px] cursor-pointer">
+                <span class="text-[11px] text-cv-ink leading-snug">
+                  <span class="font-medium">Require #ad / #paidpartnership disclosure (ASCI)</span>
+                  <span class="block text-[10px] text-cv-ink-subtle">Flags campaign Reels missing <code class="text-cv-ink">#ad</code>, <code class="text-cv-ink">#paidpartnership</code>, <code class="text-cv-ink">#sponsored</code>, or <code class="text-cv-ink">#collab</code>.</span>
+                </span>
+              </label>
+            </div>
+
             <div class="pt-3 border-t border-cv-border flex items-center justify-end gap-2.5">
               <button type="button" (click)="close.emit()" class="h-10 px-4 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-xs font-medium text-cv-ink-muted hover:text-cv-ink cursor-pointer transition-colors">
                 Cancel
@@ -130,6 +150,8 @@ export class CampaignFormModalComponent implements OnChanges {
   startDate = signal('');
   endDate = signal('');
   briefNotes = signal('');
+  requiredHashtags = signal('');
+  requireDisclosure = signal(false);
   localError = signal('');
 
   currencySymbol = computed(() => resolveCurrencySymbol(this.currency()));
@@ -146,6 +168,8 @@ export class CampaignFormModalComponent implements OnChanges {
         this.startDate.set(c?.startDate || '');
         this.endDate.set(c?.endDate || '');
         this.briefNotes.set(c?.briefNotes || '');
+        this.requiredHashtags.set(c?.requiredHashtags || '');
+        this.requireDisclosure.set(!!c?.requireDisclosure);
       }
     }
   }
@@ -175,7 +199,9 @@ export class CampaignFormModalComponent implements OnChanges {
       targetViewsGoal: goalVal,
       startDate: sd,
       endDate: ed,
-      briefNotes: this.briefNotes().trim()
+      briefNotes: this.briefNotes().trim(),
+      requiredHashtags: this.requiredHashtags().trim(),
+      requireDisclosure: this.requireDisclosure()
     });
   }
 }

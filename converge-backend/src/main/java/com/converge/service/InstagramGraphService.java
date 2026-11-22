@@ -1,6 +1,7 @@
 package com.converge.service;
 
 import com.converge.config.InstagramProperties;
+import com.converge.entity.Campaign;
 import com.converge.entity.Creator;
 import com.converge.entity.ReelDeliverable;
 import org.slf4j.Logger;
@@ -47,6 +48,8 @@ public class InstagramGraphService {
     private static final Pattern GRAPH_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_]{1,64}$");
     private static final Pattern BIO_MGMT_PATTERN = Pattern.compile("(?i)(?:managed\\s+by|management|mgmt|agency|represented\\s+by|talent)\\s*[:\\-]?\\s*(@[a-z0-9._]{1,30})");
     private static final Pattern BRANDED_CAPTION_PATTERN = Pattern.compile("(?i)(#ad\\b|#paidpartnership\\b|paid\\s+partnership|#sponsored\\b|#collab\\b|#brandpartner\\b)");
+    private static final Pattern HASHTAG_PATTERN = Pattern.compile("(?<![A-Za-z0-9_])#([A-Za-z0-9_]{2,60})");
+    private static final Set<String> DISCLOSURE_ONLY_HASHTAGS = Set.of("#ad", "#paidpartnership", "#sponsored", "#collab", "#brandpartner");
     private static final Pattern MENTION_PATTERN = Pattern.compile("@([a-z0-9._]{1,30})", Pattern.CASE_INSENSITIVE);
     private static final String BD_MEDIA_FIELDS_V26 = "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count,view_count,thumbnail_url,media_url";
     private static final String BD_MEDIA_FIELDS_LEGACY = "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count,thumbnail_url,media_url";
@@ -2177,6 +2180,297 @@ public class InstagramGraphService {
 
         void removeByPrefix(String prefix) {
             map.keySet().removeIf(k -> k.startsWith(prefix));
+        }
+    }
+
+    /** Extract unique hashtags from an Instagram caption in appearance order (preserving first-seen casing). */
+    public static List<String> extractHashtags(String caption) {
+        if (caption == null || caption.isBlank()) {
+            return List.of();
+        }
+        Map<String, String> unique = new LinkedHashMap<>();
+        Matcher matcher = HASHTAG_PATTERN.matcher(caption);
+        while (matcher.find()) {
+            String rawTag = "#" + matcher.group(1);
+            String lower = rawTag.toLowerCase(Locale.ROOT);
+            unique.putIfAbsent(lower, rawTag);
+        }
+        return new ArrayList<>(unique.values());
+    }
+
+    /** Parse comma- or whitespace-separated campaign hashtag rules into clean unique #tags. */
+    public static List<String> parseRequiredHashtags(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        Map<String, String> unique = new LinkedHashMap<>();
+        for (String token : raw.split("[,\\s;]+")) {
+            String clean = token.trim().replaceAll("^#+", "");
+            if (clean.matches("^[A-Za-z0-9_]{2,60}$")) {
+                String tag = "#" + clean;
+                unique.putIfAbsent(tag.toLowerCase(Locale.ROOT), tag);
+                if (unique.size() >= 15) {
+                    break;
+                }
+            }
+        }
+        return new ArrayList<>(unique.values());
+    }
+
+    public static String normalizeRequiredHashtagsString(String raw) {
+        List<String> parsed = parseRequiredHashtags(raw);
+        return parsed.isEmpty() ? null : String.join(", ", parsed);
+    }
+
+    public static boolean hasAdDisclosure(String caption) {
+        return caption != null && !caption.isBlank() && BRANDED_CAPTION_PATTERN.matcher(caption).find();
+    }
+
+    public static boolean isDisclosureOnlyHashtag(String hashtag) {
+        return hashtag != null && DISCLOSURE_ONLY_HASHTAGS.contains(hashtag.trim().toLowerCase(Locale.ROOT));
+    }
+
+    /** Evaluate a Reel deliverable against a Campaign's hashtag and ASCI disclosure rules. */
+    public static Map<String, Object> evaluateReelHashtagCompliance(ReelDeliverable reel, Campaign camp) {
+        String caption = reel != null ? reel.getCaption() : null;
+        List<String> hashtags = extractHashtags(caption);
+        Set<String> presentLower = new HashSet<>();
+        for (String h : hashtags) {
+            presentLower.add(h.toLowerCase(Locale.ROOT));
+        }
+
+        List<String> requiredTags = camp != null ? parseRequiredHashtags(camp.getRequiredHashtags()) : List.of();
+        boolean requireDisclosure = camp != null && camp.isRequireDisclosure();
+        boolean hasRules = !requiredTags.isEmpty() || requireDisclosure;
+        boolean captionPresent = caption != null && !caption.isBlank();
+
+        List<String> missingTags = new ArrayList<>();
+        for (String req : requiredTags) {
+            if (!presentLower.contains(req.toLowerCase(Locale.ROOT))) {
+                missingTags.add(req);
+            }
+        }
+        boolean hasDisclosure = hasAdDisclosure(caption);
+        boolean disclosureMissing = requireDisclosure && !hasDisclosure;
+        boolean compliant = !hasRules || (captionPresent && missingTags.isEmpty() && !disclosureMissing);
+
+        String status;
+        if (!hasRules) {
+            status = "UNCONFIGURED";
+        } else if (!captionPresent) {
+            status = "NO_CAPTION";
+        } else if (compliant) {
+            status = "COMPLIANT";
+        } else if (disclosureMissing && !missingTags.isEmpty()) {
+            status = "MISSING_BOTH";
+        } else if (disclosureMissing) {
+            status = "MISSING_DISCLOSURE";
+        } else {
+            status = "MISSING_TAGS";
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("hashtags", hashtags);
+        out.put("hasDisclosure", hasDisclosure);
+        out.put("hasRules", hasRules);
+        out.put("captionPresent", captionPresent);
+        out.put("requiredTags", requiredTags);
+        out.put("missingTags", missingTags);
+        out.put("requireDisclosure", requireDisclosure);
+        out.put("disclosureMissing", disclosureMissing);
+        out.put("compliant", compliant);
+        out.put("status", status);
+        return out;
+    }
+
+    public record CampaignComplianceResult(
+            Map<String, Object> summary,
+            Map<String, Object> deliverableCompliance) {}
+
+    /** Aggregate campaign compliance summary + optional per-deliverable status map without duplicating evaluation loops. */
+    public static CampaignComplianceResult buildCampaignCompliance(Campaign camp, Collection<ReelDeliverable> campReels) {
+        List<String> requiredTags = camp != null ? parseRequiredHashtags(camp.getRequiredHashtags()) : List.of();
+        boolean requireDisclosure = camp != null && camp.isRequireDisclosure();
+        boolean hasRules = !requiredTags.isEmpty() || requireDisclosure;
+
+        int total = 0;
+        int compliantCount = 0;
+        int nonCompliantCount = 0;
+        int missingDisclosureCount = 0;
+        int missingTagsCount = 0;
+        int noCaptionCount = 0;
+        Map<String, Object> perDeliverable = new LinkedHashMap<>();
+
+        if (campReels != null) {
+            for (ReelDeliverable r : campReels) {
+                if (r == null) continue;
+                total++;
+                Map<String, Object> eval = evaluateReelHashtagCompliance(r, camp);
+                if (r.getId() != null) {
+                    perDeliverable.put(r.getId().toString(), eval);
+                }
+                if (!hasRules) continue;
+                String status = String.valueOf(eval.get("status"));
+                if ("NO_CAPTION".equals(status)) {
+                    noCaptionCount++;
+                } else if ("COMPLIANT".equals(status)) {
+                    compliantCount++;
+                } else {
+                    nonCompliantCount++;
+                    if (Boolean.TRUE.equals(eval.get("disclosureMissing"))) {
+                        missingDisclosureCount++;
+                    }
+                    if (eval.get("missingTags") instanceof List<?> mList && !mList.isEmpty()) {
+                        missingTagsCount++;
+                    }
+                }
+            }
+        }
+
+        int evaluableCount = compliantCount + nonCompliantCount;
+        Double ratePct = (hasRules && evaluableCount > 0)
+                ? Math.round((compliantCount * 1000.0) / evaluableCount) / 10.0
+                : null;
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("hasRules", hasRules);
+        summary.put("requiredTags", requiredTags);
+        summary.put("requireDisclosure", requireDisclosure);
+        summary.put("totalReels", total);
+        summary.put("evaluableReels", evaluableCount);
+        summary.put("compliantCount", compliantCount);
+        summary.put("nonCompliantCount", nonCompliantCount);
+        summary.put("missingDisclosureCount", missingDisclosureCount);
+        summary.put("missingTagsCount", missingTagsCount);
+        summary.put("noCaptionCount", noCaptionCount);
+        summary.put("complianceRatePct", ratePct);
+        return new CampaignComplianceResult(summary, perDeliverable);
+    }
+
+    /** Aggregate views, engagement, creator breadth, and hook rate per content hashtag across scoped reels. */
+    public static List<Map<String, Object>> buildHashtagAnalytics(Collection<ReelDeliverable> reels) {
+        if (reels == null || reels.isEmpty()) {
+            return List.of();
+        }
+        Map<String, HashtagAccum> accumMap = new LinkedHashMap<>();
+        for (ReelDeliverable r : reels) {
+            if (r == null) continue;
+            List<String> tags = extractHashtags(r.getCaption());
+            if (tags.isEmpty()) continue;
+            long views = Math.max(0L, r.getViewsCount());
+            long interactions = Math.max(0L, r.getLikesCount()) + Math.max(0L, r.getCommentsCount());
+            Double hookRate = r.getHookRatePct();
+
+            for (String tag : tags) {
+                if (isDisclosureOnlyHashtag(tag)) continue;
+                String lower = tag.toLowerCase(Locale.ROOT);
+                HashtagAccum acc = accumMap.computeIfAbsent(lower, k -> new HashtagAccum(lower, tag));
+                acc.preferMixedCase(tag);
+                acc.reelsCount++;
+                if (r.getCreatorId() != null) {
+                    acc.creatorIds.add(r.getCreatorId());
+                }
+                acc.totalViews += views;
+                acc.totalInteractions += interactions;
+                if (hookRate != null && hookRate > 0 && views > 0) {
+                    acc.hookWeightedSum += hookRate * views;
+                    acc.hookViews += views;
+                }
+            }
+        }
+
+        List<HashtagAccum> sorted = new ArrayList<>(accumMap.values());
+        sorted.sort(Comparator
+                .comparingLong((HashtagAccum a) -> a.totalViews).reversed()
+                .thenComparing(Comparator.comparingInt((HashtagAccum a) -> a.reelsCount).reversed())
+                .thenComparing(a -> a.normalized));
+
+        int limit = Math.min(sorted.size(), 30);
+        List<Map<String, Object>> rows = new ArrayList<>(limit);
+        for (int i = 0; i < limit; i++) {
+            HashtagAccum a = sorted.get(i);
+            long avgViews = a.reelsCount > 0 ? Math.round((double) a.totalViews / a.reelsCount) : 0L;
+            double er = a.totalViews > 0
+                    ? Math.round((a.totalInteractions * 10000.0) / a.totalViews) / 100.0
+                    : 0.0;
+            Double avgHook = a.hookViews > 0
+                    ? Math.round((a.hookWeightedSum / a.hookViews) * 10.0) / 10.0
+                    : null;
+
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("hashtag", a.display);
+            row.put("normalizedHashtag", a.normalized);
+            row.put("reelsCount", a.reelsCount);
+            row.put("creatorsCount", a.creatorIds.size());
+            row.put("totalViews", a.totalViews);
+            row.put("avgViews", avgViews);
+            row.put("totalInteractions", a.totalInteractions);
+            row.put("engagementRate", er);
+            row.put("avgHookRatePct", avgHook);
+            rows.add(row);
+        }
+        return rows;
+    }
+
+    /** Map each creatorId to their top content hashtags ranked by usage frequency then views. */
+    public static Map<UUID, List<String>> buildCreatorHashtagMap(Collection<ReelDeliverable> reels) {
+        if (reels == null || reels.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, Map<String, HashtagAccum>> byCreator = new LinkedHashMap<>();
+        for (ReelDeliverable r : reels) {
+            if (r == null || r.getCreatorId() == null) continue;
+            List<String> tags = extractHashtags(r.getCaption());
+            if (tags.isEmpty()) continue;
+            long views = Math.max(0L, r.getViewsCount());
+            Map<String, HashtagAccum> cMap = byCreator.computeIfAbsent(r.getCreatorId(), k -> new LinkedHashMap<>());
+            for (String tag : tags) {
+                if (isDisclosureOnlyHashtag(tag)) continue;
+                String lower = tag.toLowerCase(Locale.ROOT);
+                HashtagAccum acc = cMap.computeIfAbsent(lower, k -> new HashtagAccum(lower, tag));
+                acc.preferMixedCase(tag);
+                acc.reelsCount++;
+                acc.totalViews += views;
+            }
+        }
+        Map<UUID, List<String>> out = new LinkedHashMap<>();
+        for (Map.Entry<UUID, Map<String, HashtagAccum>> entry : byCreator.entrySet()) {
+            List<HashtagAccum> list = new ArrayList<>(entry.getValue().values());
+            list.sort(Comparator
+                    .comparingInt((HashtagAccum a) -> a.reelsCount).reversed()
+                    .thenComparing(Comparator.comparingLong((HashtagAccum a) -> a.totalViews).reversed())
+                    .thenComparing(a -> a.normalized));
+            List<String> topTags = new ArrayList<>();
+            for (int i = 0; i < Math.min(list.size(), 8); i++) {
+                topTags.add(list.get(i).display);
+            }
+            if (!topTags.isEmpty()) {
+                out.put(entry.getKey(), topTags);
+            }
+        }
+        return out;
+    }
+
+    private static final class HashtagAccum {
+        final String normalized;
+        String display;
+        int reelsCount = 0;
+        final Set<UUID> creatorIds = new HashSet<>();
+        long totalViews = 0L;
+        long totalInteractions = 0L;
+        double hookWeightedSum = 0.0;
+        long hookViews = 0L;
+
+        HashtagAccum(String normalized, String display) {
+            this.normalized = normalized;
+            this.display = display;
+        }
+
+        void preferMixedCase(String candidate) {
+            if (candidate != null && !candidate.equals(candidate.toLowerCase(Locale.ROOT))
+                    && display.equals(display.toLowerCase(Locale.ROOT))) {
+                this.display = candidate;
+            }
         }
     }
 }

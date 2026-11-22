@@ -8,8 +8,10 @@ import {
   ReelDeliverable
 } from '../services/api.service';
 import {
+  extractCaptionHashtags,
   formatCompactCount,
   formatMoney,
+  isDisclosureOnlyHashtag,
   resolveCurrencySymbol
 } from '../utils/campaign-analytics';
 import {
@@ -216,6 +218,72 @@ export interface AssignCreatorPayload {
           </form>
         }
 
+        @if (b.complianceSummary?.hasRules || (b.hashtagAnalytics?.length || 0) > 0) {
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            @if (b.complianceSummary; as cs) {
+              @if (cs.hasRules) {
+                <div class="bg-cv-card rounded-[4px] p-4 border border-cv-border space-y-2.5"
+                     [ngClass]="(b.hashtagAnalytics?.length || 0) > 0 ? 'lg:col-span-5' : 'lg:col-span-12'">
+                  <div class="flex items-center justify-between gap-2">
+                    <h2 class="font-headline uppercase text-base font-bold text-cv-ink tracking-[0.02em]">HASHTAG &amp; DISCLOSURE COMPLIANCE</h2>
+                    @if (cs.evaluableReels > 0) {
+                      <span class="px-2 py-0.5 rounded-[3px] text-[10px] font-bold uppercase tracking-wide"
+                            [ngClass]="cs.nonCompliantCount === 0 ? 'bg-[#007656] text-[#fff6e8]' : 'bg-[#fabf29] text-[#111111]'">
+                        {{ cs.nonCompliantCount === 0 ? ('All ' + cs.compliantCount + ' Compliant ✓') : (cs.compliantCount + ' / ' + cs.evaluableReels + ' Compliant') }}
+                      </span>
+                    }
+                  </div>
+                  @if (cs.requiredTags.length > 0) {
+                    <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      <span class="text-cv-ink-muted font-medium">Required:</span>
+                      @for (tag of cs.requiredTags; track tag) {
+                        <span class="px-2 py-0.5 rounded-[3px] bg-cv-well border border-cv-border font-medium text-cv-ink">{{ tag }}</span>
+                      }
+                    </div>
+                  }
+                  <div class="flex flex-wrap items-center gap-2 text-[11px] text-cv-ink-muted">
+                    @if (cs.requireDisclosure) {
+                      <span class="px-2 py-0.5 rounded-[3px] bg-cv-well border border-cv-border text-cv-ink">ASCI Rule: #ad / #paidpartnership required</span>
+                    }
+                    @if (cs.nonCompliantCount > 0) {
+                      <span class="text-[#f54e26] font-semibold">
+                        {{ cs.nonCompliantCount }} Reel{{ cs.nonCompliantCount === 1 ? '' : 's' }} flagged
+                        @if (cs.missingDisclosureCount > 0) { ({{ cs.missingDisclosureCount }} missing disclosure) }
+                      </span>
+                    } @else if (cs.noCaptionCount > 0 && cs.evaluableReels === 0) {
+                      <span>Sync Deliverables from Instagram to verify captions.</span>
+                    }
+                  </div>
+                </div>
+              }
+            }
+
+            @if ((b.hashtagAnalytics?.length || 0) > 0) {
+              <div class="bg-cv-card rounded-[4px] p-4 border border-cv-border space-y-2.5"
+                   [ngClass]="b.complianceSummary?.hasRules ? 'lg:col-span-7' : 'lg:col-span-12'">
+                <div class="flex items-center justify-between gap-2">
+                  <h2 class="font-headline uppercase text-base font-bold text-cv-ink tracking-[0.02em]">TOP CAMPAIGN HASHTAGS</h2>
+                  <span class="text-[11px] text-cv-ink-muted">Ranked by views delivered</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 tabular-nums">
+                  @for (ht of (b.hashtagAnalytics || []).slice(0, 6); track ht.hashtag) {
+                    <div class="p-2.5 rounded-[4px] bg-cv-well border border-cv-border-soft flex items-center justify-between gap-2">
+                      <div class="min-w-0">
+                        <p class="text-xs font-bold text-cv-ink truncate">{{ ht.hashtag }}</p>
+                        <p class="text-[10px] text-cv-ink-muted">{{ ht.reelsCount }} reel{{ ht.reelsCount === 1 ? '' : 's' }} · {{ ht.engagementRate }}% ER</p>
+                      </div>
+                      <div class="text-right shrink-0">
+                        <p class="font-headline text-base font-bold text-[#f54e26] leading-none">{{ compact(ht.totalViews) }}</p>
+                        <p class="text-[9px] uppercase text-cv-ink-subtle">views</p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
         <!-- Assigned Creators Roster -->
         <div class="bg-cv-card rounded-[4px] border border-cv-border overflow-hidden">
           <div class="px-5 py-3.5 border-b border-cv-border flex flex-wrap items-center justify-between gap-2">
@@ -331,10 +399,41 @@ export interface AssignCreatorPayload {
                       <div class="w-11 h-11 rounded-[4px] bg-cv-control text-[#f54e26] font-headline text-xs font-bold flex items-center justify-center shrink-0">REEL</div>
                     }
                     <div class="min-w-0">
-                      <p class="text-sm font-bold text-cv-ink truncate hover:text-[#f54e26] transition-colors">{{ displayTitle(r) }}</p>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <p class="text-sm font-bold text-cv-ink truncate hover:text-[#f54e26] transition-colors">{{ displayTitle(r) }}</p>
+                        @let comp = b.deliverableCompliance?.[r.id];
+                        @if (comp?.hasRules) {
+                          @if (comp!.status === 'COMPLIANT') {
+                            <span class="px-1.5 py-0.5 rounded-[3px] bg-[#007656]/20 text-cv-green border border-[#007656]/30 text-[10px] font-bold uppercase tracking-wide">✓ Compliant</span>
+                          } @else if (comp!.status === 'NO_CAPTION') {
+                            <span class="px-1.5 py-0.5 rounded-[3px] bg-cv-well border border-cv-border text-cv-ink-subtle text-[10px] font-medium">Caption pending sync</span>
+                          } @else {
+                            <span class="px-1.5 py-0.5 rounded-[3px] bg-[#fabf29]/20 text-cv-gold border border-[#fabf29]/40 text-[10px] font-bold">
+                              @if (comp!.disclosureMissing && comp!.missingTags.length > 0) {
+                                Missing #ad &amp; {{ comp!.missingTags.join(', ') }}
+                              } @else if (comp!.disclosureMissing) {
+                                Missing #ad
+                              } @else {
+                                Missing {{ comp!.missingTags.join(', ') }}
+                              }
+                            </span>
+                          }
+                        }
+                      </div>
                       <p class="text-xs text-cv-ink-muted truncate tabular-nums">
                         <span class="text-[#f54e26]">{{ r.creatorHandle }}</span> • {{ reelMeta(r) }}
                       </p>
+                      @let rTags = reelTags(r);
+                      @if (rTags.length > 0) {
+                        <div class="flex flex-wrap gap-1 mt-1">
+                          @for (tag of rTags.slice(0, 5); track tag) {
+                            <span class="px-1.5 py-0.2 rounded-[2px] text-[10px] font-medium"
+                                  [ngClass]="isDisclosureTag(tag) ? 'bg-[#007656]/15 text-cv-green' : 'bg-cv-well border border-cv-border-soft text-cv-ink-muted'">
+                              {{ tag }}
+                            </span>
+                          }
+                        </div>
+                      }
                     </div>
                   </div>
 
@@ -492,4 +591,10 @@ export class CampaignDetailViewComponent implements OnChanges {
     const pub = formatPublishedDateLabel(r.publishedAt);
     return pub ? `${kind} · Published ${pub}` : kind;
   }
+
+  reelTags(r: ReelDeliverable): string[] {
+    return extractCaptionHashtags(r.caption);
+  }
+
+  readonly isDisclosureTag = isDisclosureOnlyHashtag;
 }

@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { ApiService, Agency, AuditLog, Brand, Campaign, CampaignDetailBundle, CampaignSummary, Creator, CreatorInsightsBundle, DeliverableInsightsBundle, InstagramStatus, ReelDeliverable, ReelDeltaSummary, ReelSnapshotPoint, SharedReportRecord } from '../services/api.service';
+import { ApiService, Agency, AuditLog, Brand, Campaign, CampaignDetailBundle, CampaignSummary, Creator, CreatorInsightsBundle, DeliverableInsightsBundle, HashtagPerfRow, InstagramStatus, ReelDeliverable, ReelDeltaSummary, ReelSnapshotPoint, SharedReportRecord } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { DashboardExitAware, DashboardExitController } from '../services/auth.guard';
 import { ConfirmModalComponent } from '../components/confirm-modal.component';
@@ -21,7 +21,7 @@ import { AppHeaderComponent } from '../components/app-header.component';
 import { AppFooterComponent } from '../components/app-footer.component';
 import { ThemeToggleComponent } from '../components/theme-toggle.component';
 import { formatAuditSummary, formatAuditTitle } from '../utils/audit-format';
-import { computeExecutiveAnalytics, extractDistinctCampaigns, filterWorkspaceByCampaign, formatMoney } from '../utils/campaign-analytics';
+import { computeExecutiveAnalytics, computeHashtagLeaderboard, extractDistinctCampaigns, filterWorkspaceByCampaign, formatMoney } from '../utils/campaign-analytics';
 import { formatPublishedDateLabel, formatReelDisplayTitle, formatReelMetaLabel } from '../utils/reel-format';
 import { computeAxisBarScale, formatShortAxisDate, formatSyncAxisLabel } from '../utils/chart-axis';
 import { computeReelSnapshotMetrics } from '../utils/reel-metrics';
@@ -978,6 +978,52 @@ import { safeExternalUrl } from '../utils/url-safety';
                 </div>
               }
 
+              <!-- Top Performing Hashtags Leaderboard (shown when synced captions include hashtags) -->
+              @if (scopedHashtagAnalytics().length > 0) {
+                <div class="bg-cv-card rounded-[4px] border border-cv-border overflow-hidden">
+                  <div class="px-5 py-3.5 border-b border-cv-border flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 class="font-headline uppercase text-lg font-bold text-cv-ink tracking-[0.02em]">TOP PERFORMING HASHTAGS</h3>
+                      <p class="text-[11px] text-cv-ink-muted">Click any hashtag to filter matching creators in your roster</p>
+                    </div>
+                    <span class="text-[11px] text-cv-ink-subtle">{{ scopedHashtagAnalytics().length }} active topic tags</span>
+                  </div>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left tabular-nums">
+                      <thead class="bg-cv-well border-b border-cv-border-soft text-[10px] uppercase font-semibold text-cv-ink-muted tracking-wider">
+                        <tr>
+                          <th class="px-5 py-2.5">Hashtag</th>
+                          <th class="px-3 py-2.5 text-right">Reels</th>
+                          <th class="px-3 py-2.5 text-right">Creators</th>
+                          <th class="px-3 py-2.5 text-right">Avg Views</th>
+                          <th class="px-3 py-2.5 text-right">Total Views</th>
+                          <th class="px-3 py-2.5 text-right">Eng. Rate</th>
+                          @if (hasHashtagHookColumn()) {
+                            <th class="px-5 py-2.5 text-right">Hook (3s)</th>
+                          }
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-cv-divide-soft">
+                        @for (ht of scopedHashtagAnalytics().slice(0, 8); track ht.hashtag) {
+                          <tr (click)="filterCreatorsByHashtag(ht.hashtag)"
+                              class="hover:bg-cv-hover-subtle cursor-pointer transition-colors">
+                            <td class="px-5 py-2.5 font-semibold text-[#f54e26] hover:underline">{{ ht.hashtag }}</td>
+                            <td class="px-3 py-2.5 text-right text-cv-ink-muted">{{ ht.reelsCount }}</td>
+                            <td class="px-3 py-2.5 text-right text-cv-ink-muted">{{ ht.creatorsCount }}</td>
+                            <td class="px-3 py-2.5 text-right font-medium text-cv-ink">{{ formatNum(ht.avgViews) }}</td>
+                            <td class="px-3 py-2.5 text-right font-headline text-base font-bold text-[#f54e26]">{{ formatNum(ht.totalViews) }}</td>
+                            <td class="px-3 py-2.5 text-right font-semibold text-cv-green">{{ ht.engagementRate > 0 ? ht.engagementRate + '%' : '—' }}</td>
+                            @if (hasHashtagHookColumn()) {
+                              <td class="px-5 py-2.5 text-right font-semibold text-cv-gold">{{ ht.avgHookRatePct != null ? ht.avgHookRatePct + '%' : '—' }}</td>
+                            }
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+
               @if (canManageAgencies()) {
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                   <div class="lg:col-span-2 bg-cv-card rounded-[4px] border border-cv-border divide-y divide-cv-divide">
@@ -1188,6 +1234,22 @@ import { safeExternalUrl } from '../utils/url-safety';
                           <p class="text-xs text-cv-ink-muted line-clamp-2 leading-relaxed">{{ camp.briefNotes }}</p>
                         }
 
+                        @if (camp.complianceSummary?.hasRules || camp.requiredHashtags) {
+                          <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
+                            @if (camp.complianceSummary?.hasRules && camp.complianceSummary!.evaluableReels > 0) {
+                              <span class="px-1.5 py-0.5 rounded-[3px] font-bold uppercase tracking-wide"
+                                    [ngClass]="camp.complianceSummary!.nonCompliantCount === 0 ? 'bg-[#007656]/20 text-cv-green' : 'bg-[#fabf29]/20 text-cv-gold'">
+                                {{ camp.complianceSummary!.nonCompliantCount === 0
+                                    ? ('✓ ' + camp.complianceSummary!.compliantCount + ' Compliant')
+                                    : (camp.complianceSummary!.nonCompliantCount + ' Need #ad/Tag') }}
+                              </span>
+                            }
+                            @if (camp.requiredHashtags) {
+                              <span class="text-cv-ink-subtle truncate">{{ camp.requiredHashtags }}</span>
+                            }
+                          </div>
+                        }
+
                         <div class="grid grid-cols-3 divide-x divide-cv-divide rounded-[4px] bg-cv-well border border-cv-border-soft text-center py-2">
                           <div>
                             <span class="text-[10px] text-cv-ink-muted block">Views</span>
@@ -1322,7 +1384,7 @@ import { safeExternalUrl } from '../utils/url-safety';
                 <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                   <div class="group flex-1 md:max-w-lg flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-cv-well border border-cv-border-strong focus-within:border-[#f54e26] transition-colors">
                     <svg class="doodle-svg w-4 h-4 text-cv-ink-muted group-focus-within:text-[#f54e26] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
-                    <input [(ngModel)]="creatorSearch" (ngModelChange)="creatorSearchSig.set($event)" placeholder="Search creators by name, @handle, or niche..." class="w-full min-w-0 bg-transparent text-sm text-cv-ink placeholder:text-cv-ink-subtle focus:outline-none"/>
+                    <input [(ngModel)]="creatorSearch" (ngModelChange)="creatorSearchSig.set($event)" placeholder="Search creators by name, @handle, niche, or #hashtag..." class="w-full min-w-0 bg-transparent text-sm text-cv-ink placeholder:text-cv-ink-subtle focus:outline-none"/>
                   </div>
                   @if (canManageAgencies()) {
                     <div class="relative shrink-0">
@@ -1430,6 +1492,17 @@ import { safeExternalUrl } from '../utils/url-safety';
                                 <p class="text-[11px] text-cv-ink-muted truncate mt-0.5">
                                   {{ c.category || c.niche }}{{ c.country ? ' • ' + c.country : '' }}
                                 </p>
+                              }
+                              @let cTags = (creatorHashtags()[c.id] || []).slice(0, 3);
+                              @if (cTags.length > 0) {
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                  @for (ht of cTags; track ht) {
+                                    <button type="button" (click)="creatorSearch = ht; creatorSearchSig.set(ht); $event.stopPropagation()"
+                                            class="px-1.5 py-0.2 rounded-[2px] bg-cv-well border border-cv-border-soft hover:border-[#f54e26] text-[10px] text-cv-ink-muted hover:text-[#f54e26] cursor-pointer transition-colors">
+                                      {{ ht }}
+                                    </button>
+                                  }
+                                </div>
                               }
                             </div>
                           </div>
@@ -1763,6 +1836,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   currentBrand = signal<Brand | null>(null);
   agencies = signal<Agency[]>([]);
   campaigns = signal<CampaignSummary[]>([]);
+  hashtagAnalytics = signal<HashtagPerfRow[]>([]);
+  creatorHashtags = signal<Record<string, string[]>>({});
   creators = signal<Creator[]>([]);
   deliverables = signal<ReelDeliverable[]>([]);
   reelDeltas = signal<Record<string, ReelDeltaSummary>>({});
@@ -2177,14 +2252,30 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     );
   });
 
+  scopedHashtagAnalytics = computed(() => {
+    const computedRows = computeHashtagLeaderboard(this.scopedDeliverables());
+    if (computedRows.length > 0) return computedRows;
+    return this.selectedCampaignFilter() === 'ALL' ? this.hashtagAnalytics() : [];
+  });
+
+  hasHashtagHookColumn = computed(() =>
+    this.scopedHashtagAnalytics().some(h => h.avgHookRatePct != null)
+  );
+
   filteredCreators = computed(() => {
-    const q = this.creatorSearchSig().toLowerCase();
+    const q = this.creatorSearchSig().toLowerCase().trim();
     const ag = this.selectedAgencySig();
     const tp = this.creatorTypeFilter();
+    const cTagMap = this.creatorHashtags();
     return this.scopedCreators().filter(c => {
       const mType = tp === 'all' || c.sourceType === tp;
       const mAg = ag === 'all' || c.agencyName === ag;
-      const mQ = !q || c.name.toLowerCase().includes(q) || c.handle.toLowerCase().includes(q) || (c.niche || '').toLowerCase().includes(q);
+      const tags = cTagMap[c.id] || [];
+      const mQ = !q
+        || c.name.toLowerCase().includes(q)
+        || c.handle.toLowerCase().includes(q)
+        || (c.niche || '').toLowerCase().includes(q)
+        || tags.some(t => t.toLowerCase().includes(q));
       return mType && mAg && mQ;
     });
   });
@@ -2448,6 +2539,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
         this.currentBrand.set(res.brand);
         this.agencies.set(res.agencies);
         this.campaigns.set(res.campaigns || []);
+        this.hashtagAnalytics.set(res.hashtagAnalytics || []);
+        this.creatorHashtags.set(res.creatorHashtags || {});
         this.creators.set(res.creators);
         const list = res.deliverables || res.recentReels || [];
         this.deliverables.set(list);
@@ -2685,7 +2778,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  submitReel(payload: { title: string; reelUrl: string; costQuoted?: string; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }) {
+  filterCreatorsByHashtag(tag: string) {
+    this.creatorSearch = tag;
+    this.creatorSearchSig.set(tag);
+    this.switchTab('creators');
+  }
+
+  submitReel(payload: { title: string; reelUrl: string; caption?: string; costQuoted?: string; campaignId?: string | null; campaignTag?: string; hookRatePct?: string | number | null }) {
     const ic = this.inspectedCreator();
     if (!ic || !payload.reelUrl.trim()) return;
     this.api.addReelDeliverable(ic.id, payload).subscribe({

@@ -72,6 +72,9 @@ public class CampaignService {
             throw new IllegalArgumentException("End date cannot be earlier than start date.");
         }
         String briefNotes = BrandService.trimToMax(brandService.strVal(payload.get("briefNotes")), 2000);
+        String requiredHashtags = InstagramGraphService.normalizeRequiredHashtagsString(brandService.strVal(payload.get("requiredHashtags")));
+        boolean requireDisclosure = Boolean.TRUE.equals(payload.get("requireDisclosure"))
+                || "true".equalsIgnoreCase(brandService.strVal(payload.get("requireDisclosure")));
 
         Campaign camp = new Campaign();
         camp.setBrandId(brandId);
@@ -82,6 +85,8 @@ public class CampaignService {
         camp.setStartDate(startDate);
         camp.setEndDate(endDate);
         camp.setBriefNotes(briefNotes);
+        camp.setRequiredHashtags(requiredHashtags);
+        camp.setRequireDisclosure(requireDisclosure ? Boolean.TRUE : null);
         camp.setCreatedAt(Instant.now());
         camp.setUpdatedAt(Instant.now());
 
@@ -140,6 +145,14 @@ public class CampaignService {
         }
         if (payload.containsKey("briefNotes")) {
             camp.setBriefNotes(BrandService.trimToMax(brandService.strVal(payload.get("briefNotes")), 2000));
+        }
+        if (payload.containsKey("requiredHashtags")) {
+            camp.setRequiredHashtags(InstagramGraphService.normalizeRequiredHashtagsString(brandService.strVal(payload.get("requiredHashtags"))));
+        }
+        if (payload.containsKey("requireDisclosure")) {
+            boolean req = Boolean.TRUE.equals(payload.get("requireDisclosure"))
+                    || "true".equalsIgnoreCase(brandService.strVal(payload.get("requireDisclosure")));
+            camp.setRequireDisclosure(req ? Boolean.TRUE : Boolean.FALSE);
         }
 
         camp.setUpdatedAt(Instant.now());
@@ -339,6 +352,11 @@ public class CampaignService {
         stats.put("expectedReelsCount", expectedReelsTotal);
         stats.put("deliverablesCount", campReels.size());
 
+        InstagramGraphService.CampaignComplianceResult compliance =
+                InstagramGraphService.buildCampaignCompliance(camp, campReels);
+        List<Map<String, Object>> hashtagAnalytics =
+                InstagramGraphService.buildHashtagAnalytics(campReels);
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("campaign", camp);
         result.put("brand", Map.of(
@@ -349,6 +367,9 @@ public class CampaignService {
         result.put("assignedCreators", assignedCreators);
         result.put("deliverables", campReels);
         result.put("reelDeltas", brandService.buildBrandReelDeltasMap(brand.getId(), campReels));
+        result.put("complianceSummary", compliance.summary());
+        result.put("deliverableCompliance", compliance.deliverableCompliance());
+        result.put("hashtagAnalytics", hashtagAnalytics);
         result.put("stats", stats);
         return result;
     }

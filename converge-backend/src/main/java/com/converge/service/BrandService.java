@@ -408,6 +408,8 @@ public class BrandService {
         result.put("recentReels", reels.stream().limit(6).toList());
         result.put("deliverables", reels);
         result.put("campaigns", buildCampaignSummariesList(brandId, scopedAgency, creators, reels));
+        result.put("hashtagAnalytics", InstagramGraphService.buildHashtagAnalytics(reels));
+        result.put("creatorHashtags", InstagramGraphService.buildCreatorHashtagMap(reels));
         result.put("reelDeltas", buildBrandReelDeltasMap(brandId, reels));
         result.put("stats", brandStats);
         return result;
@@ -1012,6 +1014,10 @@ public class BrandService {
         reel.setCreatorId(creator.getId());
         reel.setCreatorHandle(creator.getHandle());
         reel.setTitle(title);
+        String cap = trimToMax(strVal(payload.get("caption")), 2200);
+        if (!cap.isEmpty()) {
+            reel.setCaption(cap);
+        }
         reel.setReelUrl(reelUrl);
         reel.setShortcode(shortcode);
         reel.setCampaignId(resolvedCamp != null ? resolvedCamp.getId() : null);
@@ -2244,6 +2250,10 @@ public class BrandService {
             reel.setCreatorId(finalTarget.getId());
             reel.setCreatorHandle(finalTarget.getHandle());
             reel.setTitle(title);
+            String itemCaption = trimToMax(strVal(entryMap.get("caption")), 2200);
+            if (!itemCaption.isEmpty()) {
+                reel.setCaption(itemCaption);
+            }
             reel.setReelUrl(reelUrl);
             reel.setShortcode(shortcode);
             reel.setCampaignId(itemCampaign != null ? itemCampaign.getId() : null);
@@ -2374,9 +2384,11 @@ public class BrandService {
 
         Instant now = Instant.now();
         Campaign summerCamp = ensureDemoCampaignRecord(brandId, "Summer Glow Drop", 225_000.0, 2_200_000L,
-                "Hero summer product launch Reels showcasing daily Vitamin C & hydration routines.", -14, 16);
+                "Hero summer product launch Reels showcasing daily Vitamin C & hydration routines.",
+                "#SummerGlow, #GlowRoutine", true, -14, 16);
         Campaign monsoonCamp = ensureDemoCampaignRecord(brandId, "Monsoon Creator Wave", 120_000.0, 800_000L,
-                "Monsoon travel-ready skincare & honest SPF review deliverables.", -7, 21);
+                "Monsoon travel-ready skincare & honest SPF review deliverables.",
+                "#MonsoonSkincare", true, -7, 21);
 
         List<Creator> createdCreators = new ArrayList<>();
         Creator aanya = saveDemoCreator(brandId, scopedAgency, "Aanya Kapoor", "@aanya.kapoor_demo",
@@ -2411,21 +2423,37 @@ public class BrandService {
         UUID monsoonId = monsoonCamp != null ? monsoonCamp.getId() : null;
 
         List<ReelDeliverable> createdReels = new ArrayList<>();
-        createdReels.add(saveDemoReel(aanya, "Morning Vitamin C Routine", summerId, "Summer Glow Drop", "C0DemoAanya01",
+        createdReels.add(saveDemoReel(aanya, "Morning Vitamin C Routine",
+                "Morning Vitamin C glow routine before stepping out ☀️ #SummerGlow #GlowRoutine #VitaminCSkin #SkincareIndia #ad",
+                summerId, "Summer Glow Drop", "C0DemoAanya01",
                 840_000L, 48_200L, 912L, 3_420L, 35_000.0, 54.2, 16_400L, now.minusSeconds(9 * 86400L)));
-        createdReels.add(saveDemoReel(aanya, "7-Day Hydration Test", summerId, "Summer Glow Drop", "C0DemoAanya02",
+        createdReels.add(saveDemoReel(aanya, "7-Day Hydration Test",
+                "7-day barrier hydration check — lightweight even in May heat 💧 #SummerGlow #GlowRoutine #HydratingSerum #paidpartnership",
+                summerId, "Summer Glow Drop", "C0DemoAanya02",
                 310_000L, 19_400L, 418L, 1_290L, 35_000.0, 41.8, 12_800L, now.minusSeconds(4 * 86400L)));
-        createdReels.add(saveDemoReel(rohan, "AM Grooming Essentials", summerId, "Summer Glow Drop", "C0DemoRohan01",
+        createdReels.add(saveDemoReel(rohan, "AM Grooming Essentials",
+                "5-min AM grooming essentials that actually stick #SummerGlow #GlowRoutine #MensGrooming #SkincareIndia #ad",
+                summerId, "Summer Glow Drop", "C0DemoRohan01",
                 520_000L, 28_600L, 640L, 1_850L, 48_000.0, 47.6, 14_900L, now.minusSeconds(11 * 86400L)));
-        createdReels.add(saveDemoReel(rohan, "Travel Kit Breakdown", monsoonId, "Monsoon Creator Wave", "C0DemoRohan02",
+        createdReels.add(saveDemoReel(rohan, "Travel Kit Breakdown",
+                "Humidity-proof travel kit for weekend monsoon trips ✈️ #MonsoonSkincare #MensGrooming #TravelSkincare #ad",
+                monsoonId, "Monsoon Creator Wave", "C0DemoRohan02",
                 195_000L, 11_200L, 244L, 680L, 48_000.0, 35.4, 10_200L, now.minusSeconds(3 * 86400L)));
-        createdReels.add(saveDemoReel(nisha, "Rain-Proof Skincare Layering", monsoonId, "Monsoon Creator Wave", "C0DemoNisha01",
+        createdReels.add(saveDemoReel(nisha, "Rain-Proof Skincare Layering",
+                "Zero pilling skincare layering for rainy mornings 🌧️ #MonsoonSkincare #GlassSkin #SkincareRoutine #ad",
+                monsoonId, "Monsoon Creator Wave", "C0DemoNisha01",
                 245_000L, 16_800L, 530L, 1_940L, null, 58.9, 18_300L, now.minusSeconds(6 * 86400L)));
-        createdReels.add(saveDemoReel(kabir, "Post-Workout Recovery Ritual", summerId, "Summer Glow Drop", "C0DemoKabir01",
+        createdReels.add(saveDemoReel(kabir, "Post-Workout Recovery Ritual",
+                "Post-workout shower & sunscreen recovery ritual 💪 #SummerGlow #GlowRoutine #FitnessSkincare #CleanBeauty #ad",
+                summerId, "Summer Glow Drop", "C0DemoKabir01",
                 218_000L, 12_900L, 310L, 820L, null, 38.2, 11_600L, now.minusSeconds(8 * 86400L)));
-        createdReels.add(saveDemoReel(kabir, "Unboxing Brand Kit", summerId, "Summer Glow Drop", "C0DemoKabir02",
+        createdReels.add(saveDemoReel(kabir, "Unboxing Brand Kit",
+                "Wait until you see what came in this box 👀 #FitnessSkincare #DailyRoutine",
+                summerId, "Summer Glow Drop", "C0DemoKabir02",
                 142_000L, 7_600L, 198L, 410L, null, 31.5, 9_400L, now.minusSeconds(2 * 86400L)));
-        createdReels.add(saveDemoReel(tara, "Honest Texture & SPF Review", monsoonId, "Monsoon Creator Wave", "C0DemoTara01",
+        createdReels.add(saveDemoReel(tara, "Honest Texture & SPF Review",
+                "No white cast SPF texture test under direct sun 🧴 #MonsoonSkincare #CleanBeauty #SPFRoutine #ad",
+                monsoonId, "Monsoon Creator Wave", "C0DemoTara01",
                 92_000L, 6_450L, 265L, 790L, 18_000.0, 49.0, 15_200L, now.minusSeconds(1 * 86400L)));
 
         for (Creator dc : createdCreators) {
@@ -2502,6 +2530,7 @@ public class BrandService {
     private ReelDeliverable saveDemoReel(
             Creator creator,
             String title,
+            String caption,
             UUID campaignId,
             String campaignTag,
             String shortcode,
@@ -2518,6 +2547,7 @@ public class BrandService {
         r.setCreatorId(creator.getId());
         r.setCreatorHandle(creator.getHandle());
         r.setTitle(title);
+        r.setCaption(caption);
         r.setCampaignId(campaignId);
         r.setCampaignTag(campaignTag);
         r.setShortcode(shortcode);
@@ -2994,6 +3024,8 @@ public class BrandService {
             Double budgetAmount,
             Long targetViewsGoal,
             String briefNotes,
+            String requiredHashtags,
+            boolean requireDisclosure,
             long startOffsetDays,
             long endOffsetDays) {
         if (campaignRepository == null) return null;
@@ -3008,6 +3040,8 @@ public class BrandService {
         c.setBudgetAmount(budgetAmount);
         c.setTargetViewsGoal(targetViewsGoal);
         c.setBriefNotes(briefNotes);
+        c.setRequiredHashtags(InstagramGraphService.normalizeRequiredHashtagsString(requiredHashtags));
+        c.setRequireDisclosure(requireDisclosure);
         LocalDate today = LocalDate.now();
         c.setStartDate(today.plusDays(startOffsetDays));
         c.setEndDate(today.plusDays(endOffsetDays));
@@ -3199,6 +3233,9 @@ public class BrandService {
             row.put("startDate", camp.getStartDate());
             row.put("endDate", camp.getEndDate());
             row.put("briefNotes", camp.getBriefNotes());
+            row.put("requiredHashtags", camp.getRequiredHashtags());
+            row.put("requireDisclosure", camp.isRequireDisclosure());
+            row.put("complianceSummary", InstagramGraphService.buildCampaignCompliance(camp, campReels).summary());
             row.put("demoData", camp.isDemoData());
             row.put("createdAt", camp.getCreatedAt());
             row.put("creatorsCount", creatorIdsInCamp.size());
