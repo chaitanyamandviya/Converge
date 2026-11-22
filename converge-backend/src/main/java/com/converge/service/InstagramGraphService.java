@@ -7,10 +7,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -18,9 +20,13 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,20 +34,46 @@ import java.util.regex.Pattern;
 public class InstagramGraphService {
 
     private static final Logger log = LoggerFactory.getLogger(InstagramGraphService.class);
-    private static final Pattern SHORTCODE_PATTERN = Pattern.compile("/(?:p|reels?|tv)/([A-Za-z0-9_-]+)");
+    private static final Set<String> ALLOWED_INSTAGRAM_HOSTS = Set.of(
+            "instagram.com",
+            "www.instagram.com",
+            "m.instagram.com",
+            "instagr.am"
+    );
+    private static final Pattern SHORTCODE_PATTERN = Pattern.compile("^/(?:[A-Za-z0-9._]{1,30}/)?(?:p|reels?|tv)/([A-Za-z0-9_-]{4,64})(?:/|$)");
+    private static final Pattern URL_OWNER_PATTERN = Pattern.compile("^/([A-Za-z0-9._]{1,30})/(?:p|reels?|tv)/[A-Za-z0-9_-]{4,64}(?:/|$)");
     private static final Pattern HANDLE_CLEAN_PATTERN = Pattern.compile("^[a-z0-9._]{1,30}$");
+    private static final Pattern CURSOR_PATTERN = Pattern.compile("^[A-Za-z0-9+/=_.:-]{1,2048}$");
+    private static final Pattern GRAPH_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_]{1,64}$");
     private static final Pattern BIO_MGMT_PATTERN = Pattern.compile("(?i)(?:managed\\s+by|management|mgmt|agency|represented\\s+by|talent)\\s*[:\\-]?\\s*(@[a-z0-9._]{1,30})");
     private static final Pattern BRANDED_CAPTION_PATTERN = Pattern.compile("(?i)(#ad\\b|#paidpartnership\\b|paid\\s+partnership|#sponsored\\b|#collab\\b|#brandpartner\\b)");
     private static final Pattern MENTION_PATTERN = Pattern.compile("@([a-z0-9._]{1,30})", Pattern.CASE_INSENSITIVE);
     private static final String BD_MEDIA_FIELDS_V26 = "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count,view_count,thumbnail_url,media_url";
     private static final String BD_MEDIA_FIELDS_LEGACY = "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count,thumbnail_url,media_url";
 
+    private static final Duration PROFILE_CACHE_TTL = Duration.ofMinutes(10);
+    private static final Duration MEDIA_CACHE_TTL = Duration.ofMinutes(5);
+    private static final Duration INSIGHTS_CACHE_TTL = Duration.ofMinutes(5);
+    private static final int MAX_CACHE_ENTRIES = 500;
+
     private final InstagramProperties properties;
     private final RestClient restClient;
+    private final TtlCache<Map<String, Object>> profileCache = new TtlCache<>(PROFILE_CACHE_TTL, MAX_CACHE_ENTRIES);
+    private final TtlCache<MediaPageResult> mediaPageCache = new TtlCache<>(MEDIA_CACHE_TTL, MAX_CACHE_ENTRIES);
+    private final TtlCache<Map<String, Object>> mediaInsightsCache = new TtlCache<>(INSIGHTS_CACHE_TTL, MAX_CACHE_ENTRIES);
+    private final ConcurrentHashMap<String, CompletableFuture<?>> inFlightRequests = new ConcurrentHashMap<>();
+    private volatile Instant rateLimitCooldownUntil = Instant.EPOCH;
 
     @Autowired
     public InstagramGraphService(InstagramProperties properties) {
-        this(properties, RestClient.create());
+        this(properties, createTimeoutRestClient());
+    }
+
+    private static RestClient createTimeoutRestClient() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(5));
+        factory.setReadTimeout(Duration.ofSeconds(12));
+        return RestClient.builder().requestFactory(factory).build();
     }
 
     public InstagramGraphService(InstagramProperties properties, RestClient.Builder builder) {
@@ -69,29 +101,33 @@ public class InstagramGraphService {
     }
 
     public Map<String, Object> getStatus() {
-        List<String> missing = new ArrayList<>();
-        if (!isTokenConfigured()) missing.add("INSTAGRAM_ACCESS_TOKEN");
-        if (properties.getBusinessAccountId() == null || properties.getBusinessAccountId().isBlank()
-                || properties.getBusinessAccountId().startsWith("your_")) {
-            missing.add("INSTAGRAM_BUSINESS_ACCOUNT_ID");
-        }
+        return getStatus(false);
+    }
 
+    public Map<String, Object> getStatus(boolean includeAdminDetails) {
         Map<String, Object> status = new LinkedHashMap<>();
         status.put("configured", isBusinessDiscoveryConfigured());
-        status.put("hasAccessToken", isTokenConfigured());
-        status.put("hasBusinessAccountId", properties.getBusinessAccountId() != null && !properties.getBusinessAccountId().isBlank());
         status.put("hasOAuthApp", isOAuthConfigured());
-        status.put("hasAppSecretProof", properties.getAppSecret() != null && !properties.getAppSecret().isBlank());
         status.put("creatorMarketplaceEnabled", properties.isCreatorMarketplaceEnabled());
-        status.put("baseUrl", properties.getBaseUrl());
-        status.put("missingEnvVars", missing);
+        if (includeAdminDetails) {
+            List<String> missing = new ArrayList<>();
+            if (!isTokenConfigured()) missing.add("INSTAGRAM_ACCESS_TOKEN");
+            if (properties.getBusinessAccountId() == null || properties.getBusinessAccountId().isBlank()
+                    || properties.getBusinessAccountId().startsWith("your_")) {
+                missing.add("INSTAGRAM_BUSINESS_ACCOUNT_ID");
+            }
+            status.put("hasAccessToken", isTokenConfigured());
+            status.put("hasBusinessAccountId", properties.getBusinessAccountId() != null && !properties.getBusinessAccountId().isBlank());
+            status.put("hasAppSecretProof", properties.getAppSecret() != null && !properties.getAppSecret().isBlank());
+            status.put("missingEnvVars", missing);
+        }
         return status;
     }
 
     public static String normalizeHandle(String rawHandle) {
         if (rawHandle == null || rawHandle.isBlank()) return "";
         String cleaned = rawHandle.trim()
-                .replaceAll("^https?://(www\\.)?instagram\\.com/", "");
+                .replaceAll("^https?://(www\\.|m\\.)?instagram\\.com/", "");
         int qIdx = cleaned.indexOf('?');
         if (qIdx >= 0) cleaned = cleaned.substring(0, qIdx);
         int slashIdx = cleaned.indexOf('/');
@@ -105,10 +141,54 @@ public class InstagramGraphService {
         return norm.startsWith("@") ? norm.substring(1) : norm;
     }
 
+    public static boolean isValidHandle(String rawHandle) {
+        String username = stripAt(rawHandle);
+        return !username.isEmpty() && HANDLE_CLEAN_PATTERN.matcher(username).matches();
+    }
+
     public static String extractShortcode(String url) {
         if (url == null || url.isBlank()) return null;
-        Matcher m = SHORTCODE_PATTERN.matcher(url);
-        return m.find() ? m.group(1) : null;
+        try {
+            URI parsed = URI.create(url.trim());
+            String scheme = parsed.getScheme();
+            String host = parsed.getHost();
+            if (!"https".equalsIgnoreCase(scheme) || host == null) {
+                return null;
+            }
+            String lowerHost = host.toLowerCase(Locale.ROOT);
+            if (!ALLOWED_INSTAGRAM_HOSTS.contains(lowerHost)) {
+                return null;
+            }
+            String path = parsed.getPath();
+            if (path == null) return null;
+            Matcher m = SHORTCODE_PATTERN.matcher(path);
+            return m.find() ? m.group(1) : null;
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    public static String extractUrlOwnerHandle(String url) {
+        if (url == null || url.isBlank()) return null;
+        try {
+            URI parsed = URI.create(url.trim());
+            String scheme = parsed.getScheme();
+            String host = parsed.getHost();
+            if (!"https".equalsIgnoreCase(scheme) || host == null) {
+                return null;
+            }
+            if (!ALLOWED_INSTAGRAM_HOSTS.contains(host.toLowerCase(Locale.ROOT))) {
+                return null;
+            }
+            String path = parsed.getPath();
+            if (path == null) return null;
+            Matcher m = URL_OWNER_PATTERN.matcher(path);
+            if (!m.find()) return null;
+            String owner = m.group(1).toLowerCase(Locale.ROOT);
+            return HANDLE_CLEAN_PATTERN.matcher(owner).matches() ? owner : null;
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     public static String formatCompactNumber(long count) {
@@ -137,8 +217,25 @@ public class InstagramGraphService {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    public void evictCreatorCache(String rawHandle) {
+        String username = stripAt(rawHandle);
+        if (username.isEmpty()) return;
+        profileCache.remove("profile:" + username);
+        mediaPageCache.removeByPrefix("bd_page:" + username + ":");
+        mediaPageCache.removeByPrefix("oauth_media:" + username + ":");
+    }
+
+    public void evictMediaCache(String igMediaId) {
+        if (igMediaId == null || igMediaId.isBlank()) return;
+        mediaInsightsCache.removeByPrefix("media_ins:" + igMediaId + ":");
+    }
+
     public Map<String, Object> fetchCreatorProfile(String rawHandle) {
+        return fetchCreatorProfile(rawHandle, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> fetchCreatorProfile(String rawHandle, boolean forceRefresh) {
         String username = stripAt(rawHandle);
         if (username.isEmpty() || !HANDLE_CLEAN_PATTERN.matcher(username).matches()) {
             throw new IllegalArgumentException("Please enter a valid Instagram username or profile URL.");
@@ -147,73 +244,145 @@ public class InstagramGraphService {
             throw new IllegalStateException("Instagram Graph API is not configured. Set INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ACCOUNT_ID in .env.");
         }
 
-        Map<String, Object> response = executeBusinessDiscoveryQuery(
-                username,
-                "id,username,name,biography,website,profile_picture_url,followers_count,follows_count,media_count,media.limit(25){%s}"
-        );
-
-        Object bdObj = response.get("business_discovery");
-        if (!(bdObj instanceof Map<?, ?> bd)) {
-            throw new IllegalArgumentException("Instagram account '@" + username + "' did not return business discovery profile data.");
+        String cacheKey = "profile:" + username;
+        if (forceRefresh) {
+            evictCreatorCache(username);
+        } else {
+            Map<String, Object> cached = profileCache.get(cacheKey);
+            if (cached != null) {
+                return cached;
+            }
         }
 
-        long followers = asLong(bd.get("followers_count"));
-        long follows = asLong(bd.get("follows_count"));
-        long mediaCount = asLong(bd.get("media_count"));
-        String bio = asString(bd.get("biography"));
-        List<Map<String, Object>> recentMedia = parseMediaList(bd.get("media"));
-        Map<String, Object> signals = analyzeRecentMediaSignals(recentMedia, username, followers);
+        return runCoalesced(cacheKey, () -> {
+            DiscoveryQueryResult queryRes = executeBusinessDiscoveryQueryWithMeta(
+                    username,
+                    "id,username,name,biography,website,profile_picture_url,followers_count,follows_count,media_count,media.limit(50){%s}"
+            );
+            Map<String, Object> response = queryRes.body();
 
-        Map<String, Object> marketplaceData = properties.isCreatorMarketplaceEnabled()
-                ? fetchCreatorMarketplaceDataSafe(username)
-                : Map.of();
+            Object bdObj = response.get("business_discovery");
+            if (!(bdObj instanceof Map<?, ?> bd)) {
+                throw new IllegalArgumentException("Instagram account '@" + username + "' did not return business discovery profile data.");
+            }
 
-        Map<String, Object> profile = new LinkedHashMap<>();
-        profile.put("igUserId", asString(bd.get("id")));
-        profile.put("username", asString(bd.get("username"), username));
-        profile.put("handle", "@" + asString(bd.get("username"), username));
-        profile.put("name", asString(bd.get("name"), username));
-        profile.put("bio", bio);
-        profile.put("website", asString(bd.get("website")));
-        profile.put("avatarUrl", asString(bd.get("profile_picture_url")));
-        profile.put("profileUrl", "https://www.instagram.com/" + username + "/");
-        profile.put("followersCount", followers);
-        profile.put("followersDisplay", formatCompactNumber(followers));
-        profile.put("followsCount", follows);
-        profile.put("mediaCount", mediaCount);
-        profile.put("recentMedia", recentMedia);
-        profile.put("postedLast28Days", signals.get("postedLast28Days"));
-        profile.put("publicInteractions30d", signals.get("publicInteractions30d"));
-        profile.put("totalRecentInteractions", signals.get("totalRecentInteractions"));
-        profile.put("publicViews30d", signals.get("publicViews30d"));
-        profile.put("totalRecentViews", signals.get("totalRecentViews"));
-        profile.put("estimatedInteractionRate", signals.get("estimatedInteractionRate"));
-        profile.put("partnershipAdCount", signals.get("partnershipAdCount"));
-        profile.put("detectedBrandPartners", signals.get("detectedBrandPartners"));
-        profile.put("suggestedManagementHandle", extractManagementHandle(bio));
-        profile.put("marketplaceInsights", marketplaceData);
-        profile.put("source", marketplaceData.isEmpty() ? "META_BUSINESS_DISCOVERY" : "META_CREATOR_MARKETPLACE");
-        return profile;
+            long followers = asFlexibleLong(bd.get("followers_count"));
+            long follows = asFlexibleLong(bd.get("follows_count"));
+            long mediaCount = asFlexibleLong(bd.get("media_count"));
+            String bio = asString(bd.get("biography"));
+            List<Map<String, Object>> recentMedia = parseMediaList(bd.get("media"), queryRes.viewsSupported());
+            Map<String, Object> signals = analyzeRecentMediaSignals(recentMedia, username, followers);
+
+            String afterCursor = (bd.get("media") instanceof Map<?, ?> mw) ? extractAfterCursor(mw) : null;
+            mediaPageCache.put("bd_page:" + username + ":root:50",
+                    new MediaPageResult(recentMedia, afterCursor, followers, queryRes.viewsSupported()));
+
+            Map<String, Object> marketplaceData = properties.isCreatorMarketplaceEnabled()
+                    ? fetchCreatorMarketplaceDataSafe(username)
+                    : Map.of();
+
+            Map<String, Object> profile = new LinkedHashMap<>();
+            profile.put("igUserId", asString(bd.get("id")));
+            profile.put("username", asString(bd.get("username"), username));
+            profile.put("handle", "@" + asString(bd.get("username"), username));
+            profile.put("name", asString(bd.get("name"), username));
+            profile.put("bio", bio);
+            profile.put("website", asString(bd.get("website")));
+            profile.put("avatarUrl", asString(bd.get("profile_picture_url")));
+            profile.put("profileUrl", "https://www.instagram.com/" + username + "/");
+            profile.put("followersCount", followers);
+            profile.put("followersDisplay", formatCompactNumber(followers));
+            profile.put("followsCount", follows);
+            profile.put("mediaCount", mediaCount);
+            profile.put("recentMedia", recentMedia);
+            profile.put("postedLast28Days", signals.get("postedLast28Days"));
+            profile.put("publicInteractions30d", signals.get("publicInteractions30d"));
+            profile.put("totalRecentInteractions", signals.get("totalRecentInteractions"));
+            profile.put("publicViews30d", signals.get("publicViews30d"));
+            profile.put("totalRecentViews", signals.get("totalRecentViews"));
+            profile.put("estimatedInteractionRate", signals.get("estimatedInteractionRate"));
+            profile.put("partnershipAdCount", signals.get("partnershipAdCount"));
+            profile.put("detectedBrandPartners", signals.get("detectedBrandPartners"));
+            profile.put("suggestedManagementHandle", extractManagementHandle(bio));
+            profile.put("marketplaceInsights", marketplaceData);
+            profile.put("source", marketplaceData.isEmpty() ? "META_BUSINESS_DISCOVERY" : "META_CREATOR_MARKETPLACE");
+            profileCache.put(cacheKey, profile);
+            return profile;
+        });
     }
 
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> fetchRecentMedia(String rawHandle, int limit, String creatorOAuthToken) {
-        int safeLimit = Math.max(1, Math.min(limit, 50));
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        int firstPageLimit = Math.min(safeLimit, 50);
+        String username = stripAt(rawHandle);
         if (creatorOAuthToken != null && !creatorOAuthToken.isBlank()) {
-            Map<String, Object> resp = executeGraphGet(
-                    properties.getGraphBaseUrl(),
-                    "/me/media",
-                    Map.of(
-                            "fields", "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count,thumbnail_url,media_url",
-                            "limit", String.valueOf(safeLimit)
-                    ),
-                    creatorOAuthToken,
-                    stripAt(rawHandle)
-            );
-            return parseMediaDataArray(resp.get("data"));
+            String oauthKey = "oauth_media:" + username + ":" + safeLimit;
+            MediaPageResult cachedOAuth = mediaPageCache.get(oauthKey);
+            if (cachedOAuth != null) {
+                return cachedOAuth.items();
+            }
+            for (int candidateSize : new int[]{100, 50}) {
+                if (candidateSize >= safeLimit) {
+                    MediaPageResult cachedLarger = mediaPageCache.get("oauth_media:" + username + ":" + candidateSize);
+                    if (cachedLarger != null) {
+                        List<Map<String, Object>> all = cachedLarger.items();
+                        return all.size() > safeLimit ? all.subList(0, safeLimit) : all;
+                    }
+                }
+            }
+            return runCoalesced(oauthKey, () -> {
+                List<Map<String, Object>> collected = new ArrayList<>();
+                boolean viewsSupported = true;
+                String afterCursor = null;
+                int maxPages = safeLimit > 50 ? 3 : 1;
+                for (int page = 0; page < maxPages && collected.size() < safeLimit; page++) {
+                    int pageSize = Math.min(50, safeLimit - collected.size());
+                    Map<String, String> params = new LinkedHashMap<>();
+                    params.put("fields", viewsSupported ? BD_MEDIA_FIELDS_V26 : BD_MEDIA_FIELDS_LEGACY);
+                    params.put("limit", String.valueOf(pageSize));
+                    if (afterCursor != null && !afterCursor.isBlank()) {
+                        params.put("after", afterCursor);
+                    }
+                    Map<String, Object> resp;
+                    try {
+                        resp = executeGraphGet(
+                                properties.getGraphBaseUrl(),
+                                "/me/media",
+                                params,
+                                creatorOAuthToken,
+                                username
+                        );
+                    } catch (IllegalStateException ex) {
+                        if (viewsSupported && ex.getMessage() != null && ex.getMessage().contains("view_count")) {
+                            viewsSupported = false;
+                            params.put("fields", BD_MEDIA_FIELDS_LEGACY);
+                            resp = executeGraphGet(
+                                    properties.getGraphBaseUrl(),
+                                    "/me/media",
+                                    params,
+                                    creatorOAuthToken,
+                                    username
+                            );
+                        } else {
+                            if (page > 0) break;
+                            throw ex;
+                        }
+                    }
+                    List<Map<String, Object>> pageItems = parseMediaDataArray(resp.get("data"), viewsSupported);
+                    if (pageItems.isEmpty()) break;
+                    collected.addAll(pageItems);
+                    afterCursor = extractAfterCursor(resp);
+                    if (afterCursor == null || afterCursor.isBlank()) break;
+                }
+                List<Map<String, Object>> finalItems = collected.size() > safeLimit
+                        ? List.copyOf(collected.subList(0, safeLimit))
+                        : List.copyOf(collected);
+                mediaPageCache.put(oauthKey, new MediaPageResult(finalItems, afterCursor, 0L, viewsSupported));
+                return finalItems;
+            });
         }
 
-        String username = stripAt(rawHandle);
         if (username.isEmpty() || !HANDLE_CLEAN_PATTERN.matcher(username).matches()) {
             throw new IllegalArgumentException("Valid Instagram handle is required.");
         }
@@ -221,30 +390,103 @@ public class InstagramGraphService {
             throw new IllegalStateException("Instagram Graph API is not configured. Set INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ACCOUNT_ID in .env.");
         }
 
-        Map<String, Object> resp = executeBusinessDiscoveryQuery(
-                username,
-                "followers_count,media.limit(" + safeLimit + "){%s}"
-        );
-        if (resp.get("business_discovery") instanceof Map<?, ?> bd) {
-            return parseMediaList(bd.get("media"));
+        MediaPageResult cachedExact = mediaPageCache.get("bd_page:" + username + ":root:" + safeLimit);
+        if (cachedExact != null) {
+            return cachedExact.items();
         }
-        return List.of();
+        for (int candidateSize : new int[]{100, 50, 25}) {
+            if (candidateSize >= safeLimit) {
+                MediaPageResult cachedLarger = mediaPageCache.get("bd_page:" + username + ":root:" + candidateSize);
+                if (cachedLarger != null && (cachedLarger.items().size() >= safeLimit || cachedLarger.afterCursor() == null)) {
+                    List<Map<String, Object>> all = cachedLarger.items();
+                    return all.size() > safeLimit ? all.subList(0, safeLimit) : all;
+                }
+            }
+        }
+
+        String bdKey = "bd_page:" + username + ":root:" + safeLimit;
+        return runCoalesced(bdKey, () -> {
+            List<Map<String, Object>> collected = new ArrayList<>();
+            long followers = 0L;
+            boolean viewsSupported = true;
+            String afterCursor = null;
+
+            MediaPageResult cachedFirstPage = mediaPageCache.get("bd_page:" + username + ":root:50");
+            if (cachedFirstPage == null && safeLimit > 25) {
+                cachedFirstPage = mediaPageCache.get("bd_page:" + username + ":root:25");
+            }
+            int startPage = 0;
+            if (cachedFirstPage != null && !cachedFirstPage.items().isEmpty()) {
+                collected.addAll(cachedFirstPage.items());
+                followers = cachedFirstPage.followersCount();
+                viewsSupported = cachedFirstPage.viewsSupported();
+                afterCursor = cachedFirstPage.afterCursor();
+                startPage = 1;
+            }
+
+            int maxPages = safeLimit > 50 ? 4 : 1;
+            for (int page = startPage; page < maxPages && collected.size() < safeLimit; page++) {
+                if (page > 0 && (afterCursor == null || afterCursor.isBlank())) {
+                    break;
+                }
+                int pageLimit = page == 0 ? firstPageLimit : 50;
+                String mediaExpr = (afterCursor == null)
+                        ? "followers_count,media.limit(" + pageLimit + "){%s}"
+                        : "followers_count,media.after(" + afterCursor + ").limit(" + pageLimit + "){%s}";
+                try {
+                    DiscoveryQueryResult qRes = executeBusinessDiscoveryQueryWithMeta(username, mediaExpr);
+                    viewsSupported = qRes.viewsSupported();
+                    Map<String, Object> resp = qRes.body();
+                    if (!(resp.get("business_discovery") instanceof Map<?, ?> bd)) {
+                        break;
+                    }
+                    followers = asFlexibleLong(bd.get("followers_count"));
+                    List<Map<String, Object>> pageItems = parseMediaList(bd.get("media"), qRes.viewsSupported());
+                    if (pageItems.isEmpty()) break;
+                    collected.addAll(pageItems);
+                    String nextCursor = (bd.get("media") instanceof Map<?, ?> mw) ? extractAfterCursor(mw) : null;
+                    if (page == 0) {
+                        mediaPageCache.put("bd_page:" + username + ":root:" + pageLimit,
+                                new MediaPageResult(pageItems, nextCursor, followers, viewsSupported));
+                    } else if (afterCursor != null) {
+                        mediaPageCache.put("bd_page:" + username + ":" + afterCursor + ":50",
+                                new MediaPageResult(pageItems, nextCursor, followers, viewsSupported));
+                    }
+                    afterCursor = nextCursor;
+                } catch (Exception ex) {
+                    if (page == 0) throw ex;
+                    break;
+                }
+            }
+
+            List<Map<String, Object>> finalItems = collected.size() > safeLimit
+                    ? List.copyOf(collected.subList(0, safeLimit))
+                    : List.copyOf(collected);
+            mediaPageCache.put(bdKey, new MediaPageResult(finalItems, afterCursor, followers, viewsSupported));
+            return finalItems;
+        });
     }
 
     public Map<String, Object> inspectPublicReel(String reelUrl, String creatorHandle) {
         String shortcode = extractShortcode(reelUrl);
         if (shortcode == null) {
-            throw new IllegalArgumentException("Enter a valid public Instagram Reel or Post URL (e.g. https://www.instagram.com/reel/...).");
+            throw new IllegalArgumentException("Enter a valid public https://www.instagram.com/reel/... URL.");
         }
         if (!isBusinessDiscoveryConfigured()) {
-            throw new IllegalStateException("Instagram Graph API is not configured. Set INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ACCOUNT_ID in .env.");
+            throw new IllegalStateException("Instagram Graph API is not configured.");
         }
         String username = stripAt(creatorHandle);
-        if (username.isEmpty()) {
-            throw new IllegalArgumentException("Creator Instagram handle is required for Meta Business Discovery Reel lookup.");
+        if (username.isEmpty() || !HANDLE_CLEAN_PATTERN.matcher(username).matches()) {
+            throw new IllegalArgumentException("Valid Instagram creator handle is required for Meta Business Discovery Reel lookup.");
         }
 
         Map<String, Object> bdResult = lookupMediaViaBusinessDiscovery(username, shortcode);
+        if (bdResult == null) {
+            String urlOwner = extractUrlOwnerHandle(reelUrl);
+            if (urlOwner != null && !urlOwner.equalsIgnoreCase(username)) {
+                bdResult = lookupMediaViaBusinessDiscovery(urlOwner, shortcode);
+            }
+        }
         if (bdResult == null) {
             throw new IllegalArgumentException("Reel shortcode '" + shortcode + "' was not found in the latest public media for @" + username + ".");
         }
@@ -252,37 +494,79 @@ public class InstagramGraphService {
     }
 
     public Map<String, Object> fetchMediaInsights(String igMediaId, String tokenToUse, String baseUrlOverride) {
+        if (igMediaId == null || !GRAPH_ID_PATTERN.matcher(igMediaId).matches()) {
+            throw new IllegalArgumentException("Invalid Instagram media ID.");
+        }
         String effectiveBase = (baseUrlOverride != null && !baseUrlOverride.isBlank()) ? baseUrlOverride : properties.getBaseUrl();
         String token = (tokenToUse != null && !tokenToUse.isBlank()) ? tokenToUse : properties.getAccessToken();
         if (token == null || token.isBlank()) {
             throw new IllegalStateException("Instagram access token is required.");
         }
 
-        Map<String, Object> media = executeGraphGet(
-                effectiveBase,
-                "/" + igMediaId,
-                Map.of("fields", "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count,view_count,thumbnail_url,media_url"),
-                token,
-                igMediaId
-        );
-
-        Map<String, Object> result = normalizeMediaMap(media);
-        long views = asLong(result.get("viewsCount"));
-        long likes = asLong(result.get("likeCount"));
-        long comments = asLong(result.get("commentsCount"));
-
-        Map<String, Long> insightMetrics = fetchInsightMetricsSafe(effectiveBase, igMediaId, token);
-        if (insightMetrics.containsKey("views") && insightMetrics.get("views") > 0) {
-            views = insightMetrics.get("views");
+        String cacheKey = "media_ins:" + igMediaId + ":" + effectiveBase;
+        Map<String, Object> cached = mediaInsightsCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
         }
-        if (likes == 0 && insightMetrics.containsKey("likes")) likes = insightMetrics.get("likes");
-        if (comments == 0 && insightMetrics.containsKey("comments")) comments = insightMetrics.get("comments");
 
-        result.put("viewsCount", views);
-        result.put("likeCount", likes);
-        result.put("commentsCount", comments);
-        result.put("source", insightMetrics.isEmpty() ? "META_GRAPH_MEDIA" : "META_GRAPH_INSIGHTS");
-        return result;
+        return runCoalesced(cacheKey, () -> {
+            boolean viewsFieldSupported = true;
+            Map<String, Object> media;
+            try {
+                media = executeGraphGet(
+                        effectiveBase,
+                        "/" + igMediaId,
+                        Map.of("fields", BD_MEDIA_FIELDS_V26),
+                        token,
+                        igMediaId
+                );
+            } catch (IllegalStateException ex) {
+                if (ex.getMessage() != null && ex.getMessage().contains("view_count")) {
+                    viewsFieldSupported = false;
+                    media = executeGraphGet(
+                            effectiveBase,
+                            "/" + igMediaId,
+                            Map.of("fields", BD_MEDIA_FIELDS_LEGACY),
+                            token,
+                            igMediaId
+                    );
+                } else {
+                    throw ex;
+                }
+            }
+
+            Map<String, Object> result = normalizeMediaMap(media, viewsFieldSupported);
+            String mediaType = resolveDisplayMediaType(result);
+            long views = asLong(result.get("viewsCount"));
+            long likes = asLong(result.get("likeCount"));
+            long comments = asLong(result.get("commentsCount"));
+
+            Map<String, Long> insightMetrics = fetchInsightMetricsSafe(effectiveBase, igMediaId, token, mediaType);
+            if (insightMetrics.containsKey("views") && (insightMetrics.get("views") > 0 || !viewsFieldSupported)) {
+                views = insightMetrics.get("views");
+                result.put("viewsFieldSupported", Boolean.TRUE);
+            }
+            if (likes == 0 && insightMetrics.containsKey("likes")) likes = insightMetrics.get("likes");
+            if (comments == 0 && insightMetrics.containsKey("comments")) comments = insightMetrics.get("comments");
+
+            long reach = insightMetrics.getOrDefault("reach", 0L);
+            long saves = insightMetrics.getOrDefault("saved", 0L);
+            long shares = insightMetrics.getOrDefault("shares", 0L);
+            long avgWatchTimeMs = insightMetrics.getOrDefault("ig_reels_avg_watch_time", 0L);
+            long totalInteractions = insightMetrics.getOrDefault("total_interactions", likes + comments + saves + shares);
+
+            result.put("viewsCount", views);
+            result.put("reachCount", reach);
+            result.put("savesCount", saves);
+            result.put("sharesCount", shares);
+            result.put("avgWatchTimeMs", avgWatchTimeMs);
+            result.put("totalInteractions", totalInteractions);
+            result.put("likeCount", likes);
+            result.put("commentsCount", comments);
+            result.put("source", insightMetrics.isEmpty() ? "META_GRAPH_MEDIA" : "META_GRAPH_INSIGHTS");
+            mediaInsightsCache.put(cacheKey, result);
+            return result;
+        });
     }
 
     public boolean applyProfileIfAvailable(Creator creator) {
@@ -347,13 +631,23 @@ public class InstagramGraphService {
         // Path A: Connected Creator OAuth Token (supports private Reels insights: views, reach, saved, shares)
         if (creator != null && creator.isIgConnected() && creator.getIgAccessToken() != null && !creator.getIgAccessToken().isBlank()) {
             try {
+                String mediaId = reel.getIgMediaId();
+                if (mediaId != null && GRAPH_ID_PATTERN.matcher(mediaId).matches()) {
+                    try {
+                        Map<String, Object> insights = fetchMediaInsights(mediaId, creator.getIgAccessToken(), properties.getGraphBaseUrl());
+                        applyReelMetrics(reel, insights, creator.getFollowersCount(), "META_GRAPH_INSIGHTS");
+                        return;
+                    } catch (Exception directEx) {
+                        log.debug("Direct OAuth media ID insights lookup fallback for {}: {}", mediaId, directEx.getMessage());
+                    }
+                }
                 List<Map<String, Object>> ownMedia = fetchRecentMedia(creator.getHandle(), 50, creator.getIgAccessToken());
                 Optional<Map<String, Object>> match = ownMedia.stream()
                         .filter(m -> matchesShortcode(m, shortcode))
                         .findFirst();
                 if (match.isPresent()) {
-                    String mediaId = asString(match.get().get("id"));
-                    Map<String, Object> insights = fetchMediaInsights(mediaId, creator.getIgAccessToken(), properties.getGraphBaseUrl());
+                    String resolvedMediaId = asString(match.get().get("id"));
+                    Map<String, Object> insights = fetchMediaInsights(resolvedMediaId, creator.getIgAccessToken(), properties.getGraphBaseUrl());
                     applyReelMetrics(reel, insights, creator.getFollowersCount(), "META_GRAPH_INSIGHTS");
                     return;
                 }
@@ -367,13 +661,23 @@ public class InstagramGraphService {
                 && isBusinessDiscoveryConfigured()
                 && properties.getBusinessAccountId().equals(creator.getIgUserId())) {
             try {
+                String mediaId = reel.getIgMediaId();
+                if (mediaId != null && GRAPH_ID_PATTERN.matcher(mediaId).matches()) {
+                    try {
+                        Map<String, Object> insights = fetchMediaInsights(mediaId, properties.getAccessToken(), properties.getBaseUrl());
+                        applyReelMetrics(reel, insights, creator.getFollowersCount(), "META_GRAPH_INSIGHTS");
+                        return;
+                    } catch (Exception directEx) {
+                        log.debug("Direct owned business media ID lookup fallback for {}: {}", mediaId, directEx.getMessage());
+                    }
+                }
                 List<Map<String, Object>> ownMedia = fetchRecentMedia(creator.getHandle(), 50, null);
                 Optional<Map<String, Object>> match = ownMedia.stream()
                         .filter(m -> matchesShortcode(m, shortcode))
                         .findFirst();
                 if (match.isPresent()) {
-                    String mediaId = asString(match.get().get("id"));
-                    Map<String, Object> insights = fetchMediaInsights(mediaId, properties.getAccessToken(), properties.getBaseUrl());
+                    String resolvedMediaId = asString(match.get().get("id"));
+                    Map<String, Object> insights = fetchMediaInsights(resolvedMediaId, properties.getAccessToken(), properties.getBaseUrl());
                     applyReelMetrics(reel, insights, creator.getFollowersCount(), "META_GRAPH_INSIGHTS");
                     return;
                 }
@@ -384,20 +688,30 @@ public class InstagramGraphService {
 
         // Path B: Meta System/Brand Token + Business Discovery (public engagement & media metadata)
         if (!isBusinessDiscoveryConfigured()) {
-            reel.setStatus("PENDING_META_SYNC");
-            reel.setMetricsSource("PENDING_META_API");
+            if (!"VERIFIED".equals(reel.getStatus())) {
+                reel.setStatus("PENDING_META_SYNC");
+                reel.setMetricsSource("PENDING_META_API");
+            }
             return;
         }
 
         String username = creator != null ? stripAt(creator.getHandle()) : stripAt(reel.getCreatorHandle());
         if (username.isEmpty()) {
-            reel.setStatus("PENDING_META_SYNC");
-            reel.setMetricsSource("MISSING_CREATOR_HANDLE");
+            if (!"VERIFIED".equals(reel.getStatus())) {
+                reel.setStatus("PENDING_META_SYNC");
+                reel.setMetricsSource("MISSING_CREATOR_HANDLE");
+            }
             return;
         }
 
         try {
             Map<String, Object> match = lookupMediaViaBusinessDiscovery(username, shortcode);
+            if (match == null) {
+                String urlOwner = extractUrlOwnerHandle(reel.getReelUrl());
+                if (urlOwner != null && !urlOwner.equalsIgnoreCase(username)) {
+                    match = lookupMediaViaBusinessDiscovery(urlOwner, shortcode);
+                }
+            }
             if (match != null) {
                 long followers = asLong(match.get("creatorFollowersCount"));
                 if (creator != null && followers > 0) {
@@ -405,14 +719,16 @@ public class InstagramGraphService {
                     creator.setFollowersDisplay(formatCompactNumber(followers));
                 }
                 applyReelMetrics(reel, match, creator != null ? creator.getFollowersCount() : followers, "META_BUSINESS_DISCOVERY");
-            } else {
+            } else if (!"VERIFIED".equals(reel.getStatus()) || (reel.getViewsCount() == 0 && reel.getLikesCount() == 0)) {
                 reel.setStatus("NOT_FOUND");
                 reel.setMetricsSource("NOT_FOUND_ON_IG");
             }
         } catch (Exception ex) {
             log.warn("Business Discovery reel sync error for {}: {}", shortcode, ex.getMessage());
-            reel.setStatus("PENDING_META_SYNC");
-            reel.setMetricsSource("META_API_ERROR");
+            if (!"VERIFIED".equals(reel.getStatus())) {
+                reel.setStatus("PENDING_META_SYNC");
+                reel.setMetricsSource("META_API_ERROR");
+            }
         }
     }
 
@@ -463,7 +779,11 @@ public class InstagramGraphService {
                     .retrieve()
                     .body(Map.class);
         } catch (RestClientResponseException ex) {
-            throw new IllegalArgumentException("Instagram OAuth code exchange failed: " + ex.getResponseBodyAsString());
+            log.warn("Instagram OAuth code exchange failed with HTTP {}", ex.getStatusCode().value());
+            throw new IllegalArgumentException("Instagram OAuth code exchange failed. Please restart the creator connection flow.");
+        } catch (RestClientException ex) {
+            log.warn("Instagram OAuth code exchange network error: {}", ex.getClass().getSimpleName());
+            throw new IllegalArgumentException("Instagram OAuth service could not be reached. Please try again shortly.");
         }
 
         if (shortResp == null || shortResp.get("access_token") == null) {
@@ -514,27 +834,31 @@ public class InstagramGraphService {
         return out;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> executeBusinessDiscoveryQuery(String username, String discoveryTemplate) {
+    private DiscoveryQueryResult executeBusinessDiscoveryQueryWithMeta(String username, String discoveryTemplate) {
+        if (username == null || !HANDLE_CLEAN_PATTERN.matcher(username).matches()) {
+            throw new IllegalArgumentException("Valid Instagram handle is required.");
+        }
         String fieldsV26 = "business_discovery.username(" + username + "){" + String.format(discoveryTemplate, BD_MEDIA_FIELDS_V26) + "}";
         try {
-            return executeGraphGet(
+            Map<String, Object> body = executeGraphGet(
                     properties.getBaseUrl(),
                     "/" + properties.getBusinessAccountId(),
                     Map.of("fields", fieldsV26),
                     properties.getAccessToken(),
                     username
             );
+            return new DiscoveryQueryResult(body, true);
         } catch (IllegalStateException ex) {
             if (ex.getMessage() != null && ex.getMessage().contains("view_count")) {
                 String fieldsLegacy = "business_discovery.username(" + username + "){" + String.format(discoveryTemplate, BD_MEDIA_FIELDS_LEGACY) + "}";
-                return executeGraphGet(
+                Map<String, Object> body = executeGraphGet(
                         properties.getBaseUrl(),
                         "/" + properties.getBusinessAccountId(),
                         Map.of("fields", fieldsLegacy),
                         properties.getAccessToken(),
                         username
                 );
+                return new DiscoveryQueryResult(body, false);
             }
             throw ex;
         }
@@ -542,29 +866,63 @@ public class InstagramGraphService {
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> lookupMediaViaBusinessDiscovery(String username, String shortcode) {
-        String afterCursor = null;
-        for (int page = 0; page < 3; page++) {
-            String mediaExpr = (afterCursor == null)
-                    ? "followers_count,media.limit(50){%s}"
-                    : "followers_count,media.after(" + afterCursor + ").limit(50){%s}";
-            Map<String, Object> body = executeBusinessDiscoveryQuery(username, mediaExpr);
-            if (!(body.get("business_discovery") instanceof Map<?, ?> bd)) {
-                return null;
-            }
-            long followers = asLong(bd.get("followers_count"));
-            if (bd.get("media") instanceof Map<?, ?> mediaWrapper) {
-                for (Map<String, Object> item : parseMediaDataArray(mediaWrapper.get("data"))) {
+        // Fast check against cached profile/page-1 snapshots first to avoid extra Meta calls.
+        for (String cachedKey : List.of("bd_page:" + username + ":root:25", "bd_page:" + username + ":root:50")) {
+            MediaPageResult snap = mediaPageCache.get(cachedKey);
+            if (snap != null) {
+                for (Map<String, Object> item : snap.items()) {
                     if (matchesShortcode(item, shortcode)) {
-                        item.put("creatorFollowersCount", followers);
-                        item.put("source", "META_BUSINESS_DISCOVERY");
-                        return item;
+                        Map<String, Object> matched = new LinkedHashMap<>(item);
+                        matched.put("creatorFollowersCount", snap.followersCount());
+                        matched.put("source", "META_BUSINESS_DISCOVERY");
+                        return matched;
                     }
                 }
-                afterCursor = extractAfterCursor(mediaWrapper);
-                if (afterCursor == null || afterCursor.isBlank()) {
-                    return null;
+            }
+        }
+
+        String afterCursor = null;
+        for (int page = 0; page < 3; page++) {
+            String cursorKey = (afterCursor == null) ? "root" : afterCursor;
+            String cacheKey = "bd_page:" + username + ":" + cursorKey + ":50";
+            final String currentCursor = afterCursor;
+
+            MediaPageResult pageRes = mediaPageCache.get(cacheKey);
+            if (pageRes == null) {
+                pageRes = runCoalesced(cacheKey, () -> {
+                    String mediaExpr = (currentCursor == null)
+                            ? "followers_count,media.limit(50){%s}"
+                            : "followers_count,media.after(" + currentCursor + ").limit(50){%s}";
+                    DiscoveryQueryResult qRes = executeBusinessDiscoveryQueryWithMeta(username, mediaExpr);
+                    Map<String, Object> body = qRes.body();
+                    if (!(body.get("business_discovery") instanceof Map<?, ?> bd)) {
+                        return new MediaPageResult(List.of(), null, 0L, qRes.viewsSupported());
+                    }
+                    long followers = asFlexibleLong(bd.get("followers_count"));
+                    if (bd.get("media") instanceof Map<?, ?> mediaWrapper) {
+                        List<Map<String, Object>> parsed = parseMediaDataArray(mediaWrapper.get("data"), qRes.viewsSupported());
+                        String next = extractAfterCursor(mediaWrapper);
+                        MediaPageResult built = new MediaPageResult(parsed, next, followers, qRes.viewsSupported());
+                        mediaPageCache.put(cacheKey, built);
+                        return built;
+                    }
+                    return new MediaPageResult(List.of(), null, followers, qRes.viewsSupported());
+                });
+            }
+
+            if (pageRes == null || pageRes.items().isEmpty()) {
+                return null;
+            }
+            for (Map<String, Object> item : pageRes.items()) {
+                if (matchesShortcode(item, shortcode)) {
+                    Map<String, Object> matched = new LinkedHashMap<>(item);
+                    matched.put("creatorFollowersCount", pageRes.followersCount());
+                    matched.put("source", "META_BUSINESS_DISCOVERY");
+                    return matched;
                 }
-            } else {
+            }
+            afterCursor = pageRes.afterCursor();
+            if (afterCursor == null || afterCursor.isBlank()) {
                 return null;
             }
         }
@@ -575,17 +933,34 @@ public class InstagramGraphService {
         if (mediaWrapper.get("paging") instanceof Map<?, ?> paging
                 && paging.get("cursors") instanceof Map<?, ?> cursors) {
             String after = asString(cursors.get("after"));
-            return after.isEmpty() ? null : after;
+            return (!after.isEmpty() && CURSOR_PATTERN.matcher(after).matches()) ? after : null;
         }
         return null;
     }
 
+    private static boolean isVideoOrReelType(String mediaType) {
+        if (mediaType == null || mediaType.isBlank()) return true;
+        String upper = mediaType.toUpperCase(Locale.ROOT);
+        return upper.contains("REEL") || upper.contains("VIDEO");
+    }
+
     @SuppressWarnings("unchecked")
-    private Map<String, Long> fetchInsightMetricsSafe(String baseUrl, String igMediaId, String token) {
-        String[] metricSets = {
-                "views,likes,comments",
-                "views"
-        };
+    private Map<String, Long> fetchInsightMetricsSafe(String baseUrl, String igMediaId, String token, String mediaType) {
+        String[] metricSets = isVideoOrReelType(mediaType)
+                ? new String[]{
+                        "views,reach,saved,shares,total_interactions,likes,comments,ig_reels_avg_watch_time",
+                        "views,reach,saved,shares,total_interactions,likes,comments",
+                        "views,reach,saved,shares,total_interactions",
+                        "views,likes,comments",
+                        "views"
+                }
+                : new String[]{
+                        "views,reach,saved,shares,total_interactions,likes,comments",
+                        "views,reach,saved,shares,total_interactions",
+                        "views,likes,comments",
+                        "views"
+                };
+
         for (String metrics : metricSets) {
             try {
                 Map<String, Object> resp = executeGraphGet(
@@ -600,8 +975,10 @@ public class InstagramGraphService {
                     for (Object rowObj : dataList) {
                         if (rowObj instanceof Map<?, ?> row && row.get("name") instanceof String name) {
                             long val = 0L;
-                            if (row.get("values") instanceof List<?> vals && !vals.isEmpty() && vals.get(0) instanceof Map<?, ?> first) {
-                                val = asLong(first.get("value"));
+                            if (row.get("total_value") instanceof Map<?, ?> tv && tv.get("value") != null) {
+                                val = asFlexibleLong(tv.get("value"));
+                            } else if (row.get("values") instanceof List<?> vals && !vals.isEmpty() && vals.get(0) instanceof Map<?, ?> first) {
+                                val = asFlexibleLong(first.get("value"));
                             }
                             parsed.put(name, val);
                         }
@@ -610,6 +987,9 @@ public class InstagramGraphService {
                 }
             } catch (Exception ex) {
                 log.debug("Meta insights call ({}) fallback for {}: {}", metrics, igMediaId, ex.getMessage());
+                if (ex.getMessage() != null && ex.getMessage().contains("rate limit")) {
+                    break;
+                }
             }
         }
         return Map.of();
@@ -617,6 +997,9 @@ public class InstagramGraphService {
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> executeGraphGet(String baseUrl, String path, Map<String, String> params, String accessToken, String contextLabel) {
+        if (Instant.now().isBefore(rateLimitCooldownUntil)) {
+            throw new IllegalStateException("Meta Instagram API rate limit reached. Showing cached metrics; please try again in a minute.");
+        }
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl + path);
         params.forEach(builder::queryParam);
         builder.queryParam("access_token", accessToken);
@@ -630,13 +1013,31 @@ public class InstagramGraphService {
             return body != null ? body : Map.of();
         } catch (RestClientResponseException ex) {
             String errBody = ex.getResponseBodyAsString();
+            int status = ex.getStatusCode().value();
+            if (status == 429
+                    || errBody.contains("\"code\":4")
+                    || errBody.contains("\"code\":17")
+                    || errBody.contains("\"code\":32")
+                    || errBody.contains("\"code\":613")
+                    || errBody.toLowerCase(Locale.ROOT).contains("request limit reached")) {
+                rateLimitCooldownUntil = Instant.now().plusSeconds(60);
+                log.warn("Meta Graph API rate limit encountered on {} (HTTP {}), backing off 60s", path, status);
+                throw new IllegalStateException("Meta Instagram API rate limit reached. Showing cached metrics; please try again in a minute.");
+            }
             if (errBody.contains("2207013") || errBody.contains("Cannot find user") || errBody.contains("Invalid user id")) {
                 throw new IllegalArgumentException("Instagram account '@" + contextLabel + "' was not found or is not a public Creator/Business account.");
             }
-            if (errBody.contains("\"code\":190") || ex.getStatusCode().value() == 401) {
+            if (errBody.contains("\"code\":190") || status == 401) {
                 throw new IllegalStateException("Instagram Graph API access token is invalid or expired.");
             }
-            throw new IllegalStateException("Meta Graph API error (" + ex.getStatusCode().value() + "): " + errBody);
+            if (errBody.contains("view_count")) {
+                throw new IllegalStateException("Meta Graph API unsupported field: view_count");
+            }
+            log.warn("Meta Graph API error on path {} (HTTP {})", path, status);
+            throw new IllegalStateException("Meta Graph API request failed (HTTP " + status + ").");
+        } catch (RestClientException ex) {
+            log.warn("Meta Graph API transport error on path {}: {}", path, ex.getClass().getSimpleName());
+            throw new IllegalStateException("Meta Graph API could not be reached right now.");
         }
     }
 
@@ -697,22 +1098,36 @@ public class InstagramGraphService {
             } catch (Exception ignored) {}
         }
 
-        long likes = asLong(m.get("likeCount"), asLong(m.get("like_count")));
-        long comments = asLong(m.get("commentsCount"), asLong(m.get("comments_count")));
-        long views = asLong(m.get("viewsCount"));
+        long likes = asFlexibleLong(m.get("likeCount"));
+        if (likes == 0) likes = asFlexibleLong(m.get("like_count"));
+        long comments = asFlexibleLong(m.get("commentsCount"));
+        if (comments == 0) comments = asFlexibleLong(m.get("comments_count"));
+        long views = asFlexibleLong(m.get("viewsCount"));
+        boolean viewsSupported = !Boolean.FALSE.equals(m.get("viewsFieldSupported"));
+        boolean hasExplicitLikes = Boolean.TRUE.equals(m.get("hasExplicitLikes")) || likes > 0;
 
-        reel.setLikesCount(likes);
+        long reach = asFlexibleLong(m.get("reachCount"));
+        long saves = asFlexibleLong(m.get("savesCount"));
+        long shares = asFlexibleLong(m.get("sharesCount"));
+        long avgWatchMs = asFlexibleLong(m.get("avgWatchTimeMs"));
+
+        if (hasExplicitLikes || "META_GRAPH_INSIGHTS".equals(source)) {
+            reel.setLikesCount(likes);
+        }
         reel.setCommentsCount(comments);
-        reel.setViewsCount(views);
-        reel.setReachCount(0L);
-        reel.setSavesCount(0L);
-        reel.setSharesCount(0L);
-        reel.setAvgWatchTimeMs(0L);
+        if (views > 0 || (viewsSupported && reel.getViewsCount() == 0)) {
+            reel.setViewsCount(views);
+        }
+        reel.setReachCount(reach);
+        reel.setSavesCount(saves);
+        reel.setSharesCount(shares);
+        reel.setAvgWatchTimeMs(avgWatchMs);
         reel.setTotalViewTimeMs(0L);
 
-        long denom = views > 0 ? views : creatorFollowers;
+        long effectiveViews = reel.getViewsCount();
+        long denom = effectiveViews > 0 ? effectiveViews : creatorFollowers;
         if (denom > 0) {
-            double eng = Math.round(((likes + comments) * 100.0 / denom) * 100.0) / 100.0;
+            double eng = Math.round(((reel.getLikesCount() + reel.getCommentsCount()) * 100.0 / denom) * 100.0) / 100.0;
             reel.setEngagementRate(eng);
         }
         reel.setStatus("VERIFIED");
@@ -720,48 +1135,66 @@ public class InstagramGraphService {
         reel.setSyncedAt(Instant.now());
     }
 
-    private List<Map<String, Object>> parseMediaList(Object mediaWrapper) {
+    private List<Map<String, Object>> parseMediaList(Object mediaWrapper, boolean viewsSupported) {
         if (mediaWrapper instanceof Map<?, ?> mediaMap) {
-            return parseMediaDataArray(mediaMap.get("data"));
+            return parseMediaDataArray(mediaMap.get("data"), viewsSupported);
         }
         return List.of();
     }
 
-    private List<Map<String, Object>> parseMediaDataArray(Object dataObj) {
+    private List<Map<String, Object>> parseMediaDataArray(Object dataObj, boolean viewsSupported) {
         if (!(dataObj instanceof List<?> list)) return List.of();
         List<Map<String, Object>> out = new ArrayList<>();
         for (Object itemObj : list) {
             if (itemObj instanceof Map<?, ?> m) {
-                out.add(normalizeMediaMap(m));
+                out.add(normalizeMediaMap(m, viewsSupported));
             }
         }
         return out;
     }
 
-    private Map<String, Object> normalizeMediaMap(Map<?, ?> m) {
+    private Map<String, Object> normalizeMediaMap(Map<?, ?> m, boolean viewsSupported) {
         Map<String, Object> out = new LinkedHashMap<>();
         String permalink = asString(m.get("permalink"));
+        String mediaType = asString(m.get("media_type"));
+        String mediaProductType = asString(m.get("media_product_type"));
         String mediaUrl = asString(m.get("media_url"));
-        String thumb = asString(m.get("thumbnail_url"), mediaUrl);
+        String rawThumb = asString(m.get("thumbnail_url"));
+        String thumb = !rawThumb.isEmpty() ? rawThumb : ("VIDEO".equalsIgnoreCase(mediaType) ? "" : mediaUrl);
+        long views = asFlexibleLong(m.get("view_count"));
+        if (views == 0) views = asFlexibleLong(m.get("viewsCount"));
+        long likes = asFlexibleLong(m.get("like_count"));
+        long comments = asFlexibleLong(m.get("comments_count"));
+        boolean isReel = "REELS".equalsIgnoreCase(mediaProductType)
+                || permalink.toLowerCase(Locale.ROOT).contains("/reel/")
+                || permalink.toLowerCase(Locale.ROOT).contains("/reels/");
+
         out.put("id", asString(m.get("id")));
         out.put("shortcode", extractShortcode(permalink));
         out.put("caption", asString(m.get("caption")));
-        out.put("mediaType", asString(m.get("media_type")));
-        out.put("mediaProductType", asString(m.get("media_product_type")));
+        out.put("mediaType", mediaType);
+        out.put("mediaProductType", mediaProductType);
+        out.put("isReel", isReel);
         out.put("permalink", permalink);
         out.put("thumbnailUrl", thumb);
         out.put("mediaUrl", mediaUrl);
         out.put("timestamp", asString(m.get("timestamp")));
-        out.put("likeCount", asLong(m.get("like_count")));
-        out.put("commentsCount", asLong(m.get("comments_count")));
-        out.put("viewsCount", asLong(m.get("view_count"), asLong(m.get("viewsCount"))));
+        out.put("likeCount", likes);
+        out.put("commentsCount", comments);
+        out.put("viewsCount", views);
+        out.put("viewsFieldSupported", viewsSupported);
+        out.put("hasExplicitLikes", m.containsKey("like_count"));
         return out;
     }
 
     private boolean matchesShortcode(Map<String, Object> m, String shortcode) {
         String sc = asString(m.get("shortcode"));
+        if (shortcode.equals(sc)) {
+            return true;
+        }
         String permalink = asString(m.get("permalink"));
-        return shortcode.equals(sc) || (!permalink.isEmpty() && permalink.contains("/" + shortcode));
+        String extracted = extractShortcode(permalink);
+        return shortcode.equals(extracted);
     }
 
     private static String asString(Object v) {
@@ -1069,7 +1502,7 @@ public class InstagramGraphService {
             for (Object accObj : accounts) {
                 if (!(accObj instanceof Map<?, ?> acc)) continue;
                 String actId = asString(acc.get("id"));
-                if (actId.isEmpty()) continue;
+                if (actId.isEmpty() || !GRAPH_ID_PATTERN.matcher(actId).matches()) continue;
 
                 Map<String, Object> adsResp = executeGraphGet(
                         properties.getBaseUrl(),
@@ -1130,7 +1563,7 @@ public class InstagramGraphService {
         if (!permalink.isEmpty()) {
             String sc = extractShortcode(permalink);
             if (sc != null && shortcodes.contains(sc)) return true;
-            if (!creatorUsername.isEmpty() && permalink.toLowerCase().contains("/" + creatorUsername + "/")) return true;
+            if (sc != null && !creatorUsername.isEmpty() && permalink.toLowerCase(Locale.ROOT).contains("/" + creatorUsername + "/")) return true;
         }
         return false;
     }
@@ -1157,8 +1590,23 @@ public class InstagramGraphService {
 
         if (profile.get("marketplaceInsights") instanceof Map<?, ?> mp && !mp.isEmpty()) {
             applyMarketplaceFieldsToCreator(creator, (Map<String, Object>) mp);
-        } else if ("PENDING_META_SYNC".equals(creator.getInsightsSource())) {
+            return;
+        }
+        if ("PENDING_META_SYNC".equals(creator.getInsightsSource())) {
             creator.setInsightsSource("BUSINESS_DISCOVERY_PARTIAL");
+        }
+        if (!"CREATOR_OAUTH_INSIGHTS".equals(creator.getInsightsSource())
+                && !"META_CREATOR_MARKETPLACE".equals(creator.getInsightsSource())
+                && creator.getAuditedReelsCount() == 0) {
+            long pubViews = asFlexibleLong(profile.get("publicViews30d"));
+            if (pubViews == 0) pubViews = asFlexibleLong(profile.get("totalRecentViews"));
+            long pubInter = asFlexibleLong(profile.get("publicInteractions30d"));
+            if (pubInter == 0) pubInter = asFlexibleLong(profile.get("totalRecentInteractions"));
+            double estIr = asDouble(profile.get("estimatedInteractionRate"));
+            if (creator.getTotalViews30d() == 0 && pubViews > 0) creator.setTotalViews30d(pubViews);
+            if (creator.getAccountInteractions30d() == 0 && pubInter > 0) creator.setAccountInteractions30d(pubInter);
+            if (creator.getInteractionRate90d() == 0 && estIr > 0) creator.setInteractionRate90d(estIr);
+            if (creator.getEngagementRate() == 0 && estIr > 0) creator.setEngagementRate(estIr);
         }
     }
 
@@ -1412,11 +1860,18 @@ public class InstagramGraphService {
 
     public boolean backfillDeliverableFromMedia(ReelDeliverable reel, Map<String, Object> m, long creatorFollowers) {
         if (reel == null || m == null) return false;
-        long mViews = asLong(m.get("viewsCount"));
-        long mLikes = asLong(m.get("likeCount"), asLong(m.get("like_count")));
-        long mComments = asLong(m.get("commentsCount"), asLong(m.get("comments_count")));
+        long mViews = asFlexibleLong(m.get("viewsCount"));
+        long mLikes = asFlexibleLong(m.get("likeCount"));
+        if (mLikes == 0) mLikes = asFlexibleLong(m.get("like_count"));
+        long mComments = asFlexibleLong(m.get("commentsCount"));
+        if (mComments == 0) mComments = asFlexibleLong(m.get("comments_count"));
         boolean changed = false;
 
+        String mediaId = asString(m.get("id"));
+        if (!mediaId.isEmpty() && (reel.getIgMediaId() == null || reel.getIgMediaId().isBlank())) {
+            reel.setIgMediaId(mediaId);
+            changed = true;
+        }
         if (mViews > 0 && reel.getViewsCount() != mViews) {
             reel.setViewsCount(mViews);
             changed = true;
@@ -1451,12 +1906,22 @@ public class InstagramGraphService {
                 changed = true;
             } catch (Exception ignored) {}
         }
-        if (changed && reel.getEngagementRate() == 0 && creatorFollowers > 0) {
+        if (!"VERIFIED".equals(reel.getStatus())) {
+            reel.setStatus("VERIFIED");
+            reel.setMetricsSource("META_BUSINESS_DISCOVERY");
+            changed = true;
+        }
+        long denom = reel.getViewsCount() > 0 ? reel.getViewsCount() : creatorFollowers;
+        if (denom > 0 && (changed || reel.getEngagementRate() == 0)) {
             long totalInt = reel.getLikesCount() + reel.getCommentsCount();
-            long denom = reel.getViewsCount() > 0 ? reel.getViewsCount() : creatorFollowers;
-            if (denom > 0) {
-                reel.setEngagementRate(Math.round((totalInt * 100.0 / denom) * 100.0) / 100.0);
+            double recalc = Math.round((totalInt * 100.0 / denom) * 100.0) / 100.0;
+            if (reel.getEngagementRate() != recalc) {
+                reel.setEngagementRate(recalc);
+                changed = true;
             }
+        }
+        if (changed) {
+            reel.setSyncedAt(Instant.now());
         }
         return changed;
     }
@@ -1535,5 +2000,85 @@ public class InstagramGraphService {
         out.put("derived", derived);
         out.put("metaConfigured", isBusinessDiscoveryConfigured() || (creator != null && creator.isIgConnected()));
         return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T runCoalesced(String key, java.util.function.Supplier<T> loader) {
+        CompletableFuture<T> ownFuture = new CompletableFuture<>();
+        CompletableFuture<T> existing = (CompletableFuture<T>) inFlightRequests.putIfAbsent(key, ownFuture);
+        if (existing != null) {
+            try {
+                return existing.join();
+            } catch (CompletionException ce) {
+                if (ce.getCause() instanceof RuntimeException re) throw re;
+                throw ce;
+            }
+        }
+        try {
+            T result = loader.get();
+            ownFuture.complete(result);
+            return result;
+        } catch (RuntimeException ex) {
+            ownFuture.completeExceptionally(ex);
+            throw ex;
+        } finally {
+            inFlightRequests.remove(key, ownFuture);
+        }
+    }
+
+    private record DiscoveryQueryResult(Map<String, Object> body, boolean viewsSupported) {}
+
+    private record MediaPageResult(
+            List<Map<String, Object>> items,
+            String afterCursor,
+            long followersCount,
+            boolean viewsSupported) {}
+
+    private static final class TtlCache<V> {
+        private record Entry<V>(V value, Instant expiresAt) {}
+
+        private final Duration ttl;
+        private final int maxEntries;
+        private final ConcurrentHashMap<String, Entry<V>> map = new ConcurrentHashMap<>();
+
+        TtlCache(Duration ttl, int maxEntries) {
+            this.ttl = ttl;
+            this.maxEntries = maxEntries;
+        }
+
+        V get(String key) {
+            Entry<V> e = map.get(key);
+            if (e == null) return null;
+            if (Instant.now().isAfter(e.expiresAt())) {
+                map.remove(key, e);
+                return null;
+            }
+            return e.value();
+        }
+
+        void put(String key, V value) {
+            if (key == null || value == null) return;
+            if (map.size() >= maxEntries) {
+                Instant now = Instant.now();
+                map.entrySet().removeIf(entry -> now.isAfter(entry.getValue().expiresAt()));
+                if (map.size() >= maxEntries) {
+                    Iterator<String> it = map.keySet().iterator();
+                    int toRemove = Math.max(1, map.size() / 4);
+                    while (it.hasNext() && toRemove-- > 0) {
+                        it.next();
+                        it.remove();
+                    }
+                }
+            }
+            map.put(key, new Entry<>(value, Instant.now().plus(ttl)));
+        }
+
+        void remove(String key) {
+            map.remove(key);
+        }
+
+        void removeByPrefix(String prefix) {
+            map.keySet().removeIf(k -> k.startsWith(prefix));
+        }
     }
 }

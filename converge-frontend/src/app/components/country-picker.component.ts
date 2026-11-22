@@ -81,9 +81,9 @@ export function enforcePhoneKeydown(event: KeyboardEvent, currentDigits: string,
         [attr.aria-expanded]="open()"
         aria-haspopup="listbox"
         aria-label="Country dialing code"
-        class="h-7 px-2 rounded-[3px] bg-[#242424] hover:bg-[#2c2c2c] border border-white/[0.14] text-xs font-medium text-[#fff6e8] flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap focus:outline-none focus:border-[#f54e26]">
+        class="h-7 px-2 rounded-[3px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-xs font-medium text-cv-ink flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap focus:outline-none focus:border-[#f54e26]">
         <span class="tabular-nums">{{ selected().label }}</span>
-        <svg class="w-3 h-3 text-[#a7a9be] transition-transform duration-150"
+        <svg class="w-3 h-3 text-cv-ink-muted transition-transform duration-150"
              [class.rotate-180]="open()"
              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 9l6 6 6-6"/>
@@ -93,7 +93,7 @@ export function enforcePhoneKeydown(event: KeyboardEvent, currentDigits: string,
       @if (open()) {
         <div
           role="listbox"
-          class="absolute left-0 top-full mt-1.5 w-44 max-h-56 overflow-y-auto rounded-[4px] bg-[#161616] border border-white/[0.18] shadow-[4px_4px_0px_#f54e26] py-1 z-50">
+          class="absolute left-0 top-full mt-1.5 w-44 max-h-56 overflow-y-auto rounded-[4px] bg-cv-card border border-cv-border-strong shadow-[4px_4px_0px_#f54e26] py-1 z-50">
           @for (c of countries; track c.iso) {
             <button
               type="button"
@@ -102,11 +102,11 @@ export function enforcePhoneKeydown(event: KeyboardEvent, currentDigits: string,
               (click)="selectCountry(c.iso)"
               class="w-full px-3 py-1.5 text-left text-xs flex items-center justify-between gap-2 transition-colors cursor-pointer"
               [ngClass]="c.iso === iso()
-                ? 'bg-[#fff6e8] text-[#111111] font-semibold'
-                : 'text-[#fff6e8] hover:bg-white/[0.08]'">
+                ? 'bg-cv-ink text-cv-ink-inverse font-semibold'
+                : 'text-cv-ink hover:bg-cv-hover-pill'">
               <span class="truncate">{{ c.name }}</span>
               <span class="tabular-nums shrink-0"
-                    [ngClass]="c.iso === iso() ? 'text-[#111111]' : 'text-[#a7a9be]'">{{ c.label }}</span>
+                    [ngClass]="c.iso === iso() ? 'text-cv-ink-inverse' : 'text-cv-ink-muted'">{{ c.label }}</span>
             </button>
           }
         </div>

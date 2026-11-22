@@ -1,5 +1,6 @@
 package com.converge.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
@@ -41,6 +42,7 @@ public class Brand {
     private String managerEmail;
     private String managerRoleTitle = "Director of Growth";
 
+    @JsonIgnore
     private String activationToken;
 
     @Column(nullable = false, updatable = false)

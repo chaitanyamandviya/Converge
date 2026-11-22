@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services/api.service';
+import { formatReelDisplayTitle } from '../utils/reel-format';
+import { safeExternalUrl } from '../utils/url-safety';
 
 @Component({
   selector: 'app-reel-insights-view',
@@ -9,27 +11,27 @@ import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services
   template: `
     <section class="space-y-5 animate-fade-in-up">
       <!-- Top Breadcrumb & Actions -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-surface-variant/60">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-cv-border-soft">
         <div class="flex items-center gap-3 min-w-0">
           <button
             type="button"
             (click)="back.emit()"
-            class="h-9 px-4 rounded-full bg-surface-container-lowest border border-surface-container-high hover:bg-surface-cream text-ink-primary text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors">
-            <span>← Back to Creator</span>
+            class="h-9 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-cv-ink text-xs font-medium flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors">
+            <span>{{ isLivePreview && !creator?.id ? '← Back to Lookup' : '← Back to Creator' }}</span>
           </button>
           <div class="min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="px-2.5 py-0.5 rounded-full bg-blue-container text-primary text-[11px] font-bold">{{ reel.mediaType || 'REELS' }}</span>
+              <span class="px-2 py-0.5 rounded-[3px] bg-[#5738af] text-[#fff6e8] text-[10px] font-bold uppercase tracking-wide">{{ reel.mediaType || 'REELS' }}</span>
               <span
-                class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                [ngClass]="reel.status === 'VERIFIED' ? 'bg-mint-container text-mint-green' : (reel.status === 'LIVE_PREVIEW' ? 'bg-blue-container/60 text-primary' : 'bg-marigold-container text-tertiary')">
+                class="px-2 py-0.5 rounded-[3px] text-[10px] font-bold uppercase tracking-wide"
+                [ngClass]="reel.status === 'VERIFIED' ? 'bg-[#007656] text-[#fff6e8]' : (reel.status === 'LIVE_PREVIEW' ? 'bg-cv-well border border-cv-border text-[#f54e26]' : 'bg-[#fabf29] text-[#111111]')">
                 {{ reel.status }}
               </span>
               @if (reel.shortcode) {
-                <span class="font-mono text-xs text-ink-secondary">{{ reel.shortcode }}</span>
+                <span class="text-xs text-cv-ink-muted tabular-nums">{{ reel.shortcode }}</span>
               }
             </div>
-            <h1 class="font-headline text-xl sm:text-2xl font-bold text-ink-primary truncate mt-1">{{ reel.title }}</h1>
+            <h1 class="font-headline uppercase text-2xl sm:text-3xl font-bold text-cv-ink tracking-[0.02em] leading-none truncate mt-1">{{ displayReelTitle(reel) }}</h1>
           </div>
         </div>
 
@@ -39,47 +41,115 @@ import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services
               type="button"
               (click)="trackLiveReel.emit(reel)"
               [disabled]="tracking"
-              class="btn-shimmer h-9 px-4 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold cursor-pointer disabled:opacity-60">
-              {{ tracking ? 'Tracking...' : '+ Track as Deliverable' }}
+              class="h-9 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer transition-colors disabled:opacity-60">
+              {{ tracking ? 'TRACKING...' : '+ TRACK AS DELIVERABLE' }}
             </button>
           } @else {
             <button
               type="button"
               (click)="syncReel.emit(reel.id)"
               [disabled]="syncing"
-              class="h-9 px-4 rounded-full bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold cursor-pointer disabled:opacity-60">
-              {{ syncing ? 'Syncing IG...' : 'Sync Reel IG' }}
+              class="h-9 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-base font-bold cursor-pointer transition-colors disabled:opacity-60">
+              {{ syncing ? 'SYNCING IG...' : 'SYNC REEL IG ↻' }}
             </button>
           }
           <button
             type="button"
             (click)="copyUrl.emit(reel.reelUrl)"
-            class="h-9 px-4 rounded-full bg-surface-container-lowest border border-surface-container-high text-ink-primary hover:bg-surface-cream text-xs font-semibold cursor-pointer transition-colors">
+            class="h-9 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-cv-ink text-xs font-medium cursor-pointer transition-colors">
             Copy URL
           </button>
-          <a
-            [href]="reel.reelUrl"
-            target="_blank"
-            rel="noopener"
-            class="h-9 px-4 rounded-full bg-blue-container text-primary hover:bg-primary hover:text-on-primary text-xs font-semibold flex items-center gap-1 transition-colors">
-            <span>Open on Instagram ↗</span>
-          </a>
+          @if (safeExternalUrl(reel.reelUrl, true); as safeReelHref) {
+            <a
+              [href]="safeReelHref"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="h-9 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-cv-ink text-xs font-medium flex items-center gap-1 transition-colors">
+              <span>Open on Instagram ↗</span>
+            </a>
+          }
         </div>
       </div>
 
       <!-- Hero Content Preview & Official Metrics -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <div class="lg:col-span-4 bg-surface-container-lowest rounded-3xl p-4 border border-surface-container-high shadow-2xs flex flex-col gap-3">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:items-start">
+        <div class="lg:col-span-4 bg-cv-card rounded-[4px] p-4 border border-cv-border flex flex-col gap-3">
           @if (reel.thumbnailUrl) {
-            <img [src]="reel.thumbnailUrl" [alt]="reel.title" (error)="reel.thumbnailUrl = ''" class="w-full h-72 xl:h-80 object-cover rounded-2xl bg-surface-warm"/>
+            <img [src]="reel.thumbnailUrl" [alt]="reel.title" (error)="reel.thumbnailUrl = ''" class="w-full aspect-[4/5] max-h-[360px] object-cover rounded-[4px] bg-cv-well border border-cv-border-soft"/>
           } @else {
-            <div class="w-full h-56 xl:h-72 rounded-2xl bg-surface-warm flex flex-col items-center justify-center text-ink-secondary text-xs gap-1">
-              <span class="font-mono font-bold text-sm text-primary">{{ reel.mediaType || 'REELS' }}</span>
+            <div class="w-full aspect-[4/5] max-h-[340px] rounded-[4px] bg-cv-well border border-cv-border-soft flex flex-col items-center justify-center text-cv-ink-muted text-xs gap-1">
+              <span class="font-headline uppercase font-bold text-lg text-[#f54e26]">{{ reel.mediaType || 'REELS' }}</span>
               <span>{{ reel.shortcode || 'Instagram Reel' }}</span>
             </div>
           }
-          <div class="flex items-center justify-between text-[11px] text-ink-secondary px-1">
-            <span>Synced from Instagram</span>
+
+          <!-- Public URL Bar + Quick Refresh (Hero Parity) -->
+          <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-[4px] bg-cv-well border border-cv-border-soft">
+            <div class="flex items-center gap-2 min-w-0 text-xs">
+              <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="reel.status === 'VERIFIED' ? 'bg-cv-green' : 'bg-[#fabf29]'"></span>
+              <span class="text-cv-ink font-medium truncate">{{ shortReelUrl(reel.reelUrl) }}</span>
+            </div>
+            @if (!isLivePreview) {
+              <button
+                type="button"
+                (click)="syncReel.emit(reel.id)"
+                [disabled]="syncing"
+                class="shrink-0 px-2.5 py-1 rounded-[3px] bg-cv-control hover:bg-[#f54e26] hover:text-[#111111] text-cv-ink text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-50">
+                {{ syncing ? 'Updating...' : 'Refresh ↻' }}
+              </button>
+            }
+          </div>
+
+          <!-- Real Snapshot Sync Momentum -->
+          @let snaps = snapshotList;
+          @if (snaps.length > 0) {
+            <div class="px-3 py-2.5 rounded-[4px] bg-cv-well border border-cv-border-soft space-y-2">
+              <div class="flex items-center justify-between gap-2 text-[11px]">
+                <span class="text-cv-ink-muted">Sync momentum</span>
+                @if ((derived.viewsDeltaLastSync || 0) > 0) {
+                  <span class="px-1.5 py-0.5 rounded-[3px] bg-[#f54e26] text-[#111111] text-[10px] font-bold uppercase tracking-wide tabular-nums">
+                    +{{ formatCompact(derived.viewsDeltaLastSync || 0) }} LAST SYNC
+                  </span>
+                } @else if (snaps.length >= 2) {
+                  <span class="text-[10px] font-semibold text-cv-green tabular-nums">{{ snaps.length }} synced snapshots</span>
+                } @else {
+                  <span class="text-[10px] text-cv-ink-subtle">Baseline synced</span>
+                }
+              </div>
+
+              @if (activeSnapshot; as snap) {
+                <div class="flex items-center justify-between text-[10px] text-cv-ink-muted tabular-nums">
+                  <span>Sync #{{ activeSnapIndex + 1 }} · {{ snap.capturedAt | date:'MMM d, h:mm a' }}</span>
+                  <span class="text-cv-ink font-semibold">
+                    {{ snap.viewsCount.toLocaleString('en-IN') }} views
+                    @if (snap.deltaViews > 0) {
+                      <span class="text-cv-green">(+{{ formatCompact(snap.deltaViews) }})</span>
+                    }
+                  </span>
+                </div>
+              }
+
+              <div class="grid grid-cols-7 gap-1.5 items-end h-11 pt-1">
+                @for (s of snaps; track $index) {
+                  <button
+                    type="button"
+                    (mouseenter)="hoveredSnapIdx = $index"
+                    (click)="hoveredSnapIdx = $index"
+                    class="w-full rounded-t-[2px] transition-all duration-150 cursor-pointer"
+                    [style.height.%]="snapshotBarPct(s.viewsCount)"
+                    [style.backgroundColor]="activeSnapIndex === $index ? '#f54e26' : '#f54e2677'"
+                    [attr.aria-label]="'Sync snapshot ' + ($index + 1)">
+                  </button>
+                }
+              </div>
+              @if (snaps.length === 1) {
+                <p class="text-[10px] text-cv-ink-subtle">Sync again later to plot view growth across checks.</p>
+              }
+            </div>
+          }
+
+          <div class="flex items-center justify-between gap-2 text-[11px] text-cv-ink-muted px-1 pt-0.5 border-t border-cv-border-faint tabular-nums">
+            <span>{{ reel.metricsSource === 'META_GRAPH_INSIGHTS' ? 'Creator OAuth API' : 'Public IG Discovery' }}</span>
             @if (reel.publishedAt) {
               <span>Published {{ reel.publishedAt | date:'mediumDate' }}</span>
             } @else if (reel.syncedAt) {
@@ -90,100 +160,117 @@ import { Creator, DeliverableInsightsBundle, ReelDeliverable } from '../services
 
         <!-- Right 2 Columns: Creator Header + Official Performance + Cost ROI -->
         <div class="lg:col-span-8 space-y-4">
-          <div class="bg-surface-container-lowest rounded-3xl p-5 border border-surface-container-high shadow-2xs space-y-3">
-            @if (creator; as c) {
+          @if (creator; as c) {
+            <div class="bg-cv-card rounded-[4px] p-5 border border-cv-border">
               <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
                   @if (c.avatarUrl) {
-                    <img [src]="c.avatarUrl" [alt]="c.name" class="w-10 h-10 rounded-full object-cover border border-surface-container-high shrink-0"/>
+                    <img [src]="c.avatarUrl" [alt]="c.name" class="w-10 h-10 rounded-[4px] object-cover border border-cv-border shrink-0"/>
                   } @else {
-                    <div class="w-10 h-10 rounded-full bg-blue-container text-primary font-headline font-bold flex items-center justify-center shrink-0">
+                    <div class="w-10 h-10 rounded-[4px] bg-[#f54e26] text-[#111111] font-headline font-bold flex items-center justify-center shrink-0">
                       {{ c.name.substring(0, 2).toUpperCase() }}
                     </div>
                   }
                   <div class="min-w-0">
-                    <p class="font-headline font-bold text-sm text-ink-primary truncate">{{ c.name }}</p>
-                    <p class="text-xs font-mono text-ink-secondary truncate">{{ c.handle }} • {{ c.followersDisplay || formatCompact(c.followersCount) }} followers</p>
+                    <p class="font-headline uppercase font-bold text-lg text-cv-ink truncate leading-tight">{{ c.name }}</p>
+                    <p class="text-xs text-cv-ink-muted truncate tabular-nums">{{ c.handle }} • {{ c.followersDisplay || formatCompact(c.followersCount) }} followers</p>
                   </div>
                 </div>
                 @if (c.campaignName) {
-                  <span class="px-3 py-1 rounded-full bg-surface-warm text-ink-primary text-xs font-semibold shrink-0">{{ c.campaignName }}</span>
-                }
-              </div>
-            }
-            @if (reel.caption) {
-              <p class="text-xs text-ink-secondary leading-relaxed whitespace-pre-line border-t border-surface-variant/30 pt-3">{{ reel.caption }}</p>
-            }
-          </div>
-
-          <!-- Reel Performance Metrics -->
-          <div class="bg-surface-container-lowest rounded-3xl p-5 border border-surface-container-high shadow-2xs space-y-3">
-            <h2 class="font-headline text-sm font-bold text-ink-primary">Reel performance metrics</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div class="p-3.5 rounded-2xl bg-surface-warm/65">
-                <p class="font-headline text-2xl font-bold text-primary">{{ reel.viewsCount > 0 ? reel.viewsCount.toLocaleString('en-IN') : (reel.mediaType === 'IMAGE' || reel.mediaType === 'CAROUSEL_ALBUM' || reel.mediaType === 'FEED' ? 'Photo' : '0') }}</p>
-                <p class="text-[11px] font-semibold text-ink-primary mt-0.5">Reel views</p>
-                <p class="text-[10px] text-ink-secondary">
-                  {{ reel.viewsCount > 0 ? 'Instagram Reel views' : (reel.mediaType === 'IMAGE' || reel.mediaType === 'CAROUSEL_ALBUM' || reel.mediaType === 'FEED' ? 'No views on photo posts' : 'Instagram Reel views') }}
-                </p>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-surface-warm/65">
-                <p class="font-headline text-2xl font-bold text-ink-primary">{{ reel.likesCount.toLocaleString('en-IN') }}</p>
-                <p class="text-[11px] font-semibold text-ink-primary mt-0.5">Likes</p>
-                <p class="text-[10px] text-ink-secondary">Post likes</p>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-surface-warm/65">
-                <p class="font-headline text-2xl font-bold text-ink-primary">{{ reel.commentsCount.toLocaleString('en-IN') }}</p>
-                <p class="text-[11px] font-semibold text-ink-primary mt-0.5">Comments</p>
-                <p class="text-[10px] text-ink-secondary">Audience comments</p>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-surface-warm/65">
-                <p class="font-headline text-2xl font-bold text-mint-green">{{ reel.engagementRate > 0 ? reel.engagementRate + '%' : '—' }}</p>
-                <p class="text-[11px] font-semibold text-ink-primary mt-0.5">Engagement rate</p>
-                @if (derived.engagementVsCreatorAvgPct !== 0) {
-                  <p class="text-[10px]" [ngClass]="derived.engagementVsCreatorAvgPct >= 0 ? 'text-mint-green' : 'text-ink-secondary'">
-                    {{ derived.engagementVsCreatorAvgPct >= 0 ? '+' : '' }}{{ derived.engagementVsCreatorAvgPct }}% vs creator avg
-                  </p>
-                } @else {
-                  <p class="text-[10px] text-ink-secondary">Likes + Comments ratio</p>
+                  <span class="px-2.5 py-1 rounded-[3px] bg-cv-well border border-cv-border text-cv-ink text-xs font-semibold shrink-0">{{ c.campaignName }}</span>
                 }
               </div>
             </div>
+          }
+
+          <!-- Reel Performance Metrics -->
+          <div class="bg-cv-card rounded-[4px] p-5 border border-cv-border space-y-3">
+            <h2 class="font-headline uppercase text-lg font-bold text-cv-ink tracking-[0.02em]">REEL PERFORMANCE METRICS</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 tabular-nums">
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <p class="font-headline text-2xl font-bold text-[#f54e26] leading-none">{{ reel.viewsCount > 0 ? reel.viewsCount.toLocaleString('en-IN') : (reel.mediaType === 'IMAGE' || reel.mediaType === 'CAROUSEL_ALBUM' || reel.mediaType === 'FEED' ? 'Photo' : '0') }}</p>
+                <p class="text-[11px] font-semibold text-cv-ink mt-1">Reel views</p>
+                <p class="text-[10px] text-cv-ink-subtle">
+                  {{ reel.viewsCount > 0 ? 'Instagram Reel views' : (reel.mediaType === 'IMAGE' || reel.mediaType === 'CAROUSEL_ALBUM' || reel.mediaType === 'FEED' ? 'No views on photo posts' : 'Instagram Reel views') }}
+                </p>
+              </div>
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <p class="font-headline text-2xl font-bold text-cv-ink leading-none">{{ reel.likesCount.toLocaleString('en-IN') }}</p>
+                <p class="text-[11px] font-semibold text-cv-ink mt-1">Likes</p>
+                <p class="text-[10px] text-cv-ink-subtle">Post likes</p>
+              </div>
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <p class="font-headline text-2xl font-bold text-cv-gold leading-none">{{ reel.commentsCount.toLocaleString('en-IN') }}</p>
+                <p class="text-[11px] font-semibold text-cv-ink mt-1">Comments</p>
+                <p class="text-[10px] text-cv-ink-subtle">Audience comments</p>
+              </div>
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <p class="font-headline text-2xl font-bold text-cv-green leading-none">{{ reel.engagementRate > 0 ? reel.engagementRate + '%' : '—' }}</p>
+                <p class="text-[11px] font-semibold text-cv-ink mt-1">Engagement rate</p>
+                @if (derived.engagementVsCreatorAvgPct !== 0) {
+                  <p class="text-[10px]" [ngClass]="derived.engagementVsCreatorAvgPct >= 0 ? 'text-cv-green' : 'text-cv-ink-muted'">
+                    {{ derived.engagementVsCreatorAvgPct >= 0 ? '+' : '' }}{{ derived.engagementVsCreatorAvgPct }}% vs creator avg
+                  </p>
+                } @else {
+                  <p class="text-[10px] text-cv-ink-subtle">Likes + Comments ratio</p>
+                }
+              </div>
+            </div>
+            @if ((reel.reachCount || 0) > 0 || (reel.savesCount || 0) > 0 || (reel.sharesCount || 0) > 0 || (reel.avgWatchTimeMs || 0) > 0) {
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-cv-border-faint tabular-nums">
+                <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                  <p class="font-headline text-xl font-bold text-cv-ink leading-none">{{ (reel.reachCount || 0) > 0 ? (reel.reachCount || 0).toLocaleString('en-IN') : '—' }}</p>
+                  <p class="text-[10px] uppercase font-semibold text-cv-ink-muted mt-1">Accounts Reached</p>
+                </div>
+                <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                  <p class="font-headline text-xl font-bold text-cv-blush leading-none">{{ (reel.savesCount || 0).toLocaleString('en-IN') }}</p>
+                  <p class="text-[10px] uppercase font-semibold text-cv-ink-muted mt-1">Saves</p>
+                </div>
+                <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                  <p class="font-headline text-xl font-bold text-cv-ink leading-none">{{ (reel.sharesCount || 0).toLocaleString('en-IN') }}</p>
+                  <p class="text-[10px] uppercase font-semibold text-cv-ink-muted mt-1">Shares</p>
+                </div>
+                <div class="p-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                  <p class="font-headline text-xl font-bold text-cv-ink leading-none">{{ formatWatchTime(reel.avgWatchTimeMs || 0) }}</p>
+                  <p class="text-[10px] uppercase font-semibold text-cv-ink-muted mt-1">Avg Watch Time</p>
+                </div>
+              </div>
+            }
           </div>
 
           <!-- Official Ratio & Cost Efficiency Signals -->
-          <div class="bg-surface-container-lowest rounded-3xl p-5 border border-surface-container-high shadow-2xs space-y-3">
-            <h2 class="font-headline text-sm font-bold text-ink-primary">Reel ratios &amp; cost ROI</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-              <div class="p-3 rounded-2xl bg-surface-cream">
-                <span class="text-[10px] uppercase font-bold text-ink-secondary">Total Interactions</span>
-                <p class="font-headline text-lg font-bold text-ink-primary mt-0.5">{{ derived.totalInteractions.toLocaleString('en-IN') }}</p>
-                <p class="text-[10px] text-ink-secondary">Likes + Comments</p>
+          <div class="bg-cv-card rounded-[4px] p-5 border border-cv-border space-y-3">
+            <h2 class="font-headline uppercase text-lg font-bold text-cv-ink tracking-[0.02em]">REEL RATIOS &amp; COST ROI</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs tabular-nums">
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">Total Interactions</span>
+                <p class="font-headline text-xl font-bold text-cv-ink mt-1 leading-none">{{ derived.totalInteractions.toLocaleString('en-IN') }}</p>
+                <p class="text-[10px] text-cv-ink-subtle mt-1">Likes + Comments</p>
               </div>
-              <div class="p-3 rounded-2xl bg-surface-cream">
-                <span class="text-[10px] uppercase font-bold text-ink-secondary">Like-to-View Rate</span>
-                <p class="font-headline text-lg font-bold text-ink-primary mt-0.5">{{ derived.likeRatePct > 0 ? derived.likeRatePct + '%' : '—' }}</p>
-                <p class="text-[10px] text-ink-secondary">Likes / Views</p>
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">Like-to-View Rate</span>
+                <p class="font-headline text-xl font-bold text-cv-ink mt-1 leading-none">{{ derived.likeRatePct > 0 ? derived.likeRatePct + '%' : '—' }}</p>
+                <p class="text-[10px] text-cv-ink-subtle mt-1">Likes / Views</p>
               </div>
-              <div class="p-3 rounded-2xl bg-surface-cream">
-                <span class="text-[10px] uppercase font-bold text-ink-secondary">Comment Rate</span>
-                <p class="font-headline text-lg font-bold text-ink-primary mt-0.5">{{ derived.commentRatePct > 0 ? derived.commentRatePct + '%' : '—' }}</p>
-                <p class="text-[10px] text-ink-secondary">Comments / Views</p>
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">Comment Rate</span>
+                <p class="font-headline text-xl font-bold text-cv-ink mt-1 leading-none">{{ derived.commentRatePct > 0 ? derived.commentRatePct + '%' : '—' }}</p>
+                <p class="text-[10px] text-cv-ink-subtle mt-1">Comments / Views</p>
               </div>
-              <div class="p-3 rounded-2xl bg-surface-cream">
-                <span class="text-[10px] uppercase font-bold text-ink-secondary">View / Follower Ratio</span>
-                <p class="font-headline text-lg font-bold text-primary mt-0.5">{{ derived.viewToFollowerRatioPct > 0 ? derived.viewToFollowerRatioPct + '%' : '—' }}</p>
-                <p class="text-[10px] text-ink-secondary">Views / Followers</p>
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">View / Follower Ratio</span>
+                <p class="font-headline text-xl font-bold text-cv-green mt-1 leading-none">{{ derived.viewToFollowerRatioPct > 0 ? derived.viewToFollowerRatioPct + '%' : '—' }}</p>
+                <p class="text-[10px] text-cv-ink-subtle mt-1">Views / Followers</p>
               </div>
-              <div class="p-3 rounded-2xl bg-surface-cream">
-                <span class="text-[10px] uppercase font-bold text-ink-secondary">CPV (Cost Per View)</span>
-                <p class="font-headline text-lg font-bold text-primary mt-0.5">{{ derived.costPerView ? formatInr(derived.costPerView, 2) : '—' }}</p>
-                <p class="text-[10px] text-ink-secondary">{{ derived.costQuoted ? formatInr(derived.costQuoted, 0) + (derived.costLabel ? ' • ' + derived.costLabel : '') : (derived.costLabel || 'Set cost on creator or reel') }}</p>
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">CPV (Cost Per View)</span>
+                <p class="font-headline text-xl font-bold text-[#f54e26] mt-1 leading-none">{{ derived.costPerView ? formatInr(derived.costPerView, 2) : '—' }}</p>
+                <p class="text-[10px] text-cv-ink-subtle mt-1">{{ derived.costQuoted ? formatInr(derived.costQuoted, 0) + (derived.costLabel ? ' • ' + derived.costLabel : '') : (derived.costLabel || 'Set cost on creator or reel') }}</p>
               </div>
-              <div class="p-3 rounded-2xl bg-surface-cream">
-                <span class="text-[10px] uppercase font-bold text-ink-secondary">CPE (Cost / Interaction)</span>
-                <p class="font-headline text-lg font-bold text-ink-primary mt-0.5">{{ derived.costPerInteraction ? formatInr(derived.costPerInteraction, 1) : '—' }}</p>
-                <p class="text-[10px] text-ink-secondary">Per like or comment</p>
+              <div class="p-3.5 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                <span class="text-[10px] uppercase tracking-[0.04em] font-semibold text-cv-ink-muted">CPE (Cost / Interaction)</span>
+                <p class="font-headline text-xl font-bold text-cv-gold mt-1 leading-none">{{ derived.costPerInteraction ? formatInr(derived.costPerInteraction, 1) : '—' }}</p>
+                <p class="text-[10px] text-cv-ink-subtle mt-1">Per like or comment</p>
               </div>
             </div>
           </div>
@@ -205,6 +292,39 @@ export class ReelInsightsViewComponent {
   @Output() trackLiveReel = new EventEmitter<ReelDeliverable>();
   @Output() copyUrl = new EventEmitter<string>();
 
+  hoveredSnapIdx: number | null = null;
+
+  get snapshotList() {
+    const raw = this.bundle?.snapshots || [];
+    return raw.slice(-7);
+  }
+
+  get activeSnapIndex(): number {
+    const list = this.snapshotList;
+    if (list.length === 0) return 0;
+    if (this.hoveredSnapIdx !== null && this.hoveredSnapIdx >= 0 && this.hoveredSnapIdx < list.length) {
+      return this.hoveredSnapIdx;
+    }
+    return list.length - 1;
+  }
+
+  get activeSnapshot() {
+    const list = this.snapshotList;
+    return list.length > 0 ? list[this.activeSnapIndex] : null;
+  }
+
+  snapshotBarPct(views: number): number {
+    const list = this.snapshotList;
+    const max = Math.max(1, ...list.map(s => s.viewsCount || 0));
+    if (views <= 0) return 14;
+    return Math.max(18, Math.round((views / max) * 100));
+  }
+
+  shortReelUrl(url?: string): string {
+    if (!url) return 'instagram.com/reel';
+    return url.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, '');
+  }
+
   get derived() {
     if (this.bundle?.derived) return this.bundle.derived;
     const views = this.reel?.viewsCount || 0;
@@ -213,7 +333,9 @@ export class ReelInsightsViewComponent {
     const totalInt = likes + comments;
     const followers = this.creator?.followersCount || 0;
     const creatorAvg = this.creator?.interactionRate90d || 0;
-    const eng = this.reel?.engagementRate || (followers > 0 && totalInt > 0 ? Math.round((totalInt * 100.0 / followers) * 100) / 100 : 0);
+    const eng = this.reel?.engagementRate || ((views > 0 ? views : followers) > 0 && totalInt > 0
+      ? Math.round((totalInt * 100.0 / (views > 0 ? views : followers)) * 100) / 100
+      : 0);
     const mode: 'COLLECTIVE' | 'PER_DELIVERABLE' =
       this.creator?.costMode === 'PER_DELIVERABLE' ? 'PER_DELIVERABLE' : 'COLLECTIVE';
     const cost = mode === 'PER_DELIVERABLE'
@@ -227,6 +349,10 @@ export class ReelInsightsViewComponent {
       viewToFollowerRatioPct: followers > 0 && views > 0 ? Math.round((views * 100.0 / followers) * 10) / 10 : 0,
       shareOfCreatorViewsPct: 0,
       engagementVsCreatorAvgPct: creatorAvg > 0 ? Math.round((eng - creatorAvg) * 10) / 10 : 0,
+      viewsDeltaLastSync: 0,
+      likesDeltaLastSync: 0,
+      commentsDeltaLastSync: 0,
+      snapshotCount: 0,
       costMode: mode,
       costLabel: mode === 'PER_DELIVERABLE' ? (this.reel?.costQuoted ? 'Deliverable cost' : 'Per-deliverable rate') : 'Fixed creator cost',
       costQuoted: cost,
@@ -241,6 +367,15 @@ export class ReelInsightsViewComponent {
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
     return String(n);
   }
+
+  formatWatchTime(ms: number): string {
+    if (!ms || ms <= 0) return '—';
+    const secs = Math.round(ms / 100) / 10;
+    return `${secs}s`;
+  }
+
+  readonly safeExternalUrl = safeExternalUrl;
+  readonly displayReelTitle = formatReelDisplayTitle;
 
   formatInr(n: number, decimals = 0): string {
     if (!n || n <= 0) return '—';

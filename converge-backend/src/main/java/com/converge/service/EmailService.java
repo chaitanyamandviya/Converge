@@ -4,12 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.HtmlUtils;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -30,10 +33,16 @@ public class EmailService {
             @Value("${app.brevo.sender-email:noreply@converge.run.place}") String senderEmail,
             @Value("${app.brevo.sender-name:Converge}") String senderName,
             @Value("${app.frontend.url:" + DEFAULT_PRODUCTION_FRONTEND_URL + "}") String frontendUrl) {
-        this.restClient = RestClient.create("https://api.brevo.com/v3");
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(5));
+        factory.setReadTimeout(Duration.ofSeconds(10));
+        this.restClient = RestClient.builder()
+                .baseUrl("https://api.brevo.com/v3")
+                .requestFactory(factory)
+                .build();
         this.apiKey = apiKey;
-        this.senderEmail = senderEmail;
-        this.senderName = senderName;
+        this.senderEmail = sanitizeHeaderText(senderEmail);
+        this.senderName = sanitizeHeaderText(senderName);
         this.frontendUrl = normalizeFrontendUrl(frontendUrl);
     }
 
@@ -43,23 +52,47 @@ public class EmailService {
         }
         String trimmed = raw.trim().replaceAll("/+$", "");
         if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+            if (trimmed.contains("://") || trimmed.toLowerCase().startsWith("javascript:") || trimmed.toLowerCase().startsWith("data:")) {
+                return DEFAULT_PRODUCTION_FRONTEND_URL;
+            }
             trimmed = "https://" + trimmed;
         }
-        return trimmed;
+        try {
+            URI parsed = URI.create(trimmed);
+            String scheme = parsed.getScheme();
+            String host = parsed.getHost();
+            if ((!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) || host == null || host.isBlank()) {
+                return DEFAULT_PRODUCTION_FRONTEND_URL;
+            }
+            return trimmed;
+        } catch (Exception ex) {
+            return DEFAULT_PRODUCTION_FRONTEND_URL;
+        }
     }
 
     public String buildAuthUrl(String mode, String email) {
+        return buildAuthUrl(mode, email, null);
+    }
+
+    public String buildAuthUrl(String mode, String email, String token) {
         String safeMode = (mode != null && mode.equalsIgnoreCase("signup")) ? "signup" : "signin";
-        String base = frontendUrl + "/auth?mode=" + safeMode;
-        if (email == null || email.isBlank()) {
-            return base;
+        StringBuilder sb = new StringBuilder(frontendUrl).append("/auth?mode=").append(safeMode);
+        if (email != null && !email.isBlank()) {
+            sb.append("&email=").append(URLEncoder.encode(email.trim(), StandardCharsets.UTF_8));
         }
-        return base + "&email=" + URLEncoder.encode(email.trim(), StandardCharsets.UTF_8);
+        if (token != null && !token.isBlank()) {
+            sb.append("&token=").append(URLEncoder.encode(token.trim(), StandardCharsets.UTF_8));
+        }
+        return sb.toString();
     }
 
     public boolean sendBrandWelcomeEmail(String toEmail, String toName, String brandName) {
+        return sendBrandWelcomeEmail(toEmail, toName, brandName, null);
+    }
+
+    public boolean sendBrandWelcomeEmail(String toEmail, String toName, String brandName, String activationToken) {
         String signInUrl = buildAuthUrl("signin", toEmail);
-        String onboardUrl = buildAuthUrl("signup", toEmail);
+        String onboardUrl = buildAuthUrl("signup", toEmail, activationToken);
         String logoUrl = frontendUrl + "/converge-logo.png";
 
         String safeBrand = HtmlUtils.htmlEscape(brandName != null ? brandName : "Brand");
@@ -93,20 +126,21 @@ public class EmailService {
               </div>
             </div>
             """.formatted(
-                logoUrl,
+                HtmlUtils.htmlEscape(logoUrl),
                 safeBrand,
                 safeName,
                 safeBrand,
                 safeEmail,
-                signInUrl,
-                onboardUrl,
-                signInUrl,
-                signInUrl,
-                onboardUrl,
-                onboardUrl
+                HtmlUtils.htmlEscape(signInUrl),
+                HtmlUtils.htmlEscape(onboardUrl),
+                HtmlUtils.htmlEscape(signInUrl),
+                HtmlUtils.htmlEscape(signInUrl),
+                HtmlUtils.htmlEscape(onboardUrl),
+                HtmlUtils.htmlEscape(onboardUrl)
         );
 
-        return sendEmail(toEmail, toName, brandName + " Workspace is Ready on Converge", html);
+        String cleanBrand = sanitizeHeaderText(brandName != null ? brandName : "Brand");
+        return sendEmail(toEmail, toName, cleanBrand + " Workspace is Ready on Converge", html);
     }
 
     public boolean sendPasswordResetEmail(String toEmail, String toName) {
@@ -140,21 +174,34 @@ public class EmailService {
                 </p>
               </div>
             </div>
-            """.formatted(logoUrl, safeName, signInUrl, onboardUrl, signInUrl, signInUrl);
+            """.formatted(
+                HtmlUtils.htmlEscape(logoUrl),
+                safeName,
+                HtmlUtils.htmlEscape(signInUrl),
+                HtmlUtils.htmlEscape(onboardUrl),
+                HtmlUtils.htmlEscape(signInUrl),
+                HtmlUtils.htmlEscape(signInUrl)
+        );
 
         return sendEmail(toEmail, toName, "Converge Account Access & Password Help", html);
     }
 
     private boolean sendEmail(String toEmail, String toName, String subject, String htmlContent) {
-        if (apiKey == null || apiKey.isBlank()) {
-            log.info("Brevo API key not configured; skipping email to {}", toEmail);
+        String cleanEmail = sanitizeHeaderText(toEmail);
+        if (cleanEmail.isEmpty()) {
             return false;
         }
+        if (apiKey == null || apiKey.isBlank()) {
+            log.info("Brevo API key not configured; skipping email to {}", cleanEmail);
+            return false;
+        }
+        String cleanName = sanitizeHeaderText(toName != null && !toName.isBlank() ? toName : cleanEmail);
+        String cleanSubject = sanitizeHeaderText(subject);
         try {
             Map<String, Object> body = Map.of(
                     "sender", Map.of("name", senderName, "email", senderEmail),
-                    "to", List.of(Map.of("email", toEmail, "name", toName != null ? toName : toEmail)),
-                    "subject", subject,
+                    "to", List.of(Map.of("email", cleanEmail, "name", cleanName)),
+                    "subject", cleanSubject,
                     "htmlContent", htmlContent
             );
             restClient.post()
@@ -166,8 +213,14 @@ public class EmailService {
                     .toBodilessEntity();
             return true;
         } catch (Exception ex) {
-            log.warn("Failed to dispatch Brevo email to {}: {}", toEmail, ex.getMessage());
+            log.warn("Failed to dispatch Brevo email to {}: {}", cleanEmail, ex.getMessage());
             return false;
         }
+    }
+
+    static String sanitizeHeaderText(String value) {
+        if (value == null) return "";
+        String cleaned = value.replaceAll("[\\r\\n\\u0000]", " ").trim();
+        return cleaned.length() > 200 ? cleaned.substring(0, 200) : cleaned;
     }
 }

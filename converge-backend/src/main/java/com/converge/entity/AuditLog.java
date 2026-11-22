@@ -15,6 +15,9 @@ public class AuditLog {
     @Column(nullable = false)
     private UUID brandId;
 
+    @Column(name = "agency_id")
+    private UUID agencyId;
+
     @Column(nullable = false)
     private String eventCode; // e.g., EVT-9204-QC
 
@@ -40,6 +43,8 @@ public class AuditLog {
     public void setId(UUID id) { this.id = id; }
     public UUID getBrandId() { return brandId; }
     public void setBrandId(UUID brandId) { this.brandId = brandId; }
+    public UUID getAgencyId() { return agencyId; }
+    public void setAgencyId(UUID agencyId) { this.agencyId = agencyId; }
     public String getEventCode() { return eventCode; }
     public void setEventCode(String eventCode) { this.eventCode = eventCode; }
     public String getCategory() { return category; }

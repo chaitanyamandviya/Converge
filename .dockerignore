@@ -1,0 +1,11 @@
+.git
+.gitignore
+**/.env
+**/.env.*
+**/application-local.properties
+**/data
+**/target
+**/node_modules
+**/dist
+**/*.log
+scratch

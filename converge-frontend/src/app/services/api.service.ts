@@ -34,6 +34,7 @@ export interface Agency {
   region: string;
   contactName: string;
   contactEmail: string;
+  contactNumber?: string;
   creatorsCount: number;
   auditedReelsCount: number;
   status: string;
@@ -141,9 +142,28 @@ export interface CreatorInsightsBundle {
   metaConfigured: boolean;
 }
 
+export interface ReelSnapshotPoint {
+  viewsCount: number;
+  likesCount: number;
+  commentsCount: number;
+  savesCount?: number;
+  deltaViews: number;
+  deltaLikes?: number;
+  capturedAt: string;
+}
+
+export interface ReelDeltaSummary {
+  snapshotCount: number;
+  viewsDeltaLastSync: number;
+  likesDeltaLastSync: number;
+  commentsDeltaLastSync: number;
+  snapshots: ReelSnapshotPoint[];
+}
+
 export interface DeliverableInsightsBundle {
   deliverable: ReelDeliverable;
   creator: Creator;
+  snapshots?: ReelSnapshotPoint[];
   derived: {
     totalInteractions: number;
     likeRatePct: number;
@@ -151,6 +171,10 @@ export interface DeliverableInsightsBundle {
     viewToFollowerRatioPct: number;
     shareOfCreatorViewsPct: number;
     engagementVsCreatorAvgPct: number;
+    viewsDeltaLastSync?: number;
+    likesDeltaLastSync?: number;
+    commentsDeltaLastSync?: number;
+    snapshotCount?: number;
     costMode?: 'COLLECTIVE' | 'PER_DELIVERABLE';
     costLabel?: string;
     costQuoted?: number | null;
@@ -175,8 +199,12 @@ export interface ReelDeliverable {
   duration: string;
   costQuoted?: number | null;
   viewsCount: number;
+  reachCount?: number;
   likesCount: number;
   commentsCount: number;
+  savesCount?: number;
+  sharesCount?: number;
+  avgWatchTimeMs?: number;
   engagementRate: number;
   status: string;
   metricsSource?: string;
@@ -186,13 +214,13 @@ export interface ReelDeliverable {
 
 export interface InstagramStatus {
   configured: boolean;
-  hasAccessToken: boolean;
-  hasBusinessAccountId: boolean;
+  hasAccessToken?: boolean;
+  hasBusinessAccountId?: boolean;
   hasOAuthApp: boolean;
-  hasAppSecretProof: boolean;
+  hasAppSecretProof?: boolean;
   creatorMarketplaceEnabled?: boolean;
-  baseUrl: string;
-  missingEnvVars: string[];
+  baseUrl?: string;
+  missingEnvVars?: string[];
 }
 
 export interface AuditLog {
@@ -233,6 +261,8 @@ export class ApiService {
     agencies: Agency[];
     creators: Creator[];
     recentReels: ReelDeliverable[];
+    deliverables?: ReelDeliverable[];
+    reelDeltas?: Record<string, ReelDeltaSummary>;
     stats: {
       totalReels: number;
       totalReach: number;
@@ -262,6 +292,10 @@ export class ApiService {
 
   updateAgencyPermissions(brandId: string, agencyId: string, payload: Partial<Agency>): Observable<Agency> {
     return this.http.patch<Agency>(`/api/brands/${brandId}/agencies/${agencyId}`, payload);
+  }
+
+  deleteAgency(brandId: string, agencyId: string): Observable<{ deleted: boolean }> {
+    return this.http.delete<{ deleted: boolean }>(`/api/brands/${brandId}/agencies/${agencyId}`);
   }
 
   listCreators(brandId: string, filters?: { type?: string; agency?: string; search?: string }): Observable<Creator[]> {
@@ -312,11 +346,13 @@ export class ApiService {
     return this.http.get<InstagramStatus>('/api/instagram/status');
   }
 
-  lookupInstagramProfile(handle: string): Observable<any> {
-    return this.http.get<any>('/api/instagram/profile', { params: { handle } });
+  lookupInstagramProfile(handle: string, refresh = false): Observable<any> {
+    let params = new HttpParams().set('handle', handle);
+    if (refresh) params = params.set('refresh', 'true');
+    return this.http.get<any>('/api/instagram/profile', { params });
   }
 
-  fetchInstagramMedia(handle: string, limit = 12, creatorId?: string): Observable<any[]> {
+  fetchInstagramMedia(handle: string, limit = 100, creatorId?: string): Observable<any[]> {
     let params = new HttpParams().set('limit', limit);
     if (handle) params = params.set('handle', handle);
     if (creatorId) params = params.set('creatorId', creatorId);
@@ -345,8 +381,8 @@ export class ApiService {
     return this.http.get<any>('/api/instagram/oauth/authorize-url', { params });
   }
 
-  exchangeInstagramOAuthCode(code: string, creatorId?: string): Observable<any> {
-    return this.http.post<any>('/api/instagram/oauth/callback', { code, creatorId: creatorId || '' });
+  exchangeInstagramOAuthCode(code: string, state: string): Observable<any> {
+    return this.http.post<any>('/api/instagram/oauth/callback', { code, state });
   }
 
   listAuditLogs(brandId: string, category?: string, search?: string, page = 0, size = 10): Observable<{

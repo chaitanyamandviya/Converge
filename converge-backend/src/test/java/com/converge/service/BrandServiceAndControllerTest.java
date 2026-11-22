@@ -1,7 +1,9 @@
 package com.converge.service;
 
 import com.converge.controller.BrandController;
+import com.converge.entity.Agency;
 import com.converge.entity.Brand;
+import com.converge.entity.Creator;
 import com.converge.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -118,9 +120,15 @@ class BrandServiceAndControllerTest {
 
         assertEquals("Bioderma India", saved.getName());
         assertEquals("ACTIVE", saved.getStatus());
-        assertNull(saved.getActivationToken());
+        assertNotNull(saved.getActivationToken());
+        assertFalse(saved.getActivationToken().isBlank());
         assertEquals("+91 98765 43210", saved.getContactNumber());
-        verify(emailService).sendBrandWelcomeEmail("aman@example.com", "Aman Gulabani", "Bioderma India");
+        verify(emailService).sendBrandWelcomeEmail(
+                eq("aman@example.com"),
+                eq("Aman Gulabani"),
+                eq("Bioderma India"),
+                argThat(rawToken -> rawToken != null && !rawToken.isBlank() && !rawToken.equals(saved.getActivationToken()))
+        );
     }
 
     @Test
@@ -428,5 +436,240 @@ class BrandServiceAndControllerTest {
         );
         assertTrue(ex.getMessage().contains("already added"));
         verify(reelRepository, never()).save(any());
+    }
+
+    @Test
+    void addAgencyValidatesFieldsSupportsDraftAndRejectsDuplicateNames() {
+        UUID brandId = UUID.randomUUID();
+        Brand brand = new Brand();
+        brand.setId(brandId);
+        brand.setName("Bioderma India");
+        when(brandRepository.findById(brandId)).thenReturn(Optional.of(brand));
+        when(agencyRepository.findByBrandIdAndNameIgnoreCase(brandId, "Studio North")).thenReturn(List.of());
+        when(agencyRepository.save(any(Agency.class))).thenAnswer(inv -> {
+            Agency a = inv.getArgument(0);
+            a.setId(UUID.randomUUID());
+            return a;
+        });
+
+        assertThrows(IllegalArgumentException.class, () ->
+                brandService.addAgency(brandId, Map.of(
+                        "name", "Studio North",
+                        "contactName", "Riya Kapoor",
+                        "contactEmail", "invalid-email",
+                        "contactNumber", "+91 9876543210"
+                ))
+        );
+
+        assertThrows(IllegalArgumentException.class, () ->
+                brandService.addAgency(brandId, Map.of(
+                        "name", "Studio North",
+                        "contactName", "Riya Kapoor",
+                        "contactEmail", "riya@studionorth.in",
+                        "contactNumber", "+91 123"
+                ))
+        );
+
+        Agency draftAgency = brandService.addAgency(brandId, Map.of(
+                "name", "Studio North",
+                "contactName", "Riya Kapoor",
+                "contactEmail", "Riya@StudioNorth.in",
+                "contactNumber", "+91 98765 43210",
+                "status", "DRAFT"
+        ));
+
+        assertEquals("Studio North", draftAgency.getName());
+        assertEquals("Riya Kapoor", draftAgency.getContactName());
+        assertEquals("riya@studionorth.in", draftAgency.getContactEmail());
+        assertEquals("+91 98765 43210", draftAgency.getContactNumber());
+        assertEquals("DRAFT", draftAgency.getStatus());
+
+        when(agencyRepository.findByBrandIdAndNameIgnoreCase(brandId, "Studio North")).thenReturn(List.of(draftAgency));
+        assertThrows(IllegalArgumentException.class, () ->
+                brandService.addAgency(brandId, Map.of(
+                        "name", "Studio North",
+                        "contactName", "Another Lead",
+                        "contactEmail", "lead@studionorth.in",
+                        "contactNumber", "+91 9876543210"
+                ))
+        );
+    }
+
+    @Test
+    void updateAndDeleteAgencySyncLinkedCreatorsCleanly() {
+        UUID brandId = UUID.randomUUID();
+        UUID agencyId = UUID.randomUUID();
+        Agency agency = new Agency();
+        agency.setId(agencyId);
+        agency.setBrandId(brandId);
+        agency.setName("Studio North");
+        agency.setMonogram("SN");
+        agency.setHandle("@studionorth");
+        agency.setContactName("Old Manager");
+        agency.setContactEmail("old@studionorth.in");
+        agency.setContactNumber("+91 9000000000");
+        agency.setStatus("DRAFT");
+
+        Creator linkedCreator = new Creator();
+        linkedCreator.setId(UUID.randomUUID());
+        linkedCreator.setBrandId(brandId);
+        linkedCreator.setAgencyId(agencyId);
+        linkedCreator.setAgencyName("Studio North");
+        linkedCreator.setSourceType("AGENCY");
+
+        when(agencyRepository.findById(agencyId)).thenReturn(Optional.of(agency));
+        when(agencyRepository.findByBrandIdAndNameIgnoreCase(brandId, "North Collective")).thenReturn(List.of());
+        when(agencyRepository.save(any(Agency.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(creatorRepository.findByAgencyId(agencyId)).thenReturn(List.of(linkedCreator));
+
+        Agency updated = brandService.updateAgencyPermissions(brandId, agencyId, Map.of(
+                "name", "North Collective",
+                "contactName", "Neha Sharma",
+                "contactEmail", "Neha@North.in",
+                "contactNumber", "+91 9811122233",
+                "status", "CONNECTED"
+        ));
+
+        assertEquals("North Collective", updated.getName());
+        assertEquals("NC", updated.getMonogram());
+        assertEquals("Neha Sharma", updated.getContactName());
+        assertEquals("neha@north.in", updated.getContactEmail());
+        assertEquals("+91 9811122233", updated.getContactNumber());
+        assertEquals("CONNECTED", updated.getStatus());
+        assertEquals("North Collective", linkedCreator.getAgencyName());
+
+        brandService.deleteAgency(brandId, agencyId, "manager@brand.test");
+
+        assertNull(linkedCreator.getAgencyId());
+        assertEquals("Direct / Independent", linkedCreator.getAgencyName());
+        assertEquals("DIRECT", linkedCreator.getSourceType());
+        verify(creatorRepository, times(2)).saveAll(any());
+        verify(agencyRepository).delete(agency);
+    }
+
+    @Test
+    void syncCreatorPreservesOAuthAccountInsightsInsteadOfClobberingThem() {
+        UUID creatorId = UUID.randomUUID();
+        UUID brandId = UUID.randomUUID();
+
+        var creator = new com.converge.entity.Creator();
+        creator.setId(creatorId);
+        creator.setBrandId(brandId);
+        creator.setHandle("@oauth_star");
+        creator.setFollowersCount(1000000L);
+        creator.setTotalViews30d(80000000L);
+        creator.setReachCount(42000000L);
+        creator.setAccountInteractions30d(2500000L);
+        creator.setInteractionRate90d(5.9);
+        creator.setInsightsSource("CREATOR_OAUTH_INSIGHTS");
+
+        var trackedReel = new com.converge.entity.ReelDeliverable();
+        trackedReel.setId(UUID.randomUUID());
+        trackedReel.setBrandId(brandId);
+        trackedReel.setCreatorId(creatorId);
+        trackedReel.setViewsCount(250000L);
+        trackedReel.setLikesCount(5000L);
+        trackedReel.setCommentsCount(200L);
+        trackedReel.setStatus("VERIFIED");
+
+        when(creatorRepository.findById(creatorId)).thenReturn(Optional.of(creator));
+        when(reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId)).thenReturn(List.of(trackedReel));
+        when(creatorRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(brandRepository.findAllById(any())).thenReturn(List.of());
+        InstagramGraphService realHelper = new InstagramGraphService(new com.converge.config.InstagramProperties());
+        when(instagramGraphService.buildCreatorInsightsSummary(any(), any(), any()))
+                .thenAnswer(inv -> realHelper.buildCreatorInsightsSummary(
+                        inv.getArgument(0), inv.getArgument(1), inv.getArgument(2)));
+
+        Map<String, Object> out = brandService.syncCreatorFromInstagram(creatorId, false, "mgr@brand.test", "Mgr");
+        var savedCreator = (com.converge.entity.Creator) out.get("creator");
+
+        verify(instagramGraphService).evictCreatorCache("@oauth_star");
+        assertEquals(80000000L, savedCreator.getTotalViews30d());
+        assertEquals(42000000L, savedCreator.getReachCount());
+        assertEquals(2500000L, savedCreator.getAccountInteractions30d());
+        assertEquals(5.9, savedCreator.getInteractionRate90d());
+        assertEquals(1, savedCreator.getAuditedReelsCount());
+    }
+
+    @Test
+    void syncDeliverableRecordsSnapshotBaselineAndComputesRealDeltas() {
+        ReelSnapshotRepository snapshotRepo = mock(ReelSnapshotRepository.class);
+        BrandService serviceWithSnapshots = new BrandService(
+                brandRepository, agencyRepository, creatorRepository,
+                reelRepository, auditLogRepository, userRepository, emailService,
+                instagramGraphService, snapshotRepo, "sysadmin@converge.test"
+        );
+
+        UUID brandId = UUID.randomUUID();
+        UUID creatorId = UUID.randomUUID();
+        UUID deliverableId = UUID.randomUUID();
+
+        var creator = new Creator();
+        creator.setId(creatorId);
+        creator.setBrandId(brandId);
+        creator.setHandle("@aman.gulabani");
+        creator.setFollowersCount(585L);
+
+        var reel = new com.converge.entity.ReelDeliverable();
+        reel.setId(deliverableId);
+        reel.setBrandId(brandId);
+        reel.setCreatorId(creatorId);
+        reel.setViewsCount(2909L);
+        reel.setLikesCount(111L);
+        reel.setCommentsCount(9L);
+        reel.setStatus("VERIFIED");
+
+        List<com.converge.entity.ReelSnapshot> storedSnapshots = new ArrayList<>();
+        when(reelRepository.findById(deliverableId)).thenReturn(Optional.of(reel));
+        when(creatorRepository.findById(creatorId)).thenReturn(Optional.of(creator));
+        when(reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId)).thenReturn(List.of(reel));
+        when(reelRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(creatorRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        when(snapshotRepo.findFirstByDeliverableIdOrderByCapturedAtDesc(deliverableId))
+                .thenAnswer(inv -> storedSnapshots.isEmpty()
+                        ? Optional.empty()
+                        : Optional.of(storedSnapshots.get(storedSnapshots.size() - 1)));
+        when(snapshotRepo.save(any())).thenAnswer(inv -> {
+            com.converge.entity.ReelSnapshot s = inv.getArgument(0);
+            storedSnapshots.add(s);
+            return s;
+        });
+        when(snapshotRepo.findTop14ByDeliverableIdOrderByCapturedAtDesc(deliverableId))
+                .thenAnswer(inv -> {
+                    List<com.converge.entity.ReelSnapshot> desc = new ArrayList<>(storedSnapshots);
+                    Collections.reverse(desc);
+                    return desc;
+                });
+
+        doAnswer(inv -> {
+            com.converge.entity.ReelDeliverable target = inv.getArgument(0);
+            target.setViewsCount(3109L);
+            target.setLikesCount(121L);
+            return null;
+        }).when(instagramGraphService).syncReelDeliverable(any(), any());
+
+        serviceWithSnapshots.syncDeliverableFromInstagram(deliverableId);
+
+        assertEquals(2, storedSnapshots.size(), "Pre-sync baseline and updated metric point must both be stored");
+        assertEquals(2909L, storedSnapshots.get(0).getViewsCount());
+        assertEquals(3109L, storedSnapshots.get(1).getViewsCount());
+
+        InstagramGraphService realHelper = new InstagramGraphService(new com.converge.config.InstagramProperties());
+        when(instagramGraphService.buildDeliverableInsightsSummary(any(), any(), anyInt()))
+                .thenAnswer(inv -> realHelper.buildDeliverableInsightsSummary(
+                        inv.getArgument(0), inv.getArgument(1), inv.getArgument(2)));
+
+        Map<String, Object> insights = serviceWithSnapshots.getDeliverableInsights(deliverableId);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> derived = (Map<String, Object>) insights.get("derived");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> snapshots = (List<Map<String, Object>>) insights.get("snapshots");
+
+        assertEquals(200L, ((Number) derived.get("viewsDeltaLastSync")).longValue());
+        assertEquals(10L, ((Number) derived.get("likesDeltaLastSync")).longValue());
+        assertEquals(2, snapshots.size());
+        assertEquals(200L, ((Number) snapshots.get(1).get("deltaViews")).longValue());
     }
 }

@@ -45,6 +45,10 @@ class DeploymentAndEmailConfigTest {
         assertEquals("jdbc:postgresql://ep-cool-moon.aws.neon.tech/converge?sslmode=require", parsed[0]);
         assertEquals("neondb_owner", parsed[1]);
         assertEquals("secret123", parsed[2]);
+        assertEquals(
+                "jdbc:postgresql://ep-cool-moon.aws.neon.tech/converge?sslmode=require&socketFactory=com.converge.config.PublicDnsSocketFactory",
+                ConvergeApplication.withPublicDnsSocketFactory(parsed[0])
+        );
     }
 
     @Test

@@ -33,19 +33,15 @@ public class HealthController {
     @GetMapping("/api/health")
     public Map<String, Object> health() {
         boolean igConfigured = instagramGraphService.isBusinessDiscoveryConfigured();
-        String database = "Unknown";
         boolean dbConnected = false;
         try (Connection conn = dataSource.getConnection()) {
-            database = conn.getMetaData().getDatabaseProductName();
             dbConnected = conn.isValid(3);
         } catch (Exception ignored) {
         }
 
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("status", "UP");
-        out.put("database", database);
+        out.put("status", dbConnected ? "UP" : "DEGRADED");
         out.put("dbConnected", dbConnected);
-        out.put("metaGraphApi", igConfigured ? "CONFIGURED" : "PENDING_CREDENTIALS");
         out.put("instagramConfigured", igConfigured);
         out.put("timestamp", Instant.now().toString());
         return out;

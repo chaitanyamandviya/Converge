@@ -1,6 +1,9 @@
 package com.converge.controller;
 
 import com.converge.repository.UserRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -18,11 +21,21 @@ public class UserController {
     }
 
     @GetMapping("/search")
-    public List<Map<String, Object>> searchByEmail(@RequestParam(defaultValue = "") String email) {
-        if (email.isBlank()) return List.of();
-        return userRepository.findByEmailContainingIgnoreCase(email.trim()).stream()
-                .filter(u -> !"SYSTEM_ADMIN".equalsIgnoreCase(u.getRole()))
-                .limit(5)
+    public List<Map<String, Object>> searchByEmail(
+            @RequestParam(defaultValue = "") String email,
+            Authentication auth) {
+        boolean isAdmin = auth != null && auth.isAuthenticated() && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_SYSTEM_ADMIN".equals(a.getAuthority()));
+        if (!isAdmin) {
+            throw new AccessDeniedException("Only System Admin can search workspace users.");
+        }
+        String trimmed = email != null ? email.trim() : "";
+        if (trimmed.length() < 2) {
+            return List.of();
+        }
+        return userRepository
+                .findByEmailContainingIgnoreCaseAndRoleNotIgnoreCase(trimmed, "SYSTEM_ADMIN", PageRequest.of(0, 5))
+                .stream()
                 .map(u -> {
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("id", u.getId() != null ? u.getId().toString() : "");

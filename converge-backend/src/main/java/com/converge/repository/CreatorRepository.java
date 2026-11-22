@@ -11,6 +11,7 @@ public interface CreatorRepository extends JpaRepository<Creator, UUID> {
     List<Creator> findByBrandIdOrderByLinkedAtDesc(UUID brandId);
     Optional<Creator> findByBrandIdAndHandleIgnoreCase(UUID brandId, String handle);
     List<Creator> findByHandleIgnoreCase(String handle);
+    List<Creator> findByAgencyId(UUID agencyId);
     long countByBrandId(UUID brandId);
     void deleteByBrandId(UUID brandId);
 }

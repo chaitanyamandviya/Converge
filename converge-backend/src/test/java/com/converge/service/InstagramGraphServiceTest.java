@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
@@ -434,12 +435,125 @@ class InstagramGraphServiceTest {
 
         assertTrue(service.backfillDeliverableFromMedia(reel, media, creator.getFollowersCount()));
         assertEquals(188L, reel.getViewsCount());
+        assertEquals(61.7, reel.getEngagementRate());
 
         Map<String, Object> summary = service.buildDeliverableInsightsSummary(reel, creator);
         Map<?, ?> derived = (Map<?, ?>) summary.get("derived");
         assertEquals(116L, derived.get("totalInteractions"));
         assertEquals(61.17, derived.get("likeRatePct"));
         assertEquals(100.0, derived.get("shareOfCreatorViewsPct"));
-        assertEquals(-3.9, derived.get("engagementVsCreatorAvgPct"));
+        assertEquals(38.0, derived.get("engagementVsCreatorAvgPct"));
+    }
+
+    @Test
+    void cachesProfileAndSharesMediaPageAcrossMultipleLookupsAndSyncs() {
+        String payload = """
+            {
+              "business_discovery": {
+                "id": "17841499999999999",
+                "username": "cached_creator",
+                "name": "Cached Creator",
+                "followers_count": 50000,
+                "media": {
+                  "data": [
+                    {
+                      "id": "m_1",
+                      "media_type": "VIDEO",
+                      "media_product_type": "REELS",
+                      "permalink": "https://www.instagram.com/reel/ReelOne1/",
+                      "like_count": 500,
+                      "comments_count": 20,
+                      "view_count": 10000
+                    },
+                    {
+                      "id": "m_2",
+                      "media_type": "VIDEO",
+                      "media_product_type": "REELS",
+                      "permalink": "https://www.instagram.com/reel/ReelTwo2/",
+                      "like_count": 1200,
+                      "comments_count": 40,
+                      "view_count": 30000
+                    }
+                  ]
+                }
+              }
+            }
+            """;
+
+        // Only 1 external HTTP request should occur for profile + recent media + both reel lookups!
+        mockServer.expect(ExpectedCount.once(), requestTo(containsString("business_discovery.username(cached_creator)")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(payload, MediaType.APPLICATION_JSON));
+
+        Map<String, Object> first = service.fetchCreatorProfile("@cached_creator");
+        Map<String, Object> second = service.fetchCreatorProfile("@cached_creator");
+        assertSame(first, second);
+
+        ReelDeliverable r1 = new ReelDeliverable();
+        r1.setReelUrl("https://www.instagram.com/reel/ReelOne1/");
+        r1.setCreatorHandle("@cached_creator");
+        ReelDeliverable r2 = new ReelDeliverable();
+        r2.setReelUrl("https://www.instagram.com/reel/ReelTwo2/");
+        r2.setCreatorHandle("@cached_creator");
+
+        service.syncReelDeliverable(r1, null);
+        service.syncReelDeliverable(r2, null);
+
+        assertEquals(10000L, r1.getViewsCount());
+        assertEquals(30000L, r2.getViewsCount());
+        mockServer.verify();
+    }
+
+    @Test
+    void persistsReachSavesSharesAndAvgWatchTimeAndUsesDirectMediaIdFastPath() {
+        Creator creator = new Creator();
+        creator.setId(UUID.randomUUID());
+        creator.setHandle("@oauth_creator");
+        creator.setFollowersCount(100000L);
+        creator.setIgConnected(true);
+        creator.setIgAccessToken("IG_TOKEN");
+
+        ReelDeliverable reel = new ReelDeliverable();
+        reel.setReelUrl("https://www.instagram.com/reel/DirectId1/");
+        reel.setIgMediaId("180111222333"); // already known media ID: bypasses /me/media list call!
+
+        String mediaJson = """
+            {
+              "id": "180111222333",
+              "media_type": "VIDEO",
+              "media_product_type": "REELS",
+              "permalink": "https://www.instagram.com/reel/DirectId1/",
+              "like_count": 4200,
+              "comments_count": 180
+            }
+            """;
+        String insightsJson = """
+            {
+              "data": [
+                {"name": "views", "total_value": {"value": 92000}},
+                {"name": "reach", "values": [{"value": 64000}]},
+                {"name": "saved", "values": [{"value": 310}]},
+                {"name": "shares", "values": [{"value": 145}]},
+                {"name": "ig_reels_avg_watch_time", "values": [{"value": 14200}]}
+              ]
+            }
+            """;
+
+        mockServer.expect(requestTo(containsString("/180111222333?fields=")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(mediaJson, MediaType.APPLICATION_JSON));
+        mockServer.expect(requestTo(containsString("/180111222333/insights")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(insightsJson, MediaType.APPLICATION_JSON));
+
+        service.syncReelDeliverable(reel, creator);
+
+        assertEquals(92000L, reel.getViewsCount());
+        assertEquals(64000L, reel.getReachCount());
+        assertEquals(310L, reel.getSavesCount());
+        assertEquals(145L, reel.getSharesCount());
+        assertEquals(14200L, reel.getAvgWatchTimeMs());
+        assertEquals(4.76, reel.getEngagementRate());
+        mockServer.verify();
     }
 }

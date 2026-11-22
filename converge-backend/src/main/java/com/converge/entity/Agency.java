@@ -30,6 +30,7 @@ public class Agency {
     private String region = "North America";
     private String contactName;
     private String contactEmail;
+    private String contactNumber;
 
     private int creatorsCount = 0;
     private int auditedReelsCount = 0;
@@ -60,6 +61,8 @@ public class Agency {
     public void setContactName(String contactName) { this.contactName = contactName; }
     public String getContactEmail() { return contactEmail; }
     public void setContactEmail(String contactEmail) { this.contactEmail = contactEmail; }
+    public String getContactNumber() { return contactNumber; }
+    public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
     public int getCreatorsCount() { return creatorsCount; }
     public void setCreatorsCount(int creatorsCount) { this.creatorsCount = creatorsCount; }
     public int getAuditedReelsCount() { return auditedReelsCount; }

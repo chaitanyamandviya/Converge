@@ -125,18 +125,147 @@
   --text-label-sm--line-height: 0.875rem;
 }
 
-@layer base {
-  html {
-    color-scheme: dark;
-  }
+@theme inline {
+  --color-cv-canvas: var(--cv-canvas);
+  --color-cv-card: var(--cv-card);
+  --color-cv-card-alt: var(--cv-card-alt);
+  --color-cv-card-soft: var(--cv-card-soft);
+  --color-cv-well: var(--cv-well);
+  --color-cv-control: var(--cv-control);
+  --color-cv-control-hover: var(--cv-control-hover);
+  --color-cv-control-dim: var(--cv-control-dim);
+  --color-cv-hover-row: var(--cv-hover-row);
+  --color-cv-hover-pill: var(--cv-hover-pill);
+  --color-cv-hover-subtle: var(--cv-hover-subtle);
+  --color-cv-ink: var(--cv-ink);
+  --color-cv-ink-soft: var(--cv-ink-soft);
+  --color-cv-ink-muted: var(--cv-ink-muted);
+  --color-cv-ink-subtle: var(--cv-ink-subtle);
+  --color-cv-ink-inverse: var(--cv-ink-inverse);
+  --color-cv-border: var(--cv-border);
+  --color-cv-border-soft: var(--cv-border-soft);
+  --color-cv-border-faint: var(--cv-border-faint);
+  --color-cv-border-strong: var(--cv-border-strong);
+  --color-cv-border-bright: var(--cv-border-bright);
+  --color-cv-divide: var(--cv-divide);
+  --color-cv-divide-soft: var(--cv-divide-soft);
+  --color-cv-backdrop: var(--cv-backdrop);
+  --color-cv-green: var(--cv-green);
+  --color-cv-gold: var(--cv-gold);
+  --color-cv-blush: var(--cv-blush);
+  --color-cv-periwinkle: var(--cv-periwinkle);
+  --color-cv-red: var(--cv-red);
+  --color-cv-red-soft: var(--cv-red-soft);
+  --color-cv-danger-bg: var(--cv-danger-bg);
+  --color-cv-danger-hover: var(--cv-danger-hover);
+  --color-cv-danger-ink: var(--cv-danger-ink);
+  --color-cv-success-bg: var(--cv-success-bg);
+  --color-cv-success-ink: var(--cv-success-ink);
+  --color-cv-ribbon-back: var(--cv-ribbon-back);
+  --color-cv-toast-bg: var(--cv-toast-bg);
+  --color-cv-toast-ink: var(--cv-toast-ink);
+}
 
+:root {
+  color-scheme: dark;
+  --cv-canvas: #1c1c1c;
+  --cv-card: #161616;
+  --cv-card-alt: #181818;
+  --cv-card-soft: #141414;
+  --cv-well: #111111;
+  --cv-control: #242424;
+  --cv-control-hover: #2c2c2c;
+  --cv-control-dim: #1a1a1a;
+  --cv-hover-row: rgba(255, 255, 255, 0.04);
+  --cv-hover-pill: rgba(255, 255, 255, 0.08);
+  --cv-hover-subtle: rgba(255, 255, 255, 0.02);
+  --cv-ink: #fff6e8;
+  --cv-ink-soft: #e8e8ee;
+  --cv-ink-muted: #a7a9be;
+  --cv-ink-subtle: #7c7e8c;
+  --cv-ink-inverse: #111111;
+  --cv-border: rgba(255, 255, 255, 0.14);
+  --cv-border-soft: rgba(255, 255, 255, 0.10);
+  --cv-border-faint: rgba(255, 255, 255, 0.08);
+  --cv-border-strong: rgba(255, 255, 255, 0.18);
+  --cv-border-bright: rgba(255, 255, 255, 0.24);
+  --cv-divide: rgba(255, 255, 255, 0.10);
+  --cv-divide-soft: rgba(255, 255, 255, 0.08);
+  --cv-ring-track: #242424;
+  --cv-backdrop: rgba(0, 0, 0, 0.75);
+  --cv-green: #4ade80;
+  --cv-gold: #fabf29;
+  --cv-blush: #ffccde;
+  --cv-periwinkle: #d0d5ff;
+  --cv-red: #ff5c5c;
+  --cv-red-soft: #ff6b6b;
+  --cv-danger-bg: #2c1517;
+  --cv-danger-hover: #3c1b1e;
+  --cv-danger-ink: #ffb4b4;
+  --cv-success-bg: #0d2820;
+  --cv-success-ink: #8ef0cc;
+  --cv-shadow-ink: #fff6e8;
+  --cv-select-option-bg: #161616;
+  --cv-ribbon-back: #262626;
+  --cv-toast-bg: #fff6e8;
+  --cv-toast-ink: #111111;
+}
+
+html.light {
+  color-scheme: light;
+  --cv-canvas: #f5f0e6;
+  --cv-card: #ffffff;
+  --cv-card-alt: #faf7f2;
+  --cv-card-soft: #f0ebe1;
+  --cv-well: #efe9dc;
+  --cv-control: #e7e0d2;
+  --cv-control-hover: #dbd2c0;
+  --cv-control-dim: #e4ddd0;
+  --cv-hover-row: rgba(20, 20, 20, 0.045);
+  --cv-hover-pill: rgba(20, 20, 20, 0.08);
+  --cv-hover-subtle: rgba(20, 20, 20, 0.025);
+  --cv-ink: #141414;
+  --cv-ink-soft: #2c2d33;
+  --cv-ink-muted: #52535c;
+  --cv-ink-subtle: #6e6f7a;
+  --cv-ink-inverse: #fff6e8;
+  --cv-border: rgba(20, 20, 20, 0.14);
+  --cv-border-soft: rgba(20, 20, 20, 0.10);
+  --cv-border-faint: rgba(20, 20, 20, 0.08);
+  --cv-border-strong: rgba(20, 20, 20, 0.22);
+  --cv-border-bright: rgba(20, 20, 20, 0.30);
+  --cv-divide: rgba(20, 20, 20, 0.12);
+  --cv-divide-soft: rgba(20, 20, 20, 0.08);
+  --cv-ring-track: #dfd6c5;
+  --cv-backdrop: rgba(20, 20, 20, 0.50);
+  --cv-green: #007656;
+  --cv-gold: #b45309;
+  --cv-blush: #be185d;
+  --cv-periwinkle: #4338ca;
+  --cv-red: #dc2626;
+  --cv-red-soft: #dc2626;
+  --cv-danger-bg: #fee2e2;
+  --cv-danger-hover: #fecaca;
+  --cv-danger-ink: #b91c1c;
+  --cv-success-bg: #dcfce7;
+  --cv-success-ink: #065f46;
+  --cv-shadow-ink: #141414;
+  --cv-select-option-bg: #ffffff;
+  --cv-ribbon-back: #141414;
+  --cv-toast-bg: #141414;
+  --cv-toast-ink: #fff6e8;
+}
+
+@layer base {
   html, body {
     margin: 0;
     padding: 0;
-    overscroll-behavior: none;
-    background-color: #1c1c1c;
-    color: #fff6e8;
+    overscroll-behavior-x: auto;
+    overscroll-behavior-y: contain;
+    background-color: var(--cv-canvas);
+    color: var(--cv-ink);
     font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    transition: background-color 0.18s ease, color 0.18s ease;
   }
 
   button, input, select, textarea, svg text {
@@ -144,8 +273,8 @@
   }
 
   select option {
-    background-color: #161616;
-    color: #fff6e8;
+    background-color: var(--cv-select-option-bg);
+    color: var(--cv-ink);
   }
 
   input:-webkit-autofill,
@@ -156,12 +285,12 @@
   textarea:-webkit-autofill:hover,
   textarea:-webkit-autofill:focus,
   select:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0 1000px #111111 inset !important;
-    box-shadow: 0 0 0 1000px #111111 inset !important;
-    -webkit-text-fill-color: #fff6e8 !important;
+    -webkit-box-shadow: 0 0 0 1000px var(--cv-well) inset !important;
+    box-shadow: 0 0 0 1000px var(--cv-well) inset !important;
+    -webkit-text-fill-color: var(--cv-ink) !important;
     background-color: transparent !important;
     border-radius: 0 !important;
-    caret-color: #fff6e8;
+    caret-color: var(--cv-ink);
     transition: background-color 999999s ease-in-out 0s;
   }
 }
@@ -363,13 +492,13 @@
 }
 
 .dark-card {
-  background-color: #242424;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: var(--cv-control);
+  border: 1px solid var(--cv-border);
 }
 
 .sticker-diecut {
-  border: 2.5px solid #fff6e8;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+  border: 2.5px solid var(--cv-shadow-ink);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
 }
 
 .card-hover {
@@ -377,7 +506,7 @@
 }
 .card-hover:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 246, 232, 0.28);
+  border-color: var(--cv-border-bright);
 }
 
 .doodle-draw-hover {

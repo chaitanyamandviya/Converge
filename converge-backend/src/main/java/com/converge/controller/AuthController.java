@@ -33,38 +33,56 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody Map<String, String> body) {
-        String name = body.getOrDefault("name", "");
-        String email = body.getOrDefault("email", "");
-        String password = body.getOrDefault("password", "");
-        if (name.isBlank() || email.isBlank() || password.length() < 6) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Name, valid email, and password (min 6 chars) are required."));
+    public ResponseEntity<?> signup(@RequestBody(required = false) Map<String, String> body) {
+        String name = optString(body, "name");
+        String email = optString(body, "email");
+        String password = optRaw(body, "password");
+        String activationToken = optString(body, "token");
+        if (activationToken.isEmpty()) {
+            activationToken = optString(body, "activationToken");
         }
-        return ResponseEntity.ok(authService.signup(name, email, password));
+        if (name.length() < 2 || email.isEmpty() || password.length() < 8) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Name (min 2 chars), valid email, and password (min 8 chars) are required."));
+        }
+        return ResponseEntity.ok(authService.signup(name, email, password, activationToken));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        String email = body.getOrDefault("email", "");
-        String password = body.getOrDefault("password", "");
+    public ResponseEntity<?> login(@RequestBody(required = false) Map<String, String> body) {
+        String email = optString(body, "email");
+        String password = optRaw(body, "password");
+        if (email.isEmpty() || password.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email and password are required."));
+        }
         return ResponseEntity.ok(authService.login(email, password));
     }
 
     @PostMapping("/google")
-    public ResponseEntity<?> google(@RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(authService.googleSignIn(
-                body.get("idToken"),
-                body.get("accessToken")
-        ));
+    public ResponseEntity<?> google(@RequestBody(required = false) Map<String, String> body) {
+        String idToken = body != null ? body.get("idToken") : null;
+        String accessToken = body != null ? body.get("accessToken") : null;
+        return ResponseEntity.ok(authService.googleSignIn(idToken, accessToken));
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
-        String email = body.getOrDefault("email", "");
-        if (!email.isBlank()) {
+    public ResponseEntity<?> forgotPassword(@RequestBody(required = false) Map<String, String> body) {
+        String email = optString(body, "email");
+        if (!email.isEmpty()) {
             authService.forgotPassword(email);
         }
         return ResponseEntity.ok(Map.of("message", "Password reset instructions have been dispatched if the account exists."));
+    }
+
+    private static String optString(Map<String, String> body, String key) {
+        if (body == null) return "";
+        String v = body.get(key);
+        return v != null ? v.trim() : "";
+    }
+
+    private static String optRaw(Map<String, String> body, String key) {
+        if (body == null) return "";
+        String v = body.get(key);
+        return v != null ? v : "";
     }
 
     @GetMapping("/me")

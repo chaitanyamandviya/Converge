@@ -29,7 +29,7 @@ public class ConvergeApplication {
 
         if (rawDbUrl != null && !rawDbUrl.isBlank()) {
             String[] parsed = normalizePostgresConfig(rawDbUrl, dbUser, dbPass);
-            String jdbcUrl = parsed[0];
+            String jdbcUrl = withPublicDnsSocketFactory(parsed[0]);
             String resolvedUser = parsed[1];
             String resolvedPass = parsed[2];
 
@@ -44,6 +44,8 @@ public class ConvergeApplication {
                 } else {
                     app.setAdditionalProfiles("local");
                 }
+            } else if (!isH2FallbackAllowed()) {
+                throw new IllegalStateException("Unsupported datasource URL protocol when H2 fallback is disabled.");
             } else {
                 app.setAdditionalProfiles("local");
             }
@@ -58,11 +60,30 @@ public class ConvergeApplication {
     }
 
     static boolean isH2FallbackAllowed() {
-        String explicit = cleanEnvValue(getEnv("ALLOW_H2_FALLBACK"));
+        return isH2FallbackAllowed(ConvergeApplication::getEnv);
+    }
+
+    public static boolean isH2FallbackAllowed(Function<String, String> envReader) {
+        String explicit = cleanEnvValue(envReader.apply("ALLOW_H2_FALLBACK"));
         if (!explicit.isEmpty()) {
             return !"false".equalsIgnoreCase(explicit) && !"0".equals(explicit);
         }
-        return cleanEnvValue(getEnv("RENDER")).isEmpty();
+        return cleanEnvValue(envReader.apply("RENDER")).isEmpty();
+    }
+
+    public static boolean isHostedProduction(org.springframework.core.env.Environment env) {
+        if (env != null) {
+            for (String profile : env.getActiveProfiles()) {
+                if ("prod".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile)) {
+                    return true;
+                }
+            }
+            String render = cleanEnvValue(env.getProperty("RENDER"));
+            String allowH2 = cleanEnvValue(env.getProperty("ALLOW_H2_FALLBACK"));
+            if (!render.isEmpty()) return true;
+            if ("false".equalsIgnoreCase(allowH2) || "0".equals(allowH2)) return true;
+        }
+        return !isH2FallbackAllowed();
     }
 
     private static boolean tryConnectPostgres(String jdbcUrl, String user, String pass) {
@@ -140,6 +161,13 @@ public class ConvergeApplication {
             }
         }
         return new String[]{url, resolvedUser, resolvedPass};
+    }
+
+    static String withPublicDnsSocketFactory(String jdbcUrl) {
+        if (jdbcUrl == null || !jdbcUrl.startsWith("jdbc:postgresql://") || jdbcUrl.contains("socketFactory=")) {
+            return jdbcUrl;
+        }
+        return jdbcUrl + (jdbcUrl.contains("?") ? "&" : "?") + "socketFactory=com.converge.config.PublicDnsSocketFactory";
     }
 
     static String firstNonBlank(String a, String b) {

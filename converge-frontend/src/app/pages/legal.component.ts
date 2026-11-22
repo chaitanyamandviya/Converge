@@ -1,125 +1,106 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { AppHeaderComponent } from '../components/app-header.component';
 import { AppFooterComponent } from '../components/app-footer.component';
+import { ThemeToggleComponent } from '../components/theme-toggle.component';
 
 @Component({
   selector: 'app-legal',
   standalone: true,
-  imports: [CommonModule, RouterLink, AppHeaderComponent, AppFooterComponent],
+  imports: [CommonModule, RouterLink, AppHeaderComponent, AppFooterComponent, ThemeToggleComponent],
   template: `
-    <div class="bg-background font-body text-on-surface min-h-screen flex flex-col justify-between overflow-x-clip selection:bg-blue-container selection:text-ink-primary">
-      <app-header>
-        <span header-left class="hidden sm:inline-flex px-2.5 py-0.5 rounded-full bg-surface-container-soft text-ink-secondary text-[11px] font-semibold">
-          Legal &amp; Trust
-        </span>
-
-        <div header-right class="flex items-center gap-2 shrink-0">
-          <a routerLink="/" class="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-surface-container-high bg-surface-container-lowest hover:bg-surface-container-low text-ink-secondary hover:text-ink-primary text-xs font-semibold active:scale-95 transition-all whitespace-nowrap group">
-            <svg class="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>
-            </svg>
-            <span class="hidden sm:inline">Back to Home</span>
-            <span class="sm:hidden">Home</span>
+    <div class="bg-cv-canvas font-body text-cv-ink min-h-screen flex flex-col justify-between overflow-x-clip selection:bg-[#f54e26]/25 selection:text-cv-ink">
+      <app-header [elevated]="true">
+        <div header-right class="flex items-center gap-2.5 shrink-0">
+          <a routerLink="/" class="inline-flex items-center gap-1.5 h-8.5 px-3.5 rounded-[4px] border border-cv-border bg-cv-control hover:bg-cv-control-hover text-cv-ink text-xs font-medium transition-colors whitespace-nowrap group">
+            <span class="transition-transform duration-200 group-hover:-translate-x-0.5">←</span>
+            <span class="hidden sm:inline">Home</span>
           </a>
+          <app-theme-toggle />
           @if (auth.isAuthenticated()) {
             <a [routerLink]="auth.currentUser()?.role === 'SYSTEM_ADMIN' ? '/admin' : '/workspace'"
-               class="cta-pill-orange btn-shimmer inline-flex items-center justify-center h-8 px-4 rounded-full text-on-primary text-xs font-bold active:scale-95 transition-all whitespace-nowrap">
-              {{ auth.currentUser()?.role === 'SYSTEM_ADMIN' ? 'Admin Console' : 'Open Workspace' }}
+               class="inline-flex items-center justify-center h-8.5 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_var(--cv-shadow-ink)] font-headline uppercase tracking-[0.04em] text-sm font-bold transition-all whitespace-nowrap">
+              {{ auth.currentUser()?.role === 'SYSTEM_ADMIN' ? 'ADMIN ↗' : 'WORKSPACE ↗' }}
             </a>
           } @else {
-            <a routerLink="/auth" [queryParams]="{mode: 'signin'}" class="inline-flex items-center justify-center h-8 px-3 rounded-full text-xs font-semibold text-ink-secondary hover:text-ink-primary hover:bg-surface-container-soft active:scale-95 transition-all whitespace-nowrap">
+            <a routerLink="/auth" [queryParams]="{mode: 'signin'}" class="inline-flex items-center justify-center h-8.5 px-3 text-xs font-medium text-cv-ink-muted hover:text-cv-ink transition-colors whitespace-nowrap">
               Sign In
             </a>
-            <a routerLink="/auth" [queryParams]="{mode: 'signup'}" class="cta-pill-orange btn-shimmer inline-flex items-center justify-center h-8 px-4 rounded-full text-on-primary text-xs font-bold active:scale-95 transition-all whitespace-nowrap">
-              Get Started
+            <a routerLink="/auth" [queryParams]="{mode: 'signup'}" class="inline-flex items-center justify-center h-8.5 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_var(--cv-shadow-ink)] font-headline uppercase tracking-[0.04em] text-sm font-bold transition-all whitespace-nowrap">
+              GET STARTED ↗
             </a>
           }
         </div>
       </app-header>
 
-      <main class="w-full py-8 sm:py-10 max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 flex-1">
-        <div class="flex flex-col items-start gap-3 max-w-4xl">
-          <h1 class="font-headline uppercase text-4xl sm:text-5xl font-bold text-ink-primary tracking-[0.015em]">PRIVACY &amp; TERMS</h1>
-          <p class="text-sm sm:text-base text-ink-secondary leading-relaxed max-w-2xl">
+      <main class="w-full py-6 sm:py-8 flex-1 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10">
+        <div class="flex flex-col items-start gap-3 pb-5 border-b border-cv-border-soft">
+          <h1 class="font-headline uppercase text-4xl sm:text-5xl font-bold text-cv-ink tracking-[0.015em] leading-none">
+            PRIVACY <span class="text-[#f54e26]">&amp; TERMS</span>
+          </h1>
+          <p class="text-sm text-cv-ink-muted leading-relaxed max-w-2xl">
             Plain rules for how Converge handles creator links, campaign reports, and your workspace data.
           </p>
 
           <div class="w-full pt-2 flex flex-wrap items-center justify-between gap-3">
-            <div class="inline-flex items-center gap-1 p-1 bg-surface-container-low border border-surface-container-high/70 rounded-full">
+            <div class="inline-flex items-center gap-1 p-1 bg-cv-well border border-cv-border rounded-[4px]">
               <button
                 type="button"
                 (click)="switchTab('privacy')"
-                class="h-8 px-4 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
-                [ngClass]="activeTab() === 'privacy' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container/60'">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 3.5l7 2.8v5.2c0 4.6-3 8.1-7 9.5-4-1.4-7-4.9-7-9.5V6.3l7-2.8z"/>
-                </svg>
-                <span>Privacy Policy</span>
+                class="h-8 px-4 rounded-[3px] font-headline uppercase tracking-[0.03em] text-base font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                [ngClass]="activeTab() === 'privacy' ? 'bg-cv-ink text-cv-ink-inverse' : 'text-cv-ink-muted hover:text-cv-ink'">
+                <span>PRIVACY POLICY</span>
               </button>
               <button
                 type="button"
                 (click)="switchTab('terms')"
-                class="h-8 px-4 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
-                [ngClass]="activeTab() === 'terms' ? 'bg-primary text-on-primary shadow-2xs' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-container/60'">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 4l6 6-8 8-6-6 8-8z"/><path d="M4 20h10"/>
-                </svg>
-                <span>Terms of Service</span>
+                class="h-8 px-4 rounded-[3px] font-headline uppercase tracking-[0.03em] text-base font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                [ngClass]="activeTab() === 'terms' ? 'bg-cv-ink text-cv-ink-inverse' : 'text-cv-ink-muted hover:text-cv-ink'">
+                <span>TERMS OF SERVICE</span>
               </button>
             </div>
 
             <div class="flex items-center gap-2">
-              <button type="button" (click)="printDoc()" class="h-8.5 px-3.5 rounded-full bg-surface-container-lowest border border-surface-container-high hover:bg-surface-cream text-ink-secondary hover:text-ink-primary flex items-center gap-1.5 cursor-pointer text-xs font-semibold transition-colors">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M6 9V4h12v5"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M6 15h12v5H6z"/>
-                </svg>
+              <button type="button" (click)="printDoc()" class="h-8.5 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-cv-ink flex items-center gap-1.5 cursor-pointer text-xs font-medium transition-colors">
                 <span>Print</span>
               </button>
-              <button type="button" (click)="copyLink()" class="h-8.5 px-3.5 rounded-full bg-surface-container-lowest border border-surface-container-high hover:bg-surface-cream text-ink-secondary hover:text-ink-primary text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/>
-                  <path d="M8.3 13.2l7.4 4.6M15.7 6.2l-7.4 4.6"/>
-                </svg>
-                <span>{{ copied() ? 'Copied!' : 'Share Policy' }}</span>
+              <button type="button" (click)="copyLink()" class="h-8.5 px-3.5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-cv-ink text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors">
+                <span>{{ copied() ? 'Copied ✓' : 'Copy Link' }}</span>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
-          <aside class="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-20">
-            <div class="p-5 rounded-3xl bg-surface-container-lowest border border-surface-container-high/80 shadow-2xs flex flex-col gap-2">
-              <div class="flex items-center justify-between pb-2 border-b border-surface-container-high/60 mb-1">
-                <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-secondary">On this document</span>
-                <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-container text-primary font-semibold">
-                  {{ activeTab() === 'privacy' ? 'Privacy Policy' : 'Terms of Service' }}
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <aside class="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-6">
+            <div class="p-4 rounded-[4px] bg-cv-card border border-cv-border flex flex-col gap-1.5">
+              <div class="flex items-center justify-between pb-2.5 border-b border-cv-border-soft mb-1">
+                <span class="text-xs font-semibold text-cv-ink-muted">Sections</span>
+                <span class="text-[11px] font-medium text-[#f54e26]">
+                  {{ activeTab() === 'privacy' ? 'Privacy' : 'Terms' }}
                 </span>
               </div>
               @for (item of currentSections(); track item.id; let i = $index) {
                 <button
                   type="button"
                   (click)="scrollToSection(item.id)"
-                  class="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer"
-                  [ngClass]="activeSectionId() === item.id ? 'bg-blue-container/70 text-primary' : 'text-ink-secondary hover:text-ink-primary hover:bg-surface-warm'">
-                  <span class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-                        [ngClass]="activeSectionId() === item.id ? 'bg-primary text-on-primary' : 'bg-surface-container text-ink-primary'">
-                    0{{ i + 1 }}
-                  </span>
+                  class="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-[4px] text-xs font-medium transition-colors cursor-pointer"
+                  [ngClass]="activeSectionId() === item.id ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'text-cv-ink-muted hover:text-cv-ink hover:bg-cv-hover-row'">
+                  <span class="font-headline font-bold shrink-0">0{{ i + 1 }}</span>
                   <span class="truncate">{{ item.title }}</span>
                 </button>
               }
             </div>
           </aside>
 
-          <div class="lg:col-span-8 xl:col-span-9 space-y-4">
+          <div class="lg:col-span-8 xl:col-span-9 rounded-[4px] bg-cv-card border border-cv-border divide-y divide-cv-divide">
             @for (item of currentSections(); track item.id; let i = $index) {
-              <section [id]="item.id" class="scroll-mt-20 p-5 sm:p-6 rounded-3xl bg-surface-container-lowest border border-surface-container-high/80 shadow-2xs">
-                <span class="text-[11px] text-primary uppercase tracking-wider font-bold">Section 0{{ i + 1 }}</span>
-                <h2 class="font-headline text-lg sm:text-xl font-bold text-ink-primary mt-1 mb-2">{{ item.title }}</h2>
-                <p class="text-sm text-ink-secondary leading-relaxed">{{ item.body }}</p>
+              <section [id]="item.id" class="scroll-mt-6 p-5 sm:p-6">
+                <span class="text-xs text-[#f54e26] font-semibold">0{{ i + 1 }}</span>
+                <h2 class="font-headline uppercase text-2xl font-bold text-cv-ink tracking-[0.015em] mt-1 mb-2">{{ item.title }}</h2>
+                <p class="text-sm text-cv-ink-muted leading-relaxed">{{ item.body }}</p>
               </section>
             }
           </div>
@@ -151,17 +132,27 @@ export class LegalComponent implements OnInit {
     { id: 't4', title: 'Service Reliability', body: 'Converge is monitored continuously to keep every brand and partner agency workspace fast, accurate, and dependable.' }
   ];
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(private route: ActivatedRoute, private router: Router) {}
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(p => {
       if (p['tab'] === 'terms' || p['tab'] === 'privacy') {
-        this.switchTab(p['tab']);
+        this.applyTab(p['tab']);
+      } else {
+        this.applyTab('privacy');
       }
     });
   }
 
   switchTab(tab: 'privacy' | 'terms') {
+    if (this.activeTab() === tab) return;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab }
+    });
+  }
+
+  private applyTab(tab: 'privacy' | 'terms') {
     this.activeTab.set(tab);
     this.activeSectionId.set(tab === 'privacy' ? 'p1' : 't1');
   }

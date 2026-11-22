@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { AppHeaderComponent } from '../components/app-header.component';
 import { AppFooterComponent } from '../components/app-footer.component';
+import { ThemeToggleComponent } from '../components/theme-toggle.component';
 
 declare const google: any;
 
@@ -13,13 +14,14 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AppHeaderComponent, AppFooterComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AppHeaderComponent, AppFooterComponent, ThemeToggleComponent],
   template: `
-    <div class="bg-[#1c1c1c] font-body text-[#fff6e8] min-h-screen lg:h-screen lg:overflow-hidden flex flex-col selection:bg-[#f54e26]/25 selection:text-[#fff6e8] overflow-x-clip">
+    <div class="bg-cv-canvas font-body text-cv-ink min-h-screen flex flex-col selection:bg-[#f54e26]/25 selection:text-cv-ink overflow-x-clip">
       <!-- Slim Minimal Header matching Landing Page -->
       <app-header [elevated]="true">
-        <div header-right class="flex items-center gap-5">
-          <a routerLink="/" class="text-sm text-[#a7a9be] hover:text-[#fff6e8] transition-colors inline-flex items-center gap-1.5 group">
+        <div header-right class="flex items-center gap-3 sm:gap-5">
+          <app-theme-toggle />
+          <a routerLink="/" class="text-sm text-cv-ink-muted hover:text-cv-ink transition-colors inline-flex items-center gap-1.5 group">
             <span class="transition-transform duration-200 group-hover:-translate-x-0.5">←</span>
             <span>Back to home</span>
           </a>
@@ -27,7 +29,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       </app-header>
 
       <!-- Editorial Neo-Brutalist Auth Stage -->
-      <main class="w-full flex-1 lg:min-h-0 lg:overflow-y-auto bg-[#1c1c1c] relative flex items-center justify-center px-4 sm:px-6 lg:px-10 py-3 sm:py-4 lg:py-3.5">
+      <main class="w-full flex-1 bg-cv-canvas relative flex items-center justify-center px-4 sm:px-6 lg:px-10 py-3 sm:py-4 lg:py-3.5">
         <div class="w-full max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center my-auto">
 
           <!-- Left Column: Condensed Color-Blocked Statement + VSK Stickers (Desktop) -->
@@ -37,10 +39,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
               <div class="px-2.5 py-1 bg-[#5738af] text-[#fff6e8] font-headline uppercase font-bold text-lg tracking-[0.02em] -rotate-12 -mr-1.5 z-10 shadow-md">
                 {{ mode() === 'signin' ? 'HEY!' : 'NEW!' }}
               </div>
-              <div class="w-12 h-12 rounded-xl bg-[#111111] border border-white/15 flex items-center justify-center p-1.5 shadow-lg">
+              <div class="w-12 h-12 rounded-xl bg-[#111111] border border-cv-border flex items-center justify-center p-1.5 shadow-lg">
                 <img src="/converge-logo.svg" alt="Converge" class="w-full h-full object-contain"/>
               </div>
-              <div class="w-9 h-9 rounded-full bg-[#007656] border-2 border-[#1c1c1c] flex items-center justify-center -ml-2 -mt-6 shadow-md">
+              <div class="w-9 h-9 rounded-full bg-[#007656] border-2 border-cv-canvas flex items-center justify-center -ml-2 -mt-6 shadow-md">
                 <div class="flex items-center gap-1">
                   <span class="w-2 h-2.5 rounded-full bg-[#fff6e8] flex items-center justify-end pr-0.5"><span class="w-1 h-1 rounded-full bg-[#111111]"></span></span>
                   <span class="w-2 h-2.5 rounded-full bg-[#fff6e8] flex items-center justify-end pr-0.5"><span class="w-1 h-1 rounded-full bg-[#111111]"></span></span>
@@ -50,24 +52,24 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
             <!-- Color-Blocked Condensed Headline -->
             @if (mode() === 'signin') {
-              <h1 class="font-headline uppercase font-bold text-[3.2rem] xl:text-[4.1rem] leading-[0.96] tracking-[0.01em] text-[#fff6e8]">
+              <h1 class="font-headline uppercase font-bold text-[3.2rem] xl:text-[4.1rem] leading-[0.96] tracking-[0.01em] text-cv-ink">
                 OPEN YOUR<br/>
-                <span class="text-[#fabf29]">CAMPAIGNS,</span><br/>
-                CHECK LIVE <span class="text-[#ffccde]">REELS,</span><br/>
+                <span class="text-cv-gold">CAMPAIGNS,</span><br/>
+                CHECK LIVE <span class="text-cv-blush">REELS,</span><br/>
                 <span class="text-[#f54e26]">SKIP THE DMS.</span>
               </h1>
             } @else {
-              <h1 class="font-headline uppercase font-bold text-[3.2rem] xl:text-[4.1rem] leading-[0.96] tracking-[0.01em] text-[#fff6e8]">
+              <h1 class="font-headline uppercase font-bold text-[3.2rem] xl:text-[4.1rem] leading-[0.96] tracking-[0.01em] text-cv-ink">
                 TRACK EVERY<br/>
-                <span class="text-[#fabf29]">PUBLIC REEL,</span><br/>
+                <span class="text-cv-gold">PUBLIC REEL,</span><br/>
                 ZERO CREATOR <span class="text-[#007656]">PASSWORDS,</span><br/>
                 <span class="text-[#f54e26]">START IN 60S.</span>
               </h1>
             }
 
-            <p class="text-sm xl:text-base text-[#a7a9be] mt-4 leading-relaxed max-w-md">
+            <p class="text-sm xl:text-base text-cv-ink-muted mt-4 leading-relaxed max-w-md">
               {{ mode() === 'signin'
-                ? 'Open your brand workspaces to see real Reel views, likes, saves, and clean campaign spreadsheets in one place.'
+                ? 'Open your brand workspaces to see real Reel views, likes, comments, and clean campaign spreadsheets in one place.'
                 : 'Set up your workspace in under a minute. Paste any public Instagram Reel link and get real post numbers without chasing screenshots.' }}
             </p>
 
@@ -76,10 +78,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
               <span class="px-3 py-1 rounded-[4px] bg-[#5738af] text-[#fff6e8] text-xs font-semibold">
                 No Passwords
               </span>
-              <span class="px-3 py-1 rounded-[4px] bg-[#141414] border border-white/[0.14] text-[#e8e8ee] text-xs font-medium">
+              <span class="px-3 py-1 rounded-[4px] bg-cv-card-soft border border-cv-border text-cv-ink-soft text-xs font-medium">
                 Live Reel Numbers
               </span>
-              <span class="px-3 py-1 rounded-[4px] bg-[#141414] border border-white/[0.14] text-[#e8e8ee] text-xs font-medium">
+              <span class="px-3 py-1 rounded-[4px] bg-cv-card-soft border border-cv-border text-cv-ink-soft text-xs font-medium">
                 1-Click CSV Export
               </span>
             </div>
@@ -96,27 +98,27 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
           <div class="lg:col-span-6 w-full flex flex-col items-center lg:items-end animate-fade-in-up">
             <!-- Mobile / Tablet Condensed Title -->
             <div class="lg:hidden text-center mb-4">
-              <h1 class="font-headline uppercase text-4xl font-bold text-[#fff6e8] tracking-[0.015em] leading-none">
+              <h1 class="font-headline uppercase text-4xl font-bold text-cv-ink tracking-[0.015em] leading-none">
                 {{ mode() === 'signin' ? 'WELCOME BACK.' : 'START FREE.' }}
               </h1>
-              <p class="text-xs text-[#a7a9be] mt-1.5">
+              <p class="text-xs text-cv-ink-muted mt-1.5">
                 {{ mode() === 'signin' ? 'Sign in to open your workspace.' : 'Create your Converge workspace in seconds.' }}
               </p>
             </div>
 
             <div
-              class="w-full max-w-[460px] xl:max-w-[488px] bg-[#161616] rounded-[8px] p-4 sm:p-5 border border-white/[0.18] shadow-[6px_6px_0px_#f54e26] transition-all duration-300"
+              class="w-full max-w-[460px] xl:max-w-[488px] bg-cv-card rounded-[8px] p-4 sm:p-5 border border-cv-border-strong shadow-[6px_6px_0px_#f54e26] transition-all duration-300"
               [class.animate-shake]="shakeForm()">
 
               <!-- Hairline Mode Switcher (Sign In / Create Account) -->
-              <div class="w-full grid grid-cols-2 gap-1 p-1 rounded-[4px] bg-[#111111] border border-white/[0.14] mb-3.5 select-none" role="tablist">
+              <div class="w-full grid grid-cols-2 gap-1 p-1 rounded-[4px] bg-cv-well border border-cv-border mb-3.5 select-none" role="tablist">
                 <button
                   type="button"
                   role="tab"
                   [attr.aria-selected]="mode() === 'signin'"
                   (click)="switchMode('signin')"
                   class="py-2 text-center rounded-[3px] font-headline uppercase text-lg tracking-[0.03em] font-bold transition-colors duration-150 cursor-pointer"
-                  [ngClass]="mode() === 'signin' ? 'bg-[#fff6e8] text-[#111111]' : 'text-[#a7a9be] hover:text-[#fff6e8]'">
+                  [ngClass]="mode() === 'signin' ? 'bg-cv-ink text-cv-ink-inverse' : 'text-cv-ink-muted hover:text-cv-ink'">
                   SIGN IN
                 </button>
                 <button
@@ -125,7 +127,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   [attr.aria-selected]="mode() === 'signup'"
                   (click)="switchMode('signup')"
                   class="py-2 text-center rounded-[3px] font-headline uppercase text-lg tracking-[0.03em] font-bold transition-colors duration-150 cursor-pointer"
-                  [ngClass]="mode() === 'signup' ? 'bg-[#fff6e8] text-[#111111]' : 'text-[#a7a9be] hover:text-[#fff6e8]'">
+                  [ngClass]="mode() === 'signup' ? 'bg-cv-ink text-cv-ink-inverse' : 'text-cv-ink-muted hover:text-cv-ink'">
                   CREATE ACCOUNT
                 </button>
               </div>
@@ -136,7 +138,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   type="button"
                   (click)="handleGoogle()"
                   [disabled]="loading() || googleLoading()"
-                  class="w-full h-10 px-4 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] active:scale-[0.99] text-[#fff6e8] text-sm font-medium flex items-center justify-center gap-2.5 border border-white/[0.16] hover:border-white/[0.3] focus-visible:outline-none focus-visible:border-[#f54e26] transition-all duration-150 cursor-pointer disabled:opacity-60">
+                  class="w-full h-10 px-4 rounded-[4px] bg-cv-control hover:bg-cv-control-hover active:scale-[0.99] text-cv-ink text-sm font-medium flex items-center justify-center gap-2.5 border border-cv-border hover:border-cv-border-bright focus-visible:outline-none focus-visible:border-[#f54e26] transition-all duration-150 cursor-pointer disabled:opacity-60">
                   @if (googleLoading()) {
                     <svg class="w-4 h-4 animate-spin text-[#f54e26] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                       <path d="M12 3a9 9 0 1 0 9 9"/>
@@ -155,8 +157,8 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
                 <!-- Hairline Divider -->
                 <div class="relative my-3 flex items-center justify-center">
-                  <div class="absolute inset-0 flex items-center"><div class="w-full bg-white/[0.12] h-[1px]"></div></div>
-                  <span class="relative px-3 bg-[#161616] text-xs text-[#a7a9be]">or with email</span>
+                  <div class="absolute inset-0 flex items-center"><div class="w-full bg-cv-border-soft h-[1px]"></div></div>
+                  <span class="relative px-3 bg-cv-card text-xs text-cv-ink-muted">or with email</span>
                 </div>
 
                 <!-- Alert Banner -->
@@ -164,8 +166,8 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   <div
                     class="mb-2.5 px-3 py-2 rounded-[4px] border text-xs font-medium flex items-center justify-between gap-2 animate-pop-in"
                     [ngClass]="msg.type === 'error'
-                      ? 'bg-[#2c1517] border-[#ff5c5c]/40 text-[#ffb4b4]'
-                      : 'bg-[#0d2820] border-[#007656] text-[#8ef0cc]'">
+                      ? 'bg-cv-danger-bg border-[#ff5c5c]/40 text-cv-danger-ink'
+                      : 'bg-cv-success-bg border-[#007656] text-cv-success-ink'">
                     <div class="flex items-center gap-2 min-w-0">
                       @if (msg.type === 'error') {
                         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -194,18 +196,18 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   @if (mode() === 'signup') {
                     <div>
                       <div class="flex items-center justify-between mb-1">
-                        <label for="auth-name" class="text-xs font-medium text-[#fff6e8]">Full name</label>
+                        <label for="auth-name" class="text-xs font-medium text-cv-ink">Full name</label>
                         @if (nameTouched() && nameError()) {
-                          <span class="text-xs text-[#ff6b6b] font-medium">{{ nameError() }}</span>
+                          <span class="text-xs text-cv-red-soft font-medium">{{ nameError() }}</span>
                         }
                       </div>
                       <div
-                        class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                        class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-cv-well border transition-colors duration-150"
                         [ngClass]="nameTouched() && nameError()
                           ? 'border-[#ff5c5c]'
-                          : (nameValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                          : (nameValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-cv-border focus-within:border-[#f54e26]')">
                         <svg class="doodle-svg w-4 h-4 shrink-0"
-                             [ngClass]="nameTouched() && nameError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                             [ngClass]="nameTouched() && nameError() ? 'text-[#ff5c5c]' : 'text-cv-ink-muted group-focus-within:text-[#f54e26]'"
                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                           <circle cx="12" cy="8" r="3.8"/>
                           <path d="M5.5 19.5c1-3.4 3.5-5 6.5-5s5.5 1.6 6.5 5"/>
@@ -219,10 +221,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                           autocomplete="name"
                           placeholder="Alex Morgan"
                           type="text"
-                          class="flex-1 min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm outline-none"/>
+                          class="flex-1 min-w-0 bg-transparent text-cv-ink placeholder:text-cv-ink-subtle text-sm outline-none"/>
                         @if (nameValid()) {
-                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
+                          <svg class="w-4 h-4 text-cv-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="currentColor"/>
                             <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                           </svg>
                         }
@@ -232,18 +234,18 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
                   <div>
                     <div class="flex items-center justify-between mb-1">
-                      <label for="auth-email" class="text-xs font-medium text-[#fff6e8]">Email address</label>
+                      <label for="auth-email" class="text-xs font-medium text-cv-ink">Email address</label>
                       @if (emailTouched() && emailError()) {
-                        <span class="text-xs text-[#ff6b6b] font-medium">{{ emailError() }}</span>
+                        <span class="text-xs text-cv-red-soft font-medium">{{ emailError() }}</span>
                       }
                     </div>
                     <div
-                      class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                      class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-cv-well border transition-colors duration-150"
                       [ngClass]="emailTouched() && emailError()
                         ? 'border-[#ff5c5c]'
-                        : (emailValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                        : (emailValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-cv-border focus-within:border-[#f54e26]')">
                       <svg class="doodle-svg w-4 h-4 shrink-0"
-                           [ngClass]="emailTouched() && emailError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                           [ngClass]="emailTouched() && emailError() ? 'text-[#ff5c5c]' : 'text-cv-ink-muted group-focus-within:text-[#f54e26]'"
                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/>
                         <path d="M5 7.5l7 5.2 7-5.2"/>
@@ -257,10 +259,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                         autocomplete="email"
                         placeholder="name@company.com"
                         type="email"
-                        class="flex-1 min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm outline-none"/>
+                        class="flex-1 min-w-0 bg-transparent text-cv-ink placeholder:text-cv-ink-subtle text-sm outline-none"/>
                       @if (emailValid()) {
-                        <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
+                        <svg class="w-4 h-4 text-cv-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="9" class="opacity-25" fill="currentColor"/>
                           <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                         </svg>
                       }
@@ -270,30 +272,30 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   <!-- Password Field -->
                   <div>
                     <div class="flex items-center justify-between mb-1">
-                      <label for="auth-password" class="text-xs font-medium text-[#fff6e8]">{{ mode() === 'signup' ? 'Create password' : 'Password' }}</label>
+                      <label for="auth-password" class="text-xs font-medium text-cv-ink">{{ mode() === 'signup' ? 'Create password' : 'Password' }}</label>
                       @if (passwordTouched() && passwordError()) {
-                        <span class="text-xs text-[#ff6b6b] font-medium">{{ passwordError() }}</span>
+                        <span class="text-xs text-cv-red-soft font-medium">{{ passwordError() }}</span>
                       } @else if (mode() === 'signup' && password().length > 0) {
                         <div class="flex items-center gap-1.5">
                           <div class="flex items-center gap-0.5">
-                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 1 ? passwordStrength().color : 'bg-white/15'"></span>
-                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 2 ? passwordStrength().color : 'bg-white/15'"></span>
-                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 3 ? passwordStrength().color : 'bg-white/15'"></span>
-                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 4 ? passwordStrength().color : 'bg-white/15'"></span>
+                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 1 ? passwordStrength().color : 'bg-cv-border-strong'"></span>
+                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 2 ? passwordStrength().color : 'bg-cv-border-strong'"></span>
+                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 3 ? passwordStrength().color : 'bg-cv-border-strong'"></span>
+                            <span class="w-3 h-1 rounded-xs transition-colors duration-200" [ngClass]="passwordStrength().score >= 4 ? passwordStrength().color : 'bg-cv-border-strong'"></span>
                           </div>
                           <span class="text-[11px] font-semibold" [ngClass]="passwordStrength().textColor">{{ passwordStrength().label }}</span>
                         </div>
                       } @else if (mode() === 'signin') {
-                        <button type="button" (click)="handleForgot()" class="text-xs font-medium text-[#ffccde] hover:text-[#f54e26] transition-colors cursor-pointer">Forgot password?</button>
+                        <button type="button" (click)="handleForgot()" class="text-xs font-medium text-cv-blush hover:text-[#f54e26] transition-colors cursor-pointer">Forgot password?</button>
                       }
                     </div>
                     <div
-                      class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                      class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-cv-well border transition-colors duration-150"
                       [ngClass]="passwordTouched() && passwordError()
                         ? 'border-[#ff5c5c]'
-                        : 'border-white/[0.16] focus-within:border-[#f54e26]'">
+                        : 'border-cv-border focus-within:border-[#f54e26]'">
                       <svg class="doodle-svg w-4 h-4 shrink-0"
-                           [ngClass]="passwordTouched() && passwordError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                           [ngClass]="passwordTouched() && passwordError() ? 'text-[#ff5c5c]' : 'text-cv-ink-muted group-focus-within:text-[#f54e26]'"
                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                         <path class="doodle-shackle" [class.doodle-shackle-open]="showPass()" d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/>
                         <rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/>
@@ -308,17 +310,17 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                         [autocomplete]="mode() === 'signup' ? 'new-password' : 'current-password'"
                         [placeholder]="mode() === 'signup' ? 'At least 8 characters' : 'Enter your password'"
                         [type]="showPass() ? 'text' : 'password'"
-                        class="flex-1 min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm outline-none"/>
+                        class="flex-1 min-w-0 bg-transparent text-cv-ink placeholder:text-cv-ink-subtle text-sm outline-none"/>
                       <button
                         type="button"
                         (click)="showPass.set(!showPass())"
                         aria-label="Toggle password visibility"
-                        class="shrink-0 w-7 h-7 rounded-[4px] hover:bg-white/[0.06] flex items-center justify-center text-[#a7a9be] hover:text-[#fff6e8] transition-colors cursor-pointer">
+                        class="shrink-0 w-7 h-7 rounded-[4px] hover:bg-cv-hover-pill flex items-center justify-center text-cv-ink-muted hover:text-cv-ink transition-colors cursor-pointer">
                         @if (showPass()) {
                           <svg class="w-4 h-4 doodle-eye-lid animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M2.5 12s3.6-6 9.5-6 9.5 6 9.5 6-3.6 6-9.5 6-9.5-6-9.5-6z"/>
                             <circle cx="12" cy="12" r="2.6" fill="currentColor" class="opacity-85"/>
-                            <circle cx="12.9" cy="11.1" r="0.8" fill="#111111" stroke="none"/>
+                            <circle cx="12.9" cy="11.1" r="0.8" fill="var(--cv-well)" stroke="none"/>
                           </svg>
                         } @else {
                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -336,18 +338,18 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   @if (mode() === 'signup') {
                     <div>
                       <div class="flex items-center justify-between mb-1">
-                        <label for="auth-confirm" class="text-xs font-medium text-[#fff6e8]">Confirm password</label>
+                        <label for="auth-confirm" class="text-xs font-medium text-cv-ink">Confirm password</label>
                         @if (confirmTouched() && confirmError()) {
-                          <span class="text-xs text-[#ff6b6b] font-medium">{{ confirmError() }}</span>
+                          <span class="text-xs text-cv-red-soft font-medium">{{ confirmError() }}</span>
                         }
                       </div>
                       <div
-                        class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                        class="group flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-cv-well border transition-colors duration-150"
                         [ngClass]="confirmTouched() && confirmError()
                           ? 'border-[#ff5c5c]'
-                          : (confirmValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                          : (confirmValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-cv-border focus-within:border-[#f54e26]')">
                         <svg class="doodle-svg w-4 h-4 shrink-0"
-                             [ngClass]="confirmTouched() && confirmError() ? 'text-[#ff5c5c]' : (confirmValid() ? 'text-[#4ade80]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]')"
+                             [ngClass]="confirmTouched() && confirmError() ? 'text-[#ff5c5c]' : (confirmValid() ? 'text-cv-green' : 'text-cv-ink-muted group-focus-within:text-[#f54e26]')"
                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M12 3.5l7 2.8v5.2c0 4.6-3 8.1-7 9.5-4-1.4-7-4.9-7-9.5V6.3l7-2.8z"/>
                           @if (confirmValid()) {
@@ -363,17 +365,17 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                           autocomplete="new-password"
                           placeholder="Re-enter password"
                           [type]="showConfirm() ? 'text' : 'password'"
-                          class="flex-1 min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm outline-none"/>
+                          class="flex-1 min-w-0 bg-transparent text-cv-ink placeholder:text-cv-ink-subtle text-sm outline-none"/>
                         <button
                           type="button"
                           (click)="showConfirm.set(!showConfirm())"
                           aria-label="Toggle confirm password visibility"
-                          class="shrink-0 w-7 h-7 rounded-[4px] hover:bg-white/[0.06] flex items-center justify-center text-[#a7a9be] hover:text-[#fff6e8] transition-colors cursor-pointer">
+                          class="shrink-0 w-7 h-7 rounded-[4px] hover:bg-cv-hover-pill flex items-center justify-center text-cv-ink-muted hover:text-cv-ink transition-colors cursor-pointer">
                           @if (showConfirm()) {
                             <svg class="w-4 h-4 doodle-eye-lid animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                               <path d="M2.5 12s3.6-6 9.5-6 9.5 6 9.5 6-3.6 6-9.5 6-9.5-6-9.5-6z"/>
                               <circle cx="12" cy="12" r="2.6" fill="currentColor" class="opacity-85"/>
-                              <circle cx="12.9" cy="11.1" r="0.8" fill="#111111" stroke="none"/>
+                              <circle cx="12.9" cy="11.1" r="0.8" fill="var(--cv-well)" stroke="none"/>
                             </svg>
                           } @else {
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -411,8 +413,8 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                       <path d="M20 6L9 17l-5-5"/>
                     </svg>
                   </div>
-                  <h2 class="font-headline uppercase text-3xl font-bold text-[#fff6e8] tracking-[0.02em]">{{ successTitle() }}</h2>
-                  <p class="text-sm text-[#a7a9be] mt-2 max-w-xs">{{ successSub() }}</p>
+                  <h2 class="font-headline uppercase text-3xl font-bold text-cv-ink tracking-[0.02em]">{{ successTitle() }}</h2>
+                  <p class="text-sm text-cv-ink-muted mt-2 max-w-xs">{{ successSub() }}</p>
                   <button
                     type="button"
                     (click)="proceedAfterAuth()"
@@ -423,10 +425,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
               }
 
               <!-- Legal Line inside Card Footer -->
-              <p class="mt-3 text-center text-xs text-[#a7a9be]">
+              <p class="mt-3 text-center text-xs text-cv-ink-muted">
                 By continuing, you agree to our
-                <a routerLink="/legal" [queryParams]="{tab: 'terms'}" class="underline text-[#fff6e8] hover:text-[#f54e26] transition-colors">Terms</a> &amp;
-                <a routerLink="/legal" [queryParams]="{tab: 'privacy'}" class="underline text-[#fff6e8] hover:text-[#f54e26] transition-colors">Privacy Policy</a>.
+                <a routerLink="/legal" [queryParams]="{tab: 'terms'}" class="underline text-cv-ink hover:text-[#f54e26] transition-colors">Terms</a> &amp;
+                <a routerLink="/legal" [queryParams]="{tab: 'privacy'}" class="underline text-cv-ink hover:text-[#f54e26] transition-colors">Privacy Policy</a>.
               </p>
             </div>
           </div>
@@ -453,6 +455,7 @@ export class AuthComponent implements OnInit {
   private googleClientId = '';
   private tokenClient: any = null;
   private googleTimer: any = null;
+  private inviteToken = '';
 
   name = signal('');
   email = signal('');
@@ -506,10 +509,10 @@ export class AuthComponent implements OnInit {
     if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++;
     if (/[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(p)) score++;
 
-    if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-[#ff5c5c]', textColor: 'text-[#ff5c5c]' };
-    if (score === 2) return { score: 2, label: 'Fair', color: 'bg-[#fabf29]', textColor: 'text-[#fabf29]' };
+    if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-[#ff5c5c]', textColor: 'text-cv-red' };
+    if (score === 2) return { score: 2, label: 'Fair', color: 'bg-[#fabf29]', textColor: 'text-cv-gold' };
     if (score === 3) return { score: 3, label: 'Good', color: 'bg-[#f54e26]', textColor: 'text-[#f54e26]' };
-    return { score: 4, label: 'Strong', color: 'bg-[#4ade80]', textColor: 'text-[#4ade80]' };
+    return { score: 4, label: 'Strong', color: 'bg-[#4ade80]', textColor: 'text-cv-green' };
   });
 
   constructor(
@@ -520,6 +523,11 @@ export class AuthComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    if (this.authService.isAuthenticated()) {
+      this.router.navigateByUrl(this.authService.dashboardRoute(), { replaceUrl: true });
+      return;
+    }
+
     this.route.queryParams.subscribe(p => {
       const m = String(p['mode'] || '').trim().toLowerCase();
       if (m === 'signup' || m === 'register' || m === 'onboard') {
@@ -529,6 +537,12 @@ export class AuthComponent implements OnInit {
       }
       if (p['email']) {
         this.email.set(String(p['email']).trim());
+      }
+      if (p['token'] || p['activationToken']) {
+        this.inviteToken = String(p['token'] || p['activationToken']).trim();
+      }
+      if (p['reason'] === 'expired') {
+        this.showError('Your session expired or was signed out. Please sign in again.');
       }
     });
 
@@ -632,7 +646,7 @@ export class AuthComponent implements OnInit {
 
     this.loading.set(true);
     const obs = this.mode() === 'signup'
-      ? this.authService.signup(this.name().trim(), this.email().trim(), this.password())
+      ? this.authService.signup(this.name().trim(), this.email().trim(), this.password(), this.inviteToken)
       : this.authService.login(this.email().trim(), this.password());
 
     obs.subscribe({
@@ -644,7 +658,7 @@ export class AuthComponent implements OnInit {
           this.successTitle.set('ACCOUNT CREATED');
           this.successSub.set(`Welcome, ${res.user.name}. Your Converge workspace is ready.`);
         } else {
-          this.router.navigateByUrl(this.targetRoute());
+          this.router.navigateByUrl(this.targetRoute(), { replaceUrl: true });
         }
       },
       error: (err) => {
@@ -706,7 +720,7 @@ export class AuthComponent implements OnInit {
     this.authService.googleLogin({ accessToken }).subscribe({
       next: (res) => {
         this.googleLoading.set(false);
-        this.router.navigateByUrl(res.user.role === 'SYSTEM_ADMIN' ? '/admin' : '/workspace');
+        this.router.navigateByUrl(res.user.role === 'SYSTEM_ADMIN' ? '/admin' : '/workspace', { replaceUrl: true });
       },
       error: (err) => {
         this.googleLoading.set(false);
@@ -717,7 +731,7 @@ export class AuthComponent implements OnInit {
   }
 
   proceedAfterAuth() {
-    this.router.navigateByUrl(this.targetRoute());
+    this.router.navigateByUrl(this.targetRoute(), { replaceUrl: true });
   }
 
   handleForgot() {

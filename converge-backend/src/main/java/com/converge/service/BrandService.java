@@ -2,17 +2,29 @@ package com.converge.service;
 
 import com.converge.entity.*;
 import com.converge.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class BrandService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final Set<String> VALID_BRAND_STATUSES = Set.of("ACTIVE", "DRAFT", "PENDING");
+    private static final java.util.regex.Pattern EMAIL_PATTERN =
+            java.util.regex.Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     private final BrandRepository brandRepository;
     private final AgencyRepository agencyRepository;
@@ -22,6 +34,7 @@ public class BrandService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final InstagramGraphService instagramGraphService;
+    private final ReelSnapshotRepository reelSnapshotRepository;
     private final String adminEmail;
 
     public BrandService(
@@ -34,6 +47,22 @@ public class BrandService {
             EmailService emailService,
             InstagramGraphService instagramGraphService,
             @Value("${app.admin.email:}") String adminEmail) {
+        this(brandRepository, agencyRepository, creatorRepository, reelRepository,
+                auditLogRepository, userRepository, emailService, instagramGraphService, null, adminEmail);
+    }
+
+    @Autowired
+    public BrandService(
+            BrandRepository brandRepository,
+            AgencyRepository agencyRepository,
+            CreatorRepository creatorRepository,
+            ReelDeliverableRepository reelRepository,
+            AuditLogRepository auditLogRepository,
+            UserRepository userRepository,
+            EmailService emailService,
+            InstagramGraphService instagramGraphService,
+            ReelSnapshotRepository reelSnapshotRepository,
+            @Value("${app.admin.email:}") String adminEmail) {
         this.brandRepository = brandRepository;
         this.agencyRepository = agencyRepository;
         this.creatorRepository = creatorRepository;
@@ -42,14 +71,209 @@ public class BrandService {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.instagramGraphService = instagramGraphService;
+        this.reelSnapshotRepository = reelSnapshotRepository;
         this.adminEmail = adminEmail != null ? adminEmail.trim().toLowerCase() : "";
+    }
+
+    public boolean isAdmin(Authentication auth) {
+        return auth != null && auth.isAuthenticated() && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_SYSTEM_ADMIN".equals(a.getAuthority()));
+    }
+
+    public void requireAdmin(Authentication auth) {
+        if (!isAdmin(auth)) {
+            throw new AccessDeniedException("Only System Admin can perform this action.");
+        }
+    }
+
+    public Brand requireBrandAccess(UUID brandId, Authentication auth) {
+        Brand brand = getBrand(brandId);
+        if (isAdmin(auth)) {
+            return brand;
+        }
+        if (!hasBrandAccess(brand, auth)) {
+            throw new AccessDeniedException("You do not have access to this brand workspace.");
+        }
+        return brand;
+    }
+
+    public Brand requireBrandOwnerAccess(UUID brandId, Authentication auth) {
+        Brand brand = getBrand(brandId);
+        if (isAdmin(auth) || hasBrandOwnerAccess(brand, auth)) {
+            return brand;
+        }
+        throw new AccessDeniedException("Only the Brand Manager or System Admin can manage partner agencies for this brand.");
+    }
+
+    public Creator requireCreatorAccess(UUID creatorId, Authentication auth) {
+        Creator creator = creatorRepository.findById(creatorId)
+                .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
+        Brand brand = requireBrandAccess(creator.getBrandId(), auth);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        if (scopedAgency.isPresent() && !creatorBelongsToAgency(creator, scopedAgency.get())) {
+            throw new AccessDeniedException("You only have access to creators onboarded by your agency.");
+        }
+        return creator;
+    }
+
+    public ReelDeliverable requireDeliverableAccess(UUID deliverableId, Authentication auth) {
+        ReelDeliverable reel = reelRepository.findById(deliverableId)
+                .orElseThrow(() -> new IllegalArgumentException("Deliverable not found."));
+        if (reel.getCreatorId() != null) {
+            requireCreatorAccess(reel.getCreatorId(), auth);
+        } else {
+            requireBrandAccess(reel.getBrandId(), auth);
+        }
+        return reel;
+    }
+
+    private Optional<Agency> resolveScopedAgencyForCaller(Brand brand, Authentication auth) {
+        if (brand == null || brand.getId() == null
+                || auth == null || !auth.isAuthenticated() || auth.getName() == null || auth.getName().isBlank()) {
+            return Optional.empty();
+        }
+        if (isAdmin(auth) || hasBrandOwnerAccess(brand, auth)) {
+            return Optional.empty();
+        }
+        String callerEmail = auth.getName().trim().toLowerCase(Locale.ROOT);
+        return agencyRepository.findByBrandIdOrderByConnectedAtDesc(brand.getId()).stream()
+                .filter(a -> a.getContactEmail() != null
+                        && a.getContactEmail().equalsIgnoreCase(callerEmail)
+                        && !"DRAFT".equalsIgnoreCase(a.getStatus()))
+                .findFirst();
+    }
+
+    private static boolean creatorBelongsToAgency(Creator creator, Agency agency) {
+        if (creator == null || agency == null) return false;
+        if (agency.getId() != null && agency.getId().equals(creator.getAgencyId())) {
+            return true;
+        }
+        return creator.getAgencyId() == null
+                && "AGENCY".equalsIgnoreCase(creator.getSourceType())
+                && agency.getName() != null
+                && agency.getName().equalsIgnoreCase(creator.getAgencyName());
+    }
+
+    public String resolveActor(Authentication auth, String fallback) {
+        if (auth != null && auth.getName() != null && !auth.getName().isBlank()) {
+            return auth.getName().trim().toLowerCase(Locale.ROOT);
+        }
+        return fallback;
+    }
+
+    private boolean hasBrandOwnerAccess(Brand brand, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || auth.getName() == null || auth.getName().isBlank()) {
+            return false;
+        }
+        if (isAdmin(auth)) {
+            return true;
+        }
+        if ("DRAFT".equalsIgnoreCase(brand.getStatus())) {
+            return false;
+        }
+        String callerEmail = auth.getName().trim().toLowerCase(Locale.ROOT);
+        if (brand.getManagerEmail() == null || !brand.getManagerEmail().equalsIgnoreCase(callerEmail)) {
+            return false;
+        }
+        UUID callerUid = extractAuthUserId(auth);
+        if (brand.getManagerId() != null) {
+            return callerUid != null && brand.getManagerId().equals(callerUid);
+        }
+        // Unclaimed invited workspace (managerId == null): allow only verified sessions
+        return isAuthVerified(auth);
+    }
+
+    private boolean hasActiveAgencyAccess(Brand brand, String callerEmail) {
+        if (brand == null || brand.getId() == null || "DRAFT".equalsIgnoreCase(brand.getStatus())
+                || callerEmail == null || callerEmail.isBlank()) {
+            return false;
+        }
+        return agencyRepository.findByBrandIdOrderByConnectedAtDesc(brand.getId()).stream()
+                .anyMatch(a -> a.getContactEmail() != null
+                        && a.getContactEmail().equalsIgnoreCase(callerEmail)
+                        && !"DRAFT".equalsIgnoreCase(a.getStatus()));
+    }
+
+    private boolean hasBrandAccess(Brand brand, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || auth.getName() == null || auth.getName().isBlank()) {
+            return false;
+        }
+        if (isAdmin(auth)) {
+            return true;
+        }
+        if ("DRAFT".equalsIgnoreCase(brand.getStatus())) {
+            return false;
+        }
+        if (hasBrandOwnerAccess(brand, auth)) {
+            return true;
+        }
+        String callerEmail = auth.getName().trim().toLowerCase(Locale.ROOT);
+        return hasActiveAgencyAccess(brand, callerEmail);
+    }
+
+    private UUID extractAuthUserId(Authentication auth) {
+        if (auth.getDetails() instanceof Map<?, ?> details && details.get("uid") instanceof UUID id) {
+            return id;
+        }
+        return userRepository.findByEmailIgnoreCase(auth.getName().trim())
+                .map(User::getId)
+                .orElse(null);
+    }
+
+    private boolean isAuthVerified(Authentication auth) {
+        if (auth.getDetails() instanceof Map<?, ?> details && details.get("verified") instanceof Boolean v) {
+            return v;
+        }
+        return userRepository.findByEmailIgnoreCase(auth.getName().trim())
+                .map(User::isVerified)
+                .orElse(true);
     }
 
     public List<Brand> listBrands(String status, String search, String managerEmailFilter) {
         List<Brand> all = (managerEmailFilter != null && !managerEmailFilter.isBlank())
                 ? brandRepository.findByManagerEmailIgnoreCase(managerEmailFilter)
                 : brandRepository.findAllByOrderByCreatedAtDesc();
-        return all.stream()
+        return filterBrands(all, status, search);
+    }
+
+    public List<Brand> listBrandsForCaller(String status, String search, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || auth.getName() == null) {
+            throw new AccessDeniedException("Authentication required.");
+        }
+        List<Brand> scoped;
+        if (isAdmin(auth)) {
+            scoped = brandRepository.findAllByOrderByCreatedAtDesc();
+        } else {
+            String callerEmail = auth.getName().trim().toLowerCase(Locale.ROOT);
+            Map<UUID, Brand> accessible = new LinkedHashMap<>();
+            for (Brand b : brandRepository.findByManagerEmailIgnoreCase(callerEmail)) {
+                if (b.getId() != null && hasBrandOwnerAccess(b, auth)) {
+                    accessible.put(b.getId(), b);
+                }
+            }
+            List<Agency> callerAgencies = agencyRepository.findByContactEmailIgnoreCase(callerEmail);
+            if (callerAgencies != null && !callerAgencies.isEmpty()) {
+                Set<UUID> agencyBrandIds = new LinkedHashSet<>();
+                for (Agency ag : callerAgencies) {
+                    if (ag.getBrandId() != null && !"DRAFT".equalsIgnoreCase(ag.getStatus())) {
+                        agencyBrandIds.add(ag.getBrandId());
+                    }
+                }
+                if (!agencyBrandIds.isEmpty()) {
+                    for (Brand b : brandRepository.findAllById(agencyBrandIds)) {
+                        if (b.getId() != null && !"DRAFT".equalsIgnoreCase(b.getStatus())) {
+                            accessible.putIfAbsent(b.getId(), b);
+                        }
+                    }
+                }
+            }
+            scoped = List.copyOf(accessible.values());
+        }
+        return filterBrands(scoped, status, search);
+    }
+
+    private List<Brand> filterBrands(List<Brand> source, String status, String search) {
+        return source.stream()
                 .filter(b -> status == null || status.isBlank() || status.equalsIgnoreCase("ALL")
                         || b.getStatus().equalsIgnoreCase(status))
                 .filter(b -> {
@@ -69,10 +293,33 @@ public class BrandService {
     }
 
     public Map<String, Object> getBrandOverview(UUID brandId) {
+        return getBrandOverview(brandId, null);
+    }
+
+    public Map<String, Object> getBrandOverview(UUID brandId, Authentication auth) {
         Brand brand = getBrand(brandId);
-        List<Agency> agencies = agencyRepository.findByBrandIdOrderByConnectedAtDesc(brandId);
-        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId);
-        List<ReelDeliverable> reels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        List<Agency> agencies;
+        List<Creator> creators;
+        List<ReelDeliverable> reels;
+        if (scopedAgency.isPresent()) {
+            Agency ag = scopedAgency.get();
+            agencies = List.of(ag);
+            creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
+                    .filter(c -> creatorBelongsToAgency(c, ag))
+                    .toList();
+            Set<UUID> allowedCreatorIds = new HashSet<>();
+            for (Creator c : creators) {
+                if (c.getId() != null) allowedCreatorIds.add(c.getId());
+            }
+            reels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId).stream()
+                    .filter(r -> r.getCreatorId() != null && allowedCreatorIds.contains(r.getCreatorId()))
+                    .toList();
+        } else {
+            agencies = agencyRepository.findByBrandIdOrderByConnectedAtDesc(brandId);
+            creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId);
+            reels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId);
+        }
 
         long totalReach = creators.stream().mapToLong(Creator::getReachCount).sum();
         double avgEngagement = creators.isEmpty() ? 0.0 :
@@ -83,6 +330,8 @@ public class BrandService {
         result.put("agencies", agencies);
         result.put("creators", creators);
         result.put("recentReels", reels.stream().limit(6).toList());
+        result.put("deliverables", reels);
+        result.put("reelDeltas", buildBrandReelDeltasMap(brandId, reels));
         result.put("stats", Map.of(
                 "totalReels", reels.size(),
                 "totalReach", totalReach,
@@ -93,12 +342,17 @@ public class BrandService {
         return result;
     }
 
-    private static final java.util.regex.Pattern EMAIL_PATTERN =
-            java.util.regex.Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-
     @Transactional
     public Brand provisionBrand(Map<String, String> payload) {
-        String name = payload.getOrDefault("name", "").trim();
+        return provisionBrand(payload, "Admin");
+    }
+
+    @Transactional
+    public Brand provisionBrand(Map<String, String> payload, String actor) {
+        if (payload == null) {
+            throw new IllegalArgumentException("Brand payload is required.");
+        }
+        String name = strVal(payload.get("name"));
         if (name.length() < 2) {
             throw new IllegalArgumentException("Brand organization name must be at least 2 characters.");
         }
@@ -106,15 +360,15 @@ public class BrandService {
             throw new IllegalArgumentException("A brand named \"" + name + "\" already exists.");
         }
 
-        String managerName = payload.getOrDefault("managerName", "").trim();
+        String managerName = strVal(payload.get("managerName"));
         if (managerName.length() < 2) {
             throw new IllegalArgumentException("Brand manager name must be at least 2 characters.");
         }
 
-        String managerEmail = payload.getOrDefault("managerEmail", "").trim().toLowerCase();
+        String managerEmail = strVal(payload.get("managerEmail")).toLowerCase(Locale.ROOT);
         validateManagerEmail(managerEmail);
 
-        String contactNumber = payload.getOrDefault("contactNumber", "").trim();
+        String contactNumber = strVal(payload.get("contactNumber"));
         if (!contactNumber.isEmpty()) {
             String compactPhone = contactNumber.replaceAll("[\\s\\-()]", "");
             if (!compactPhone.matches("^\\+?[0-9]{7,15}$")) {
@@ -122,20 +376,21 @@ public class BrandService {
             }
         }
 
-        String igHandle = payload.getOrDefault("instagramHandle", "").trim();
+        String igHandle = strVal(payload.get("instagramHandle"));
         if (!igHandle.isEmpty() && !igHandle.matches("^@?[A-Za-z0-9._]{1,30}$")) {
             throw new IllegalArgumentException("Instagram handle can only contain letters, numbers, dots, or underscores.");
         }
 
-        String status = payload.getOrDefault("status", "ACTIVE").toUpperCase();
+        String rawStatus = strVal(payload.get("status"));
+        String status = rawStatus.isEmpty() ? "ACTIVE" : rawStatus.toUpperCase(Locale.ROOT);
         if (!status.equals("DRAFT") && !status.equals("ACTIVE")) {
             status = "ACTIVE";
         }
 
         Brand brand = new Brand();
         brand.setName(name);
-        brand.setCode("BRD-" + (10000 + new Random().nextInt(89999)));
-        String slugBase = name.toLowerCase().replaceAll("[^a-z0-9]", "");
+        brand.setCode("BRD-" + (10000 + ThreadLocalRandom.current().nextInt(89999)));
+        String slugBase = name.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
         brand.setSlug("@" + (slugBase.isEmpty() ? "brand" : slugBase));
         brand.setDomain(slugBase + ".com");
         brand.setManagerName(managerName);
@@ -143,10 +398,19 @@ public class BrandService {
         brand.setContactNumber(contactNumber);
         brand.setInstagramHandle(igHandle);
         brand.setStatus(status);
-        brand.setDescription(payload.getOrDefault("description",
-                "Verified brand workspace provisioned on Converge for automated Reel insights and partner governance."));
+        String desc = strVal(payload.get("description"));
+        brand.setDescription(desc.isEmpty()
+                ? "Verified brand workspace provisioned on Converge for automated Reel insights and partner governance."
+                : desc);
 
-        userRepository.findByEmailIgnoreCase(managerEmail).ifPresent(u -> brand.setManagerId(u.getId()));
+        String rawActivationToken = null;
+        Optional<User> existingManager = userRepository.findByEmailIgnoreCase(managerEmail);
+        if (existingManager.isPresent()) {
+            brand.setManagerId(existingManager.get().getId());
+        } else {
+            rawActivationToken = generateRawActivationToken();
+            brand.setActivationToken(AuthService.sha256Hex(rawActivationToken));
+        }
 
         Brand saved = brandRepository.save(brand);
 
@@ -154,13 +418,33 @@ public class BrandService {
                 status.equals("DRAFT") ? "Brand Saved as Draft" : "Brand Created",
                 status.equals("DRAFT") ? "Draft" : "Active",
                 "Workspace created for " + saved.getName() + " and assigned to " + managerName + " (" + managerEmail + ").",
-                "Admin", "Brand Setup");
+                actor != null && !actor.isBlank() ? actor : "Admin", "Brand Setup");
 
         if (!status.equals("DRAFT") && !managerEmail.isEmpty()) {
-            emailService.sendBrandWelcomeEmail(managerEmail, managerName, name);
+            final String tokenForEmail = rawActivationToken;
+            dispatchAfterCommit(() -> emailService.sendBrandWelcomeEmail(managerEmail, managerName, name, tokenForEmail));
         }
 
         return saved;
+    }
+
+    private static String generateRawActivationToken() {
+        byte[] bytes = new byte[24];
+        SECURE_RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private static void dispatchAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
     }
 
     private void validateManagerEmail(String managerEmail) {
@@ -179,8 +463,16 @@ public class BrandService {
 
     @Transactional
     public Brand updateBrand(UUID brandId, Map<String, String> payload) {
+        return updateBrand(brandId, payload, "Admin");
+    }
+
+    @Transactional
+    public Brand updateBrand(UUID brandId, Map<String, String> payload, String actor) {
+        if (payload == null) {
+            throw new IllegalArgumentException("Brand update payload is required.");
+        }
         Brand brand = getBrand(brandId);
-        if (payload.containsKey("name")) {
+        if (payload.get("name") != null) {
             String nextName = payload.get("name").trim();
             if (nextName.length() < 2) {
                 throw new IllegalArgumentException("Brand organization name must be at least 2 characters.");
@@ -192,20 +484,28 @@ public class BrandService {
             }
             brand.setName(nextName);
         }
-        if (payload.containsKey("managerName")) {
+        if (payload.get("managerName") != null) {
             String nextManager = payload.get("managerName").trim();
             if (nextManager.length() < 2) {
                 throw new IllegalArgumentException("Brand manager name must be at least 2 characters.");
             }
             brand.setManagerName(nextManager);
         }
-        if (payload.containsKey("managerEmail")) {
-            String updatedEmail = payload.get("managerEmail").trim().toLowerCase();
+        if (payload.get("managerEmail") != null) {
+            String updatedEmail = payload.get("managerEmail").trim().toLowerCase(Locale.ROOT);
             validateManagerEmail(updatedEmail);
+            boolean emailChanged = brand.getManagerEmail() == null || !brand.getManagerEmail().equalsIgnoreCase(updatedEmail);
             brand.setManagerEmail(updatedEmail);
-            brand.setManagerId(userRepository.findByEmailIgnoreCase(updatedEmail).map(User::getId).orElse(null));
+            Optional<User> existingMgr = userRepository.findByEmailIgnoreCase(updatedEmail);
+            if (existingMgr.isPresent()) {
+                brand.setManagerId(existingMgr.get().getId());
+                brand.setActivationToken(null);
+            } else if (emailChanged || brand.getActivationToken() == null) {
+                brand.setManagerId(null);
+                brand.setActivationToken(AuthService.sha256Hex(generateRawActivationToken()));
+            }
         }
-        if (payload.containsKey("contactNumber")) {
+        if (payload.get("contactNumber") != null) {
             String contactNumber = payload.get("contactNumber").trim();
             if (!contactNumber.isEmpty()) {
                 String compactPhone = contactNumber.replaceAll("[\\s\\-()]", "");
@@ -215,24 +515,39 @@ public class BrandService {
             }
             brand.setContactNumber(contactNumber);
         }
-        if (payload.containsKey("domain")) brand.setDomain(payload.get("domain"));
-        if (payload.containsKey("region")) brand.setRegion(payload.get("region"));
-        if (payload.containsKey("tier")) brand.setTier(payload.get("tier"));
-        if (payload.containsKey("description")) brand.setDescription(payload.get("description"));
-        if (payload.containsKey("instagramHandle")) brand.setInstagramHandle(payload.get("instagramHandle"));
-        if (payload.containsKey("status")) brand.setStatus(payload.get("status").toUpperCase());
+        if (payload.get("domain") != null) brand.setDomain(payload.get("domain").trim());
+        if (payload.get("region") != null) brand.setRegion(payload.get("region").trim());
+        if (payload.get("tier") != null) brand.setTier(payload.get("tier").trim());
+        if (payload.get("description") != null) brand.setDescription(payload.get("description").trim());
+        if (payload.get("instagramHandle") != null) {
+            String igHandle = payload.get("instagramHandle").trim();
+            if (!igHandle.isEmpty() && !igHandle.matches("^@?[A-Za-z0-9._]{1,30}$")) {
+                throw new IllegalArgumentException("Instagram handle can only contain letters, numbers, dots, or underscores.");
+            }
+            brand.setInstagramHandle(igHandle);
+        }
+        if (payload.get("status") != null) {
+            String nextStatus = payload.get("status").trim().toUpperCase(Locale.ROOT);
+            if (!VALID_BRAND_STATUSES.contains(nextStatus)) {
+                throw new IllegalArgumentException("Invalid brand status. Allowed values: ACTIVE, DRAFT, PENDING.");
+            }
+            brand.setStatus(nextStatus);
+        }
         brand.setUpdatedAt(Instant.now());
         Brand saved = brandRepository.save(brand);
 
         recordAudit(brandId, "SYSTEM", "Brand Details Updated", "Updated",
                 "Updated brand profile and manager details for " + saved.getName() + ".",
-                "Admin", "Brand Details");
+                actor != null && !actor.isBlank() ? actor : "Admin", "Brand Details");
         return saved;
     }
 
     @Transactional
     public void deleteBrand(UUID brandId) {
         Brand brand = getBrand(brandId);
+        if (reelSnapshotRepository != null) {
+            reelSnapshotRepository.deleteByBrandId(brandId);
+        }
         reelRepository.deleteByBrandId(brandId);
         creatorRepository.deleteByBrandId(brandId);
         agencyRepository.deleteByBrandId(brandId);
@@ -241,54 +556,217 @@ public class BrandService {
     }
 
     public List<Agency> listAgencies(UUID brandId) {
+        return listAgencies(brandId, null);
+    }
+
+    public List<Agency> listAgencies(UUID brandId, Authentication auth) {
+        Optional<Agency> scopedAgency = (auth != null)
+                ? resolveScopedAgencyForCaller(getBrand(brandId), auth)
+                : Optional.empty();
+        if (scopedAgency.isPresent()) {
+            return List.of(scopedAgency.get());
+        }
         return agencyRepository.findByBrandIdOrderByConnectedAtDesc(brandId);
     }
 
     @Transactional
     public Agency addAgency(UUID brandId, Map<String, String> payload) {
+        return addAgency(brandId, payload, null);
+    }
+
+    @Transactional
+    public Agency addAgency(UUID brandId, Map<String, String> payload, String actor) {
         Brand brand = getBrand(brandId);
-        String name = payload.getOrDefault("name", "").trim();
-        if (name.isEmpty()) throw new IllegalArgumentException("Agency name is required.");
+        if (payload == null) {
+            throw new IllegalArgumentException("Agency payload is required.");
+        }
+        String name = strVal(payload.get("name"));
+        if (name.length() < 2) {
+            throw new IllegalArgumentException("Agency organization name must be at least 2 characters.");
+        }
+        if (!agencyRepository.findByBrandIdAndNameIgnoreCase(brandId, name).isEmpty()) {
+            throw new IllegalArgumentException("An agency named \"" + name + "\" is already linked to this brand.");
+        }
+
+        String contactName = strVal(payload.containsKey("contactName") ? payload.get("contactName") : payload.get("managerName"));
+        if (contactName.length() < 2) {
+            throw new IllegalArgumentException("Agency manager name must be at least 2 characters.");
+        }
+
+        String contactEmail = strVal(payload.containsKey("contactEmail") ? payload.get("contactEmail") : payload.get("managerEmail")).toLowerCase(Locale.ROOT);
+        if (!EMAIL_PATTERN.matcher(contactEmail).matches()) {
+            throw new IllegalArgumentException("Please enter a valid Agency manager email address.");
+        }
+
+        String contactNumber = validateContactNumber(strVal(payload.get("contactNumber")));
+
+        String rawStatus = strVal(payload.get("status")).toUpperCase(Locale.ROOT);
+        String status = "DRAFT".equals(rawStatus) ? "DRAFT" : "CONNECTED";
 
         Agency agency = new Agency();
         agency.setBrandId(brandId);
         agency.setName(name);
-        String slug = name.toLowerCase().replaceAll("[^a-z0-9]", "");
-        agency.setHandle(payload.getOrDefault("handle", "@" + slug));
+        String slug = name.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+        String rawHandle = strVal(payload.get("handle"));
+        agency.setHandle(rawHandle.isEmpty() ? "@" + (slug.isEmpty() ? "agency" : slug) : rawHandle);
         agency.setMonogram(buildMonogram(name));
-        agency.setRoleBadge(payload.getOrDefault("roleBadge", "Partner Agency"));
-        agency.setScopeDescription(payload.getOrDefault("scopeDescription",
-                "Authorized Partner Agency • Creator Roster Management & Campaign Audits"));
-        agency.setContactName(payload.getOrDefault("contactName", ""));
-        agency.setContactEmail(payload.getOrDefault("contactEmail", ""));
-        agency.setStatus("CONNECTED");
+        String roleBadge = strVal(payload.get("roleBadge"));
+        agency.setRoleBadge(roleBadge.isEmpty() ? "Partner Agency" : roleBadge);
+        String scopeDesc = strVal(payload.get("scopeDescription"));
+        agency.setScopeDescription(scopeDesc.isEmpty()
+                ? "Authorized Partner Agency • Creator Roster Management & Campaign Audits"
+                : scopeDesc);
+        agency.setContactName(contactName);
+        agency.setContactEmail(contactEmail);
+        agency.setContactNumber(contactNumber);
+        agency.setStatus(status);
 
         Agency saved = agencyRepository.save(agency);
+        if (!"DRAFT".equalsIgnoreCase(saved.getStatus()) && saved.getContactEmail() != null && !saved.getContactEmail().isBlank()) {
+            userRepository.findByEmailIgnoreCase(saved.getContactEmail()).ifPresent(existingUser -> {
+                if (!existingUser.isVerified()) {
+                    existingUser.setVerified(true);
+                    userRepository.save(existingUser);
+                }
+            });
+        }
 
-        recordAudit(brandId, "AGENCY_PERMISSION", "Partner Agency Linked", "Completed",
-                saved.getName() + " added as a partner agency for " + brand.getName() + ".",
-                brand.getManagerName() != null ? brand.getManagerName() : "Brand Manager",
+        recordAudit(brandId, saved.getId(), "AGENCY_PERMISSION",
+                "DRAFT".equals(status) ? "Agency Saved as Draft" : "Partner Agency Linked",
+                "DRAFT".equals(status) ? "Draft" : "Connected",
+                saved.getName() + " assigned to " + contactName + " (" + contactEmail + ") for " + brand.getName() + ".",
+                actor != null && !actor.isBlank() ? actor : (brand.getManagerName() != null ? brand.getManagerName() : "Brand Manager"),
                 "Partner Agency");
         return saved;
     }
 
     @Transactional
     public Agency updateAgencyPermissions(UUID brandId, UUID agencyId, Map<String, String> payload) {
+        return updateAgencyPermissions(brandId, agencyId, payload, "Brand Owner");
+    }
+
+    @Transactional
+    public Agency updateAgencyPermissions(UUID brandId, UUID agencyId, Map<String, String> payload, String actor) {
         Agency agency = agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new IllegalArgumentException("Agency not found."));
-        if (payload.containsKey("roleBadge")) agency.setRoleBadge(payload.get("roleBadge"));
-        if (payload.containsKey("scopeDescription")) agency.setScopeDescription(payload.get("scopeDescription"));
-        if (payload.containsKey("status")) agency.setStatus(payload.get("status"));
+        if (!brandId.equals(agency.getBrandId())) {
+            throw new AccessDeniedException("Agency does not belong to this brand workspace.");
+        }
+        if (payload != null) {
+            if (payload.get("name") != null) {
+                String nextName = payload.get("name").trim();
+                if (nextName.length() < 2) {
+                    throw new IllegalArgumentException("Agency organization name must be at least 2 characters.");
+                }
+                boolean duplicate = agencyRepository.findByBrandIdAndNameIgnoreCase(brandId, nextName).stream()
+                        .anyMatch(other -> !other.getId().equals(agencyId));
+                if (duplicate) {
+                    throw new IllegalArgumentException("An agency named \"" + nextName + "\" is already linked to this brand.");
+                }
+                if (!nextName.equals(agency.getName())) {
+                    agency.setName(nextName);
+                    agency.setMonogram(buildMonogram(nextName));
+                    String slug = nextName.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+                    agency.setHandle("@" + (slug.isEmpty() ? "agency" : slug));
+                    List<Creator> linkedCreators = creatorRepository.findByAgencyId(agencyId);
+                    if (!linkedCreators.isEmpty()) {
+                        for (Creator c : linkedCreators) {
+                            c.setAgencyName(nextName);
+                        }
+                        creatorRepository.saveAll(linkedCreators);
+                    }
+                }
+            }
+            String mgrNameKey = payload.containsKey("contactName") ? "contactName" : (payload.containsKey("managerName") ? "managerName" : null);
+            if (mgrNameKey != null && payload.get(mgrNameKey) != null) {
+                String nextMgr = payload.get(mgrNameKey).trim();
+                if (nextMgr.length() < 2) {
+                    throw new IllegalArgumentException("Agency manager name must be at least 2 characters.");
+                }
+                agency.setContactName(nextMgr);
+            }
+            String mgrEmailKey = payload.containsKey("contactEmail") ? "contactEmail" : (payload.containsKey("managerEmail") ? "managerEmail" : null);
+            if (mgrEmailKey != null && payload.get(mgrEmailKey) != null) {
+                String nextEmail = payload.get(mgrEmailKey).trim().toLowerCase(Locale.ROOT);
+                if (!EMAIL_PATTERN.matcher(nextEmail).matches()) {
+                    throw new IllegalArgumentException("Please enter a valid Agency manager email address.");
+                }
+                agency.setContactEmail(nextEmail);
+            }
+            if (payload.get("contactNumber") != null) {
+                agency.setContactNumber(validateContactNumber(payload.get("contactNumber").trim()));
+            }
+            if (payload.get("roleBadge") != null) agency.setRoleBadge(payload.get("roleBadge").trim());
+            if (payload.get("scopeDescription") != null) agency.setScopeDescription(payload.get("scopeDescription").trim());
+            if (payload.get("status") != null) {
+                String st = payload.get("status").trim().toUpperCase(Locale.ROOT);
+                if ("ACTIVE".equals(st)) st = "CONNECTED";
+                if (!Set.of("CONNECTED", "DRAFT", "PENDING").contains(st)) {
+                    throw new IllegalArgumentException("Invalid agency status.");
+                }
+                agency.setStatus(st);
+            }
+        }
         Agency saved = agencyRepository.save(agency);
+        if (!"DRAFT".equalsIgnoreCase(saved.getStatus()) && saved.getContactEmail() != null && !saved.getContactEmail().isBlank()) {
+            userRepository.findByEmailIgnoreCase(saved.getContactEmail()).ifPresent(existingUser -> {
+                if (!existingUser.isVerified()) {
+                    existingUser.setVerified(true);
+                    userRepository.save(existingUser);
+                }
+            });
+        }
 
-        recordAudit(brandId, "AGENCY_PERMISSION", "Agency Permissions Updated", "Updated",
-                "Scoped reach & campaign access updated for " + saved.getName() + ".",
-                "Brand Owner", "Role: " + saved.getRoleBadge());
+        recordAudit(brandId, saved.getId(), "AGENCY_PERMISSION", "Agency Details Updated", "Updated",
+                "Updated agency profile and manager details for " + saved.getName() + ".",
+                actor != null && !actor.isBlank() ? actor : "Brand Owner", "Agency Details");
         return saved;
     }
 
+    @Transactional
+    public void deleteAgency(UUID brandId, UUID agencyId, String actor) {
+        Agency agency = agencyRepository.findById(agencyId)
+                .orElseThrow(() -> new IllegalArgumentException("Agency not found."));
+        if (!brandId.equals(agency.getBrandId())) {
+            throw new AccessDeniedException("Agency does not belong to this brand workspace.");
+        }
+        List<Creator> linkedCreators = creatorRepository.findByAgencyId(agencyId);
+        if (!linkedCreators.isEmpty()) {
+            for (Creator c : linkedCreators) {
+                c.setAgencyId(null);
+                c.setSourceType("DIRECT");
+                c.setAgencyName("Direct / Independent");
+            }
+            creatorRepository.saveAll(linkedCreators);
+        }
+        agencyRepository.delete(agency);
+        recordAudit(brandId, "AGENCY_PERMISSION", "Partner Agency Removed", "Removed",
+                "Removed partner agency " + agency.getName() + ".",
+                actor != null && !actor.isBlank() ? actor : "Brand Manager", "Partner Agency");
+    }
+
+    private static String validateContactNumber(String contactNumber) {
+        if (contactNumber == null || contactNumber.isBlank()) {
+            return "";
+        }
+        String trimmed = contactNumber.trim();
+        String compactPhone = trimmed.replaceAll("[\\s\\-()]", "");
+        if (!compactPhone.matches("^\\+?[0-9]{7,15}$")) {
+            throw new IllegalArgumentException("Please enter a valid phone number (7 to 15 digits).");
+        }
+        return trimmed;
+    }
+
     public List<Creator> listCreators(UUID brandId, String type, String agencyName, String search) {
+        return listCreators(brandId, type, agencyName, search, null);
+    }
+
+    public List<Creator> listCreators(UUID brandId, String type, String agencyName, String search, Authentication auth) {
+        Optional<Agency> scopedAgency = (auth != null)
+                ? resolveScopedAgencyForCaller(getBrand(brandId), auth)
+                : Optional.empty();
         return creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
+                .filter(c -> scopedAgency.isEmpty() || creatorBelongsToAgency(c, scopedAgency.get()))
                 .filter(c -> type == null || type.isBlank() || type.equalsIgnoreCase("all")
                         || c.getSourceType().equalsIgnoreCase(type))
                 .filter(c -> agencyName == null || agencyName.isBlank() || agencyName.equalsIgnoreCase("all")
@@ -304,12 +782,18 @@ public class BrandService {
                 .toList();
     }
 
-    @Transactional
     public Creator addDirectCreator(UUID brandId, Map<String, String> payload) {
+        return addDirectCreator(brandId, payload, null);
+    }
+
+    public Creator addDirectCreator(UUID brandId, Map<String, String> payload, String actor) {
         Brand brand = getBrand(brandId);
-        String name = payload.getOrDefault("name", "").trim();
-        String handle = InstagramGraphService.normalizeHandle(payload.getOrDefault("handle", ""));
-        if (handle.isEmpty()) {
+        if (payload == null) {
+            throw new IllegalArgumentException("Creator details payload is required.");
+        }
+        String name = strVal(payload.get("name"));
+        String handle = InstagramGraphService.normalizeHandle(strVal(payload.get("handle")));
+        if (handle.isEmpty() || !InstagramGraphService.isValidHandle(handle)) {
             throw new IllegalArgumentException("Valid Instagram creator handle is required.");
         }
         if (creatorRepository.findByBrandIdAndHandleIgnoreCase(brandId, handle).isPresent()) {
@@ -321,31 +805,54 @@ public class BrandService {
         creator.setName(name.isEmpty() ? InstagramGraphService.stripAt(handle) : name);
         creator.setHandle(handle);
         creator.setProfileUrl("https://www.instagram.com/" + InstagramGraphService.stripAt(handle) + "/");
-        creator.setEmail(payload.getOrDefault("email", ""));
-        creator.setNiche(payload.getOrDefault("niche", "Direct / Independent"));
-        creator.setBio(payload.getOrDefault("bio", ""));
-        creator.setSourceType("DIRECT");
-        creator.setAgencyName("Direct / Independent");
-        creator.setCampaignName(payload.getOrDefault("campaignName", ""));
-        creator.setCategory(payload.getOrDefault("category", payload.getOrDefault("niche", "")));
-        creator.setManagementHandle(InstagramGraphService.normalizeHandle(payload.getOrDefault("managementHandle", "")));
-        creator.setCountry(payload.getOrDefault("country", ""));
-        creator.setGender(payload.getOrDefault("gender", ""));
-        creator.setAgeBracket(payload.getOrDefault("ageBracket", ""));
-        creator.setCreatorTraits(payload.getOrDefault("creatorTraits", ""));
-        creator.setPreviousBrandPartners(payload.getOrDefault("previousBrandPartners", ""));
-        String mode = payload.getOrDefault("costMode", "COLLECTIVE").trim();
-        creator.setCostMode(mode);
+        creator.setEmail(strVal(payload.get("email")));
+        String niche = strVal(payload.get("niche"));
+        creator.setBio(strVal(payload.get("bio")));
+        Agency matchedAgency = null;
+        if (actor != null && !actor.isBlank()
+                && (brand.getManagerEmail() == null || !brand.getManagerEmail().equalsIgnoreCase(actor.trim()))) {
+            String callerEmail = actor.trim().toLowerCase(Locale.ROOT);
+            matchedAgency = agencyRepository.findByBrandIdOrderByConnectedAtDesc(brandId).stream()
+                    .filter(a -> a.getContactEmail() != null
+                            && a.getContactEmail().equalsIgnoreCase(callerEmail)
+                            && !"DRAFT".equalsIgnoreCase(a.getStatus()))
+                    .findFirst()
+                    .orElse(null);
+        }
+        String defaultCategory;
+        if (matchedAgency != null) {
+            creator.setSourceType("AGENCY");
+            creator.setAgencyId(matchedAgency.getId());
+            creator.setAgencyName(matchedAgency.getName());
+            defaultCategory = matchedAgency.getName();
+        } else {
+            creator.setSourceType("DIRECT");
+            creator.setAgencyName("Direct / Independent");
+            defaultCategory = "Direct / Independent";
+        }
+        creator.setNiche(niche.isEmpty() ? defaultCategory : niche);
+        creator.setCampaignName(strVal(payload.get("campaignName")));
+        String category = strVal(payload.get("category"));
+        creator.setCategory(category.isEmpty() ? (niche.isEmpty() ? defaultCategory : niche) : category);
+        creator.setManagementHandle(InstagramGraphService.normalizeHandle(strVal(payload.get("managementHandle"))));
+        creator.setCountry(strVal(payload.get("country")));
+        creator.setGender(strVal(payload.get("gender")));
+        creator.setAgeBracket(strVal(payload.get("ageBracket")));
+        creator.setCreatorTraits(strVal(payload.get("creatorTraits")));
+        creator.setPreviousBrandPartners(strVal(payload.get("previousBrandPartners")));
+        String mode = strVal(payload.get("costMode"));
+        creator.setCostMode(mode.isEmpty() ? "COLLECTIVE" : mode);
         Double cost = parseNullablePositiveDouble(payload.get("costQuoted"));
         if (cost != null) {
             creator.setCostQuoted(cost);
         }
-        String curr = payload.getOrDefault("currency", "").trim();
+        String curr = strVal(payload.get("currency"));
         if (!curr.isEmpty()) creator.setCurrency(curr.toUpperCase(Locale.ROOT));
-        if ("true".equalsIgnoreCase(payload.getOrDefault("verified", "false"))) {
+        if ("true".equalsIgnoreCase(strVal(payload.get("verified")))) {
             creator.setVerified(true);
         }
-        creator.setFollowersDisplay(payload.getOrDefault("followersDisplay", "—"));
+        String fDisplay = strVal(payload.get("followersDisplay"));
+        creator.setFollowersDisplay(fDisplay.isEmpty() ? "—" : fDisplay);
         creator.setFollowersCount(0);
         creator.setReachCount(0);
         creator.setEngagementRate(0.0);
@@ -358,11 +865,16 @@ public class BrandService {
         instagramGraphService.evaluateCreatorQualification(creator);
 
         Creator saved = creatorRepository.save(creator);
+        if (matchedAgency != null && matchedAgency.getId() != null) {
+            int updatedCount = creatorRepository.findByAgencyId(matchedAgency.getId()).size();
+            matchedAgency.setCreatorsCount(Math.max(1, updatedCount));
+            agencyRepository.save(matchedAgency);
+        }
 
-        recordAudit(brandId, "CREATOR_LINK", "Creator Added", "Completed",
+        recordAudit(brandId, matchedAgency != null ? matchedAgency.getId() : null, "CREATOR_LINK", "Creator Added", "Completed",
                 saved.getName() + " (" + saved.getHandle() + ") added to " + brand.getName()
                         + (igSynced ? " (" + saved.getFollowersDisplay() + " followers)." : "."),
-                brand.getManagerName() != null ? brand.getManagerName() : "Brand Manager",
+                actor != null && !actor.isBlank() ? actor : (brand.getManagerName() != null ? brand.getManagerName() : "Brand Manager"),
                 "Creator Roster");
         return saved;
     }
@@ -371,14 +883,17 @@ public class BrandService {
         return reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
     }
 
-    @Transactional
     public ReelDeliverable addReelDeliverable(UUID creatorId, Map<String, String> payload) {
+        return addReelDeliverable(creatorId, payload, "Brand Manager");
+    }
+
+    public ReelDeliverable addReelDeliverable(UUID creatorId, Map<String, String> payload, String actor) {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
-        String reelUrl = payload.getOrDefault("reelUrl", "").trim();
+        String reelUrl = strVal(payload != null ? payload.get("reelUrl") : null);
         String shortcode = InstagramGraphService.extractShortcode(reelUrl);
         if (reelUrl.isEmpty() || shortcode == null) {
-            throw new IllegalArgumentException("Enter a valid public Instagram Reel or Post URL (e.g. https://www.instagram.com/reel/...).");
+            throw new IllegalArgumentException("Enter a valid public https://www.instagram.com/reel/... or Post URL.");
         }
         String normalizedIncoming = normalizeReelUrl(reelUrl);
         List<ReelDeliverable> existingReels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
@@ -395,7 +910,7 @@ public class BrandService {
             throw new IllegalArgumentException("This Reel is already added to " + creator.getHandle() + "'s tracked deliverables.");
         }
 
-        String title = payload.getOrDefault("title", "Campaign Reel Deliverable").trim();
+        String title = strVal(payload.get("title"));
         if (title.isEmpty()) title = "Campaign Reel Deliverable";
 
         ReelDeliverable reel = new ReelDeliverable();
@@ -413,28 +928,33 @@ public class BrandService {
         instagramGraphService.syncReelDeliverable(reel, creator);
 
         ReelDeliverable saved = reelRepository.save(reel);
+        recordDeliverableSnapshotIfChanged(saved, false);
         rollUpCreatorMetrics(creator);
 
         long displayReach = saved.getReachCount() > 0 ? saved.getReachCount() : saved.getViewsCount();
-        recordAudit(creator.getBrandId(), "REEL_AUDIT",
+        recordAudit(creator.getBrandId(), creator.getAgencyId(), "REEL_AUDIT",
                 "VERIFIED".equals(saved.getStatus()) ? "Reel Verified" : "Reel Saved",
                 "VERIFIED".equals(saved.getStatus()) ? "Verified" : "Saved",
                 "VERIFIED".equals(saved.getStatus())
                         ? "\"" + title + "\" for " + creator.getHandle() + " (" + displayReach + " views, " + saved.getLikesCount() + " likes)."
                         : "Added \"" + title + "\" for " + creator.getHandle() + ".",
-                "Brand Manager", "Reels");
+                actor != null && !actor.isBlank() ? actor : "Brand Manager", "Reels");
 
         return saved;
     }
 
-    @Transactional
     public Map<String, Object> getCreatorInsights(UUID creatorId) {
+        return getCreatorInsights(creatorId, true, null);
+    }
+
+    public Map<String, Object> getCreatorInsights(UUID creatorId, boolean includeAllBrands, String callerEmail) {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
         List<ReelDeliverable> reels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
         List<Map<String, Object>> recentMedia = loadRecentMediaSafe(creator);
 
         boolean anyReelUpdated = false;
+        Instant staleCutoff = Instant.now().minusSeconds(600);
         if (!reels.isEmpty()) {
             for (ReelDeliverable r : reels) {
                 String sc = r.getShortcode() != null ? r.getShortcode() : InstagramGraphService.extractShortcode(r.getReelUrl());
@@ -444,6 +964,7 @@ public class BrandService {
                         String mSc = String.valueOf(m.getOrDefault("shortcode", ""));
                         if (sc.equals(mSc)) {
                             matchedRecent = true;
+                            ensureBaselineSnapshotBeforeSync(r);
                             if (instagramGraphService.backfillDeliverableFromMedia(r, m, creator.getFollowersCount())) {
                                 anyReelUpdated = true;
                             }
@@ -451,31 +972,46 @@ public class BrandService {
                         }
                     }
                 }
-                if (!matchedRecent && r.getViewsCount() == 0
-                        && (instagramGraphService.isBusinessDiscoveryConfigured() || creator.isIgConnected())) {
+                boolean needsInitialSync = !matchedRecent
+                        && r.getViewsCount() == 0
+                        && !isStaticPhotoType(r.getMediaType())
+                        && !"NOT_FOUND".equals(r.getStatus())
+                        && (r.getSyncedAt() == null || r.getSyncedAt().isBefore(staleCutoff));
+                if (needsInitialSync && (instagramGraphService.isBusinessDiscoveryConfigured() || creator.isIgConnected())) {
+                    ensureBaselineSnapshotBeforeSync(r);
                     instagramGraphService.syncReelDeliverable(r, creator);
                     anyReelUpdated = true;
                 }
             }
             if (anyReelUpdated) {
-                reelRepository.saveAll(reels);
+                List<ReelDeliverable> savedReels = reelRepository.saveAll(reels);
+                List<ReelDeliverable> snapReels = (savedReels != null && !savedReels.isEmpty()) ? savedReels : reels;
+                for (ReelDeliverable r : snapReels) {
+                    recordDeliverableSnapshotIfChanged(r, false);
+                }
             }
         }
 
         creator = rollUpCreatorMetrics(creator, reels);
-        return enrichCreatorSummary(creator, reels, recentMedia);
+        return enrichCreatorSummary(creator, reels, recentMedia, includeAllBrands, callerEmail);
     }
 
     private Map<String, Object> enrichCreatorSummary(
             Creator creator,
             List<ReelDeliverable> reels,
-            List<Map<String, Object>> recentMedia) {
+            List<Map<String, Object>> recentMedia,
+            boolean includeAllBrands,
+            String callerEmail) {
         Map<String, Object> summary = new LinkedHashMap<>(instagramGraphService.buildCreatorInsightsSummary(creator, reels, recentMedia));
         summary.put("recentMedia", recentMedia);
 
         Set<UUID> brandIds = new LinkedHashSet<>();
         if (creator.getBrandId() != null) brandIds.add(creator.getBrandId());
-        if (creator.getHandle() != null && !creator.getHandle().isBlank()) {
+        if (includeAllBrands && creator.getHandle() != null && !creator.getHandle().isBlank()) {
+            for (Creator linked : creatorRepository.findByHandleIgnoreCase(creator.getHandle())) {
+                if (linked.getBrandId() != null) brandIds.add(linked.getBrandId());
+            }
+        } else if (callerEmail != null && !callerEmail.isBlank() && creator.getHandle() != null && !creator.getHandle().isBlank()) {
             for (Creator linked : creatorRepository.findByHandleIgnoreCase(creator.getHandle())) {
                 if (linked.getBrandId() != null) brandIds.add(linked.getBrandId());
             }
@@ -484,7 +1020,10 @@ public class BrandService {
         if (!brandIds.isEmpty()) {
             Map<UUID, String> namesById = new LinkedHashMap<>();
             for (Brand b : brandRepository.findAllById(brandIds)) {
-                if (b.getId() != null && b.getName() != null && !b.getName().isBlank()) {
+                boolean allowed = includeAllBrands
+                        || (creator.getBrandId() != null && creator.getBrandId().equals(b.getId()))
+                        || (callerEmail != null && !callerEmail.isBlank() && callerEmail.equalsIgnoreCase(b.getManagerEmail()));
+                if (allowed && b.getId() != null && b.getName() != null && !b.getName().isBlank()) {
                     namesById.put(b.getId(), b.getName());
                 }
             }
@@ -499,7 +1038,6 @@ public class BrandService {
         return summary;
     }
 
-    @Transactional
     public Map<String, Object> getDeliverableInsights(UUID deliverableId) {
         ReelDeliverable reel = reelRepository.findById(deliverableId)
                 .orElseThrow(() -> new IllegalArgumentException("Deliverable not found."));
@@ -507,13 +1045,24 @@ public class BrandService {
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
 
         List<ReelDeliverable> allCreatorReels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creator.getId());
-        if (reel.getViewsCount() == 0
+        Instant staleCutoff = Instant.now().minusSeconds(600);
+        boolean shouldSync = reel.getViewsCount() == 0
+                && !isStaticPhotoType(reel.getMediaType())
+                && !"VERIFIED".equals(reel.getStatus())
+                && (reel.getSyncedAt() == null || reel.getSyncedAt().isBefore(staleCutoff));
+        if (shouldSync
                 && (instagramGraphService.isBusinessDiscoveryConfigured() || creator.isIgConnected())) {
+            ensureBaselineSnapshotBeforeSync(reel);
             instagramGraphService.syncReelDeliverable(reel, creator);
             reel = reelRepository.save(reel);
-            creator = rollUpCreatorMetrics(creator);
+            recordDeliverableSnapshotIfChanged(reel, false);
+            creator = rollUpCreatorMetrics(creator, allCreatorReels);
+        } else {
+            recordDeliverableSnapshotIfChanged(reel, false);
         }
-        return instagramGraphService.buildDeliverableInsightsSummary(reel, creator, allCreatorReels.size());
+        Map<String, Object> summary = instagramGraphService.buildDeliverableInsightsSummary(reel, creator, allCreatorReels.size());
+        attachSnapshotHistory(summary, reel);
+        return summary;
     }
 
     private List<Map<String, Object>> loadRecentMediaSafe(Creator creator) {
@@ -522,14 +1071,23 @@ public class BrandService {
         }
         try {
             String token = creator.isIgConnected() ? creator.getIgAccessToken() : null;
-            return instagramGraphService.fetchRecentMedia(creator.getHandle(), 25, token);
+            int targetLimit = creator.getMediaCount() > 50 ? 100 : 50;
+            return instagramGraphService.fetchRecentMedia(creator.getHandle(), targetLimit, token);
         } catch (Exception ex) {
             return List.of();
         }
     }
 
-    @Transactional
     public Map<String, Object> updateCreatorInsightsProfile(UUID creatorId, Map<String, Object> payload) {
+        return updateCreatorInsightsProfile(creatorId, payload, true, null, "Workspace Manager");
+    }
+
+    public Map<String, Object> updateCreatorInsightsProfile(
+            UUID creatorId,
+            Map<String, Object> payload,
+            boolean includeAllBrands,
+            String callerEmail,
+            String actor) {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
 
@@ -556,36 +1114,50 @@ public class BrandService {
         instagramGraphService.evaluateCreatorQualification(creator);
         Creator saved = creatorRepository.save(creator);
 
-        recordAudit(creator.getBrandId(), "CREATOR_LINK", "Creator Details Updated", "Updated",
+        recordAudit(creator.getBrandId(), creator.getAgencyId(), "CREATOR_LINK", "Creator Details Updated", "Updated",
                 "Updated profile and rate details for " + creator.getHandle() + ".",
-                "Workspace Manager", "Creator Profile");
+                actor != null && !actor.isBlank() ? actor : "Workspace Manager", "Creator Profile");
 
         List<ReelDeliverable> reels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
         List<Map<String, Object>> recentMedia = loadRecentMediaSafe(saved);
-        return enrichCreatorSummary(saved, reels, recentMedia);
+        return enrichCreatorSummary(saved, reels, recentMedia, includeAllBrands, callerEmail);
     }
 
-    @Transactional
     public Map<String, Object> syncCreatorFromInstagram(UUID creatorId) {
+        return syncCreatorFromInstagram(creatorId, true, null, "Workspace Manager");
+    }
+
+    public Map<String, Object> syncCreatorFromInstagram(
+            UUID creatorId,
+            boolean includeAllBrands,
+            String callerEmail,
+            String actor) {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
+        instagramGraphService.evictCreatorCache(creator.getHandle());
         boolean profileUpdated = instagramGraphService.applyProfileIfAvailable(creator);
         List<ReelDeliverable> reels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
         int verifiedCount = 0;
         for (ReelDeliverable r : reels) {
+            ensureBaselineSnapshotBeforeSync(r);
+            instagramGraphService.evictMediaCache(r.getIgMediaId());
             instagramGraphService.syncReelDeliverable(r, creator);
             if ("VERIFIED".equals(r.getStatus())) verifiedCount++;
         }
-        reelRepository.saveAll(reels);
-        Creator updated = rollUpCreatorMetrics(creator);
+        List<ReelDeliverable> savedReels = reelRepository.saveAll(reels);
+        List<ReelDeliverable> finalReels = (savedReels != null && !savedReels.isEmpty()) ? savedReels : reels;
+        for (ReelDeliverable r : finalReels) {
+            recordDeliverableSnapshotIfChanged(r, true);
+        }
+        Creator updated = rollUpCreatorMetrics(creator, finalReels);
 
-        recordAudit(creator.getBrandId(), "REEL_AUDIT", "Creator Stats Refreshed",
+        recordAudit(creator.getBrandId(), creator.getAgencyId(), "REEL_AUDIT", "Creator Stats Refreshed",
                 verifiedCount > 0 || profileUpdated ? "Synced" : "Updated",
                 "Refreshed " + creator.getHandle() + " (" + verifiedCount + " of " + reels.size() + " reels updated).",
-                "Workspace Manager", "Creator Sync");
+                actor != null && !actor.isBlank() ? actor : "Workspace Manager", "Creator Sync");
 
         List<Map<String, Object>> recentMedia = loadRecentMediaSafe(updated);
-        Map<String, Object> out = enrichCreatorSummary(updated, reels, recentMedia);
+        Map<String, Object> out = enrichCreatorSummary(updated, reels, recentMedia, includeAllBrands, callerEmail);
         out.put("profileUpdated", profileUpdated);
         out.put("verifiedDeliverables", verifiedCount);
         out.put("metaConfigured", instagramGraphService.isBusinessDiscoveryConfigured() || creator.isIgConnected());
@@ -594,47 +1166,73 @@ public class BrandService {
 
     @Transactional
     public ReelDeliverable updateDeliverable(UUID deliverableId, Map<String, Object> payload) {
-        ReelDeliverable reel = reelRepository.findById(deliverableId)
-                .orElseThrow(() -> new IllegalArgumentException("Deliverable not found."));
-        if (payload.containsKey("title")) {
-            String title = strVal(payload.get("title"));
-            if (!title.isEmpty()) reel.setTitle(title);
-        }
-        if (payload.containsKey("costQuoted")) {
-            reel.setCostQuoted(parseNullablePositiveDouble(payload.get("costQuoted")));
-        }
-        ReelDeliverable saved = reelRepository.save(reel);
-        creatorRepository.findById(saved.getCreatorId()).ifPresent(this::rollUpCreatorMetrics);
-        recordAudit(saved.getBrandId(), "REEL_AUDIT", "Deliverable Updated", "Updated",
-                "Updated deliverable (" + saved.getTitle() + ") metadata/pricing.",
-                "Workspace Manager", "Deliverables");
-        return saved;
+        return updateDeliverable(deliverableId, payload, "Workspace Manager");
     }
 
     @Transactional
+    public ReelDeliverable updateDeliverable(UUID deliverableId, Map<String, Object> payload, String actor) {
+        ReelDeliverable reel = reelRepository.findById(deliverableId)
+                .orElseThrow(() -> new IllegalArgumentException("Deliverable not found."));
+        if (payload != null) {
+            if (payload.containsKey("title")) {
+                String title = strVal(payload.get("title"));
+                if (!title.isEmpty()) reel.setTitle(title);
+            }
+            if (payload.containsKey("costQuoted")) {
+                reel.setCostQuoted(parseNullablePositiveDouble(payload.get("costQuoted")));
+            }
+        }
+        ReelDeliverable saved = reelRepository.save(reel);
+        Optional<Creator> parentCreator = creatorRepository.findById(saved.getCreatorId());
+        parentCreator.ifPresent(this::rollUpCreatorMetrics);
+        recordAudit(saved.getBrandId(), parentCreator.map(Creator::getAgencyId).orElse(null), "REEL_AUDIT", "Deliverable Updated", "Updated",
+                "Updated deliverable (" + saved.getTitle() + ") metadata/pricing.",
+                actor != null && !actor.isBlank() ? actor : "Workspace Manager", "Deliverables");
+        return saved;
+    }
+
     public ReelDeliverable syncDeliverableFromInstagram(UUID deliverableId) {
         ReelDeliverable reel = reelRepository.findById(deliverableId)
                 .orElseThrow(() -> new IllegalArgumentException("Deliverable not found."));
         Creator creator = creatorRepository.findById(reel.getCreatorId())
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
+        ensureBaselineSnapshotBeforeSync(reel);
+        instagramGraphService.evictCreatorCache(creator.getHandle());
+        instagramGraphService.evictMediaCache(reel.getIgMediaId());
         instagramGraphService.syncReelDeliverable(reel, creator);
         ReelDeliverable saved = reelRepository.save(reel);
+        recordDeliverableSnapshotIfChanged(saved, true);
         rollUpCreatorMetrics(creator);
         return saved;
     }
 
     @Transactional
     public void deleteCreator(UUID creatorId) {
+        deleteCreator(creatorId, "Workspace Manager");
+    }
+
+    @Transactional
+    public void deleteCreator(UUID creatorId, String actor) {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
+        UUID agencyId = creator.getAgencyId();
+        if (reelSnapshotRepository != null) {
+            reelSnapshotRepository.deleteByCreatorId(creatorId);
+        }
         List<ReelDeliverable> reels = reelRepository.findByCreatorIdOrderBySyncedAtDesc(creatorId);
         if (!reels.isEmpty()) {
             reelRepository.deleteAll(reels);
         }
         creatorRepository.delete(creator);
-        recordAudit(creator.getBrandId(), "CREATOR_LINK", "Creator Removed", "Removed",
+        if (agencyId != null) {
+            agencyRepository.findById(agencyId).ifPresent(ag -> {
+                ag.setCreatorsCount(creatorRepository.findByAgencyId(agencyId).size());
+                agencyRepository.save(ag);
+            });
+        }
+        recordAudit(creator.getBrandId(), agencyId, "CREATOR_LINK", "Creator Removed", "Removed",
                 "Removed " + creator.getName() + " (" + creator.getHandle() + ") and associated deliverables.",
-                "Workspace Manager", "Roster Management");
+                actor != null && !actor.isBlank() ? actor : "Workspace Manager", "Roster Management");
     }
 
     @Transactional
@@ -642,6 +1240,9 @@ public class BrandService {
         ReelDeliverable reel = reelRepository.findById(deliverableId)
                 .orElseThrow(() -> new IllegalArgumentException("Deliverable not found."));
         UUID creatorId = reel.getCreatorId();
+        if (reelSnapshotRepository != null) {
+            reelSnapshotRepository.deleteByDeliverableId(deliverableId);
+        }
         reelRepository.delete(reel);
         creatorRepository.findById(creatorId).ifPresent(this::rollUpCreatorMetrics);
     }
@@ -650,10 +1251,23 @@ public class BrandService {
     public Creator attachCreatorOAuthProfile(UUID creatorId, Map<String, Object> oauthProfile) {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
+        String incomingIgUserId = oauthProfile.get("igUserId") != null ? String.valueOf(oauthProfile.get("igUserId")).trim() : "";
+        String incomingUsername = oauthProfile.get("username") != null ? InstagramGraphService.stripAt(String.valueOf(oauthProfile.get("username"))) : "";
+        String expectedUsername = InstagramGraphService.stripAt(creator.getHandle());
+
+        if (creator.getIgUserId() != null && !creator.getIgUserId().isBlank()
+                && !incomingIgUserId.isEmpty() && !creator.getIgUserId().equals(incomingIgUserId)) {
+            throw new IllegalArgumentException("Connected Instagram user ID does not match this creator profile.");
+        }
+        if (!expectedUsername.isEmpty() && !incomingUsername.isEmpty()
+                && !expectedUsername.equalsIgnoreCase(incomingUsername)) {
+            throw new IllegalArgumentException("Connected Instagram account (@" + incomingUsername + ") does not match creator " + creator.getHandle() + ".");
+        }
+
         creator.setIgConnected(true);
         creator.setIgAccessToken((String) oauthProfile.get("accessToken"));
         creator.setIgTokenExpiresAt((Instant) oauthProfile.get("expiresAt"));
-        if (oauthProfile.get("igUserId") != null) creator.setIgUserId(String.valueOf(oauthProfile.get("igUserId")));
+        if (!incomingIgUserId.isEmpty()) creator.setIgUserId(incomingIgUserId);
         if (oauthProfile.get("accountType") != null) creator.setAccountType(String.valueOf(oauthProfile.get("accountType")));
         if (oauthProfile.get("avatarUrl") instanceof String av && !av.isBlank()) creator.setAvatarUrl(av);
         if (oauthProfile.get("followersCount") instanceof Number fc && fc.longValue() > 0) {
@@ -665,26 +1279,42 @@ public class BrandService {
         creator.setLastSyncedAt(Instant.now());
         Creator saved = creatorRepository.save(creator);
 
-        recordAudit(creator.getBrandId(), "CREATOR_LINK", "Creator Account Connected", "Connected",
+        recordAudit(creator.getBrandId(), creator.getAgencyId(), "CREATOR_LINK", "Creator Account Connected", "Connected",
                 creator.getHandle() + " connected their creator profile.",
                 creator.getName(), "Creator Account");
         return saved;
     }
 
-    @Transactional
     public Map<String, Object> syncBrandDeliverables(UUID brandId) {
+        return syncBrandDeliverables(brandId, "Workspace Manager", null);
+    }
+
+    public Map<String, Object> syncBrandDeliverables(UUID brandId, String actor) {
+        return syncBrandDeliverables(brandId, actor, null);
+    }
+
+    public Map<String, Object> syncBrandDeliverables(UUID brandId, String actor, Authentication auth) {
         Brand brand = getBrand(brandId);
-        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
+                .filter(c -> scopedAgency.isEmpty() || creatorBelongsToAgency(c, scopedAgency.get()))
+                .toList();
         Map<UUID, Creator> creatorMap = new LinkedHashMap<>();
         for (Creator c : creators) {
+            instagramGraphService.evictCreatorCache(c.getHandle());
             instagramGraphService.applyProfileIfAvailable(c);
             creatorMap.put(c.getId(), c);
         }
 
-        List<ReelDeliverable> reels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId);
+        List<ReelDeliverable> reels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId).stream()
+                .filter(r -> scopedAgency.isEmpty() || (r.getCreatorId() != null && creatorMap.containsKey(r.getCreatorId())))
+                .toList();
+        Map<UUID, List<ReelDeliverable>> reelsByCreator = new LinkedHashMap<>();
         int verifiedCount = 0;
         int pendingCount = 0;
         for (ReelDeliverable r : reels) {
+            ensureBaselineSnapshotBeforeSync(r);
+            instagramGraphService.evictMediaCache(r.getIgMediaId());
             Creator c = creatorMap.get(r.getCreatorId());
             instagramGraphService.syncReelDeliverable(r, c);
             if ("VERIFIED".equals(r.getStatus())) {
@@ -692,10 +1322,15 @@ public class BrandService {
             } else {
                 pendingCount++;
             }
+            reelsByCreator.computeIfAbsent(r.getCreatorId(), k -> new ArrayList<>()).add(r);
         }
-        reelRepository.saveAll(reels);
+        List<ReelDeliverable> savedReels = reelRepository.saveAll(reels);
+        List<ReelDeliverable> snapReels = (savedReels != null && !savedReels.isEmpty()) ? savedReels : reels;
+        for (ReelDeliverable r : snapReels) {
+            recordDeliverableSnapshotIfChanged(r, true);
+        }
         for (Creator c : creators) {
-            rollUpCreatorMetrics(c);
+            rollUpCreatorMetrics(c, reelsByCreator.getOrDefault(c.getId(), List.of()));
         }
 
         Instant now = Instant.now();
@@ -705,10 +1340,10 @@ public class BrandService {
         boolean configured = instagramGraphService.isBusinessDiscoveryConfigured()
                 || creators.stream().anyMatch(Creator::isIgConnected);
 
-        recordAudit(brandId, "REEL_AUDIT", "Reels Refreshed",
+        recordAudit(brandId, scopedAgency.map(Agency::getId).orElse(null), "REEL_AUDIT", "Reels Refreshed",
                 "Refreshed",
                 "Updated " + verifiedCount + " verified reel(s) across " + creators.size() + " creator(s).",
-                "Workspace Manager", "Reels");
+                actor != null && !actor.isBlank() ? actor : "Workspace Manager", "Reels");
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("syncedCount", reels.size());
@@ -718,6 +1353,12 @@ public class BrandService {
         out.put("status", configured ? "SYNCED" : "PENDING_META_CREDENTIALS");
         out.put("syncedAt", now.toString());
         return out;
+    }
+
+    private static boolean isStaticPhotoType(String mediaType) {
+        if (mediaType == null || mediaType.isBlank()) return false;
+        String upper = mediaType.toUpperCase(Locale.ROOT);
+        return "IMAGE".equals(upper) || "CAROUSEL_ALBUM".equals(upper) || "FEED".equals(upper);
     }
 
     private Creator rollUpCreatorMetrics(Creator creator) {
@@ -730,6 +1371,9 @@ public class BrandService {
         long totalViews = safeItems.stream()
                 .mapToLong(ReelDeliverable::getViewsCount)
                 .sum();
+        long totalReach = safeItems.stream()
+                .mapToLong(r -> r.getReachCount() > 0 ? r.getReachCount() : r.getViewsCount())
+                .sum();
         long totalInteractions = safeItems.stream()
                 .mapToLong(r -> r.getLikesCount() + r.getCommentsCount())
                 .sum();
@@ -738,45 +1382,121 @@ public class BrandService {
                 : 0.0;
 
         creator.setAuditedReelsCount(safeItems.size());
-        creator.setReachCount(totalViews);
-        creator.setTotalViews30d(totalViews);
-        creator.setAccountInteractions30d(totalInteractions);
-        creator.setInteractionRate90d(trackedIrPct);
-        creator.setEngagementRate(trackedIrPct);
+
+        boolean hasAuthoritativeAccountInsights = "CREATOR_OAUTH_INSIGHTS".equals(creator.getInsightsSource())
+                || "META_CREATOR_MARKETPLACE".equals(creator.getInsightsSource());
+        if (hasAuthoritativeAccountInsights) {
+            if (totalReach > creator.getReachCount()) {
+                creator.setReachCount(totalReach);
+            }
+            if (totalViews > creator.getTotalViews30d()) {
+                creator.setTotalViews30d(totalViews);
+            }
+            if (totalInteractions > creator.getAccountInteractions30d()) {
+                creator.setAccountInteractions30d(totalInteractions);
+            }
+            if (creator.getInteractionRate90d() == 0 && trackedIrPct > 0) {
+                creator.setInteractionRate90d(trackedIrPct);
+            }
+            if (creator.getEngagementRate() == 0 && creator.getInteractionRate90d() > 0) {
+                creator.setEngagementRate(creator.getInteractionRate90d());
+            }
+        } else if (!safeItems.isEmpty()) {
+            creator.setReachCount(totalReach);
+            creator.setTotalViews30d(totalViews);
+            creator.setAccountInteractions30d(totalInteractions);
+            creator.setInteractionRate90d(trackedIrPct);
+            creator.setEngagementRate(trackedIrPct);
+        }
+
         instagramGraphService.evaluateCreatorQualification(creator);
         creator.setLastSyncedAt(Instant.now());
         return creatorRepository.save(creator);
     }
 
     public Map<String, Object> listAuditLogs(UUID brandId, String category, String search, int page, int size) {
+        return listAuditLogs(brandId, category, search, page, size, null);
+    }
+
+    public Map<String, Object> listAuditLogs(UUID brandId, String category, String search, int page, int size, Authentication auth) {
+        Optional<Agency> scopedAgency = (auth != null)
+                ? resolveScopedAgencyForCaller(getBrand(brandId), auth)
+                : Optional.empty();
+        Set<String> agencyCreatorHandles = new HashSet<>();
+        if (scopedAgency.isPresent()) {
+            Agency ag = scopedAgency.get();
+            for (Creator c : creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId)) {
+                if (creatorBelongsToAgency(c, ag) && c.getHandle() != null && !c.getHandle().isBlank()) {
+                    agencyCreatorHandles.add(c.getHandle().toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+        int safePage = Math.max(0, page);
+        int safeSize = Math.max(1, Math.min(size, 100));
         List<AuditLog> filtered = auditLogRepository.findByBrandIdOrderByCreatedAtDesc(brandId).stream()
+                .filter(l -> {
+                    if (scopedAgency.isEmpty()) return true;
+                    Agency ag = scopedAgency.get();
+                    // Never expose brand-level SYSTEM events to a Partner Agency Manager
+                    if ("SYSTEM".equalsIgnoreCase(l.getCategory())) {
+                        return false;
+                    }
+                    if (l.getAgencyId() != null) {
+                        return l.getAgencyId().equals(ag.getId());
+                    }
+                    String actor = l.getActor() != null ? l.getActor().trim().toLowerCase(Locale.ROOT) : "";
+                    String desc = l.getDescription() != null ? l.getDescription().toLowerCase(Locale.ROOT) : "";
+                    String agEmail = ag.getContactEmail() != null ? ag.getContactEmail().trim().toLowerCase(Locale.ROOT) : "";
+                    if ("AGENCY_PERMISSION".equalsIgnoreCase(l.getCategory())) {
+                        if (!agEmail.isEmpty() && desc.contains("(" + agEmail + ")")) {
+                            return true;
+                        }
+                        return ag.getName() != null && !ag.getName().isBlank()
+                                && desc.startsWith(ag.getName().trim().toLowerCase(Locale.ROOT) + " ");
+                    }
+                    if (!agEmail.isEmpty() && actor.equals(agEmail)) {
+                        return true;
+                    }
+                    for (String h : agencyCreatorHandles) {
+                        if (desc.contains(h)) return true;
+                    }
+                    return false;
+                })
                 .filter(l -> category == null || category.isBlank() || category.equalsIgnoreCase("ALL")
-                        || l.getCategory().equalsIgnoreCase(category))
+                        || (l.getCategory() != null && l.getCategory().equalsIgnoreCase(category)))
                 .filter(l -> {
                     if (search == null || search.isBlank()) return true;
-                    String q = search.toLowerCase();
-                    return l.getEventCode().toLowerCase().contains(q)
-                            || l.getTitle().toLowerCase().contains(q)
-                            || l.getDescription().toLowerCase().contains(q)
-                            || (l.getActor() != null && l.getActor().toLowerCase().contains(q));
+                    String q = search.toLowerCase(Locale.ROOT);
+                    return (l.getEventCode() != null && l.getEventCode().toLowerCase(Locale.ROOT).contains(q))
+                            || (l.getTitle() != null && l.getTitle().toLowerCase(Locale.ROOT).contains(q))
+                            || (l.getDescription() != null && l.getDescription().toLowerCase(Locale.ROOT).contains(q))
+                            || (l.getActor() != null && l.getActor().toLowerCase(Locale.ROOT).contains(q));
                 })
                 .toList();
 
         int total = filtered.size();
-        int from = Math.min(page * size, total);
-        int to = Math.min(from + size, total);
+        long fromLong = Math.min((long) safePage * safeSize, total);
+        int from = (int) fromLong;
+        int to = (int) Math.min(fromLong + safeSize, total);
 
         return Map.of(
                 "items", filtered.subList(from, to),
                 "total", total,
-                "page", page,
-                "size", size
+                "page", safePage,
+                "size", safeSize
         );
     }
 
     public String exportBrandCsv(UUID brandId) {
+        return exportBrandCsv(brandId, null);
+    }
+
+    public String exportBrandCsv(UUID brandId, Authentication auth) {
         Brand brand = getBrand(brandId);
-        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
+                .filter(c -> scopedAgency.isEmpty() || creatorBelongsToAgency(c, scopedAgency.get()))
+                .toList();
         List<ReelDeliverable> allReels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId);
         Map<UUID, List<ReelDeliverable>> deliverablesByCreator = new HashMap<>();
         for (ReelDeliverable r : allReels) {
@@ -851,15 +1571,22 @@ public class BrandService {
 
     private void recordAudit(UUID brandId, String category, String title, String badge,
                              String description, String actor, String tag) {
+        recordAudit(brandId, null, category, title, badge, description, actor, tag);
+    }
+
+    private void recordAudit(UUID brandId, UUID agencyId, String category, String title, String badge,
+                             String description, String actor, String tag) {
         AuditLog log = new AuditLog();
         log.setBrandId(brandId);
+        log.setAgencyId(agencyId);
         log.setCategory(category);
         log.setTitle(title);
         log.setStatusBadge(badge);
         log.setDescription(description);
         log.setActor(actor);
         log.setMetadataTag(tag);
-        log.setEventCode("EVT-" + (1000 + new Random().nextInt(8999)) + "-" + category.substring(0, 2));
+        String prefix = category != null && category.length() >= 2 ? category.substring(0, 2) : "SY";
+        log.setEventCode("EVT-" + (1000 + ThreadLocalRandom.current().nextInt(8999)) + "-" + prefix);
         log.setSha256Hash(sha256(brandId + title + Instant.now()));
         auditLogRepository.save(log);
     }
@@ -896,6 +1623,166 @@ public class BrandService {
 
     private String csv(String v) {
         if (v == null) return "";
-        return "\"" + v.replace("\"", "\"\"") + "\"";
+        String sanitized = v.replace("\u0000", "");
+        String leadingTrimmed = sanitized.stripLeading();
+        boolean dangerousStart = !sanitized.isEmpty() && (
+                sanitized.charAt(0) == '\t' || sanitized.charAt(0) == '\r' || sanitized.charAt(0) == '\n'
+                || (!leadingTrimmed.isEmpty() && "=+-@\t\r".indexOf(leadingTrimmed.charAt(0)) >= 0)
+        );
+        if (dangerousStart) {
+            sanitized = "'" + sanitized;
+        }
+        return "\"" + sanitized.replace("\"", "\"\"") + "\"";
+    }
+
+    private boolean hasSnapshotableData(ReelDeliverable reel) {
+        return reel != null && reel.getId() != null && (
+                reel.getViewsCount() > 0
+                || reel.getLikesCount() > 0
+                || reel.getCommentsCount() > 0
+                || reel.getSavesCount() > 0
+                || reel.getSharesCount() > 0
+                || "VERIFIED".equals(reel.getStatus())
+        );
+    }
+
+    private void ensureBaselineSnapshotBeforeSync(ReelDeliverable preSyncReel) {
+        if (reelSnapshotRepository == null || !hasSnapshotableData(preSyncReel)) {
+            return;
+        }
+        if (reelSnapshotRepository.findFirstByDeliverableIdOrderByCapturedAtDesc(preSyncReel.getId()).isPresent()) {
+            return;
+        }
+        saveSnapshotPoint(
+                preSyncReel,
+                preSyncReel.getSyncedAt() != null ? preSyncReel.getSyncedAt() : Instant.now().minusSeconds(60)
+        );
+    }
+
+    private void recordDeliverableSnapshotIfChanged(ReelDeliverable reel, boolean allowPeriodicCheckIn) {
+        if (reelSnapshotRepository == null || !hasSnapshotableData(reel)) {
+            return;
+        }
+        Optional<ReelSnapshot> latestOpt = reelSnapshotRepository.findFirstByDeliverableIdOrderByCapturedAtDesc(reel.getId());
+        if (latestOpt.isEmpty()) {
+            saveSnapshotPoint(reel, reel.getSyncedAt() != null ? reel.getSyncedAt() : Instant.now());
+            return;
+        }
+        ReelSnapshot latest = latestOpt.get();
+        boolean metricsChanged = latest.getViewsCount() != reel.getViewsCount()
+                || latest.getLikesCount() != reel.getLikesCount()
+                || latest.getCommentsCount() != reel.getCommentsCount()
+                || latest.getSavesCount() != reel.getSavesCount()
+                || latest.getSharesCount() != reel.getSharesCount();
+        boolean intervalElapsed = allowPeriodicCheckIn
+                && latest.getCapturedAt() != null
+                && latest.getCapturedAt().isBefore(Instant.now().minusSeconds(6 * 3600L));
+        if (metricsChanged || intervalElapsed) {
+            saveSnapshotPoint(reel, Instant.now());
+        }
+    }
+
+    private void saveSnapshotPoint(ReelDeliverable reel, Instant capturedAt) {
+        ReelSnapshot snap = new ReelSnapshot();
+        snap.setDeliverableId(reel.getId());
+        snap.setBrandId(reel.getBrandId());
+        snap.setCreatorId(reel.getCreatorId());
+        snap.setViewsCount(reel.getViewsCount());
+        snap.setLikesCount(reel.getLikesCount());
+        snap.setCommentsCount(reel.getCommentsCount());
+        snap.setSavesCount(reel.getSavesCount());
+        snap.setSharesCount(reel.getSharesCount());
+        snap.setCapturedAt(capturedAt != null ? capturedAt : Instant.now());
+        reelSnapshotRepository.save(snap);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void attachSnapshotHistory(Map<String, Object> summary, ReelDeliverable reel) {
+        if (summary == null || reel == null) return;
+        List<ReelSnapshot> desc = (reelSnapshotRepository != null && reel.getId() != null)
+                ? reelSnapshotRepository.findTop14ByDeliverableIdOrderByCapturedAtDesc(reel.getId())
+                : List.of();
+        Map<String, Object> bundle = buildSnapshotBundleForReel(reel, desc);
+        summary.put("snapshots", bundle.get("snapshots"));
+        Object derivedObj = summary.get("derived");
+        if (derivedObj instanceof Map<?, ?>) {
+            Map<String, Object> derived = (Map<String, Object>) derivedObj;
+            derived.put("viewsDeltaLastSync", bundle.get("viewsDeltaLastSync"));
+            derived.put("likesDeltaLastSync", bundle.get("likesDeltaLastSync"));
+            derived.put("commentsDeltaLastSync", bundle.get("commentsDeltaLastSync"));
+            derived.put("snapshotCount", bundle.get("snapshotCount"));
+        }
+    }
+
+    private Map<String, Map<String, Object>> buildBrandReelDeltasMap(UUID brandId, List<ReelDeliverable> scopedReels) {
+        Map<String, Map<String, Object>> out = new LinkedHashMap<>();
+        if (scopedReels == null || scopedReels.isEmpty()) {
+            return out;
+        }
+        Map<UUID, List<ReelSnapshot>> byDeliverable = new HashMap<>();
+        if (reelSnapshotRepository != null) {
+            for (ReelSnapshot s : reelSnapshotRepository.findByBrandIdOrderByCapturedAtDesc(brandId)) {
+                List<ReelSnapshot> list = byDeliverable.computeIfAbsent(s.getDeliverableId(), k -> new ArrayList<>());
+                if (list.size() < 7) {
+                    list.add(s);
+                }
+            }
+        }
+        for (ReelDeliverable r : scopedReels) {
+            if (r.getId() == null) continue;
+            List<ReelSnapshot> desc = byDeliverable.getOrDefault(r.getId(), List.of());
+            out.put(r.getId().toString(), buildSnapshotBundleForReel(r, desc));
+        }
+        return out;
+    }
+
+    private Map<String, Object> buildSnapshotBundleForReel(ReelDeliverable reel, List<ReelSnapshot> desc) {
+        List<ReelSnapshot> asc = new ArrayList<>(desc);
+        Collections.reverse(asc);
+        List<Map<String, Object>> points = new ArrayList<>();
+        for (int i = 0; i < asc.size(); i++) {
+            ReelSnapshot cur = asc.get(i);
+            long prevViews = i > 0 ? asc.get(i - 1).getViewsCount() : cur.getViewsCount();
+            long prevLikes = i > 0 ? asc.get(i - 1).getLikesCount() : cur.getLikesCount();
+            Map<String, Object> pt = new LinkedHashMap<>();
+            pt.put("viewsCount", cur.getViewsCount());
+            pt.put("likesCount", cur.getLikesCount());
+            pt.put("commentsCount", cur.getCommentsCount());
+            pt.put("savesCount", cur.getSavesCount());
+            pt.put("deltaViews", i > 0 ? (cur.getViewsCount() - prevViews) : 0L);
+            pt.put("deltaLikes", i > 0 ? (cur.getLikesCount() - prevLikes) : 0L);
+            pt.put("capturedAt", cur.getCapturedAt());
+            points.add(pt);
+        }
+        if (points.isEmpty() && hasSnapshotableData(reel)) {
+            Map<String, Object> baseline = new LinkedHashMap<>();
+            baseline.put("viewsCount", reel.getViewsCount());
+            baseline.put("likesCount", reel.getLikesCount());
+            baseline.put("commentsCount", reel.getCommentsCount());
+            baseline.put("savesCount", reel.getSavesCount());
+            baseline.put("deltaViews", 0L);
+            baseline.put("deltaLikes", 0L);
+            baseline.put("capturedAt", reel.getSyncedAt() != null ? reel.getSyncedAt() : Instant.now());
+            points.add(baseline);
+        }
+
+        long viewsDeltaLastSync = 0L;
+        long likesDeltaLastSync = 0L;
+        long commentsDeltaLastSync = 0L;
+        if (asc.size() >= 2) {
+            ReelSnapshot latest = asc.get(asc.size() - 1);
+            ReelSnapshot prev = asc.get(asc.size() - 2);
+            viewsDeltaLastSync = latest.getViewsCount() - prev.getViewsCount();
+            likesDeltaLastSync = latest.getLikesCount() - prev.getLikesCount();
+            commentsDeltaLastSync = latest.getCommentsCount() - prev.getCommentsCount();
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("snapshotCount", asc.size());
+        result.put("viewsDeltaLastSync", viewsDeltaLastSync);
+        result.put("likesDeltaLastSync", likesDeltaLastSync);
+        result.put("commentsDeltaLastSync", commentsDeltaLastSync);
+        result.put("snapshots", points);
+        return result;
     }
 }

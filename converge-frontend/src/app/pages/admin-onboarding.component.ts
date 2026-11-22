@@ -1,12 +1,15 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
 import { ApiService, Brand } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
+import { DashboardExitAware, DashboardExitController } from '../services/auth.guard';
 import { ConfirmModalComponent } from '../components/confirm-modal.component';
 import { AppHeaderComponent } from '../components/app-header.component';
 import { AppFooterComponent } from '../components/app-footer.component';
+import { ThemeToggleComponent } from '../components/theme-toggle.component';
 import {
   CountryPickerComponent,
   enforcePhoneKeydown,
@@ -19,14 +22,15 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 @Component({
   selector: 'app-admin-onboarding',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmModalComponent, AppHeaderComponent, AppFooterComponent, CountryPickerComponent],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent, AppHeaderComponent, AppFooterComponent, CountryPickerComponent, ThemeToggleComponent],
   template: `
-    <div class="bg-[#1c1c1c] font-body text-[#fff6e8] antialiased min-h-screen lg:h-screen lg:overflow-hidden flex flex-col overflow-x-clip selection:bg-[#f54e26]/25 selection:text-[#fff6e8]">
+    <div class="bg-cv-canvas font-body text-cv-ink antialiased min-h-screen flex flex-col overflow-x-clip selection:bg-[#f54e26]/25 selection:text-cv-ink">
       <!-- Fixed Top Header -->
       <app-header [elevated]="true" brandLink="/admin">
-        <div header-right class="flex items-center gap-3 shrink-0">
+        <div header-right class="flex items-center gap-2.5 shrink-0">
+          <app-theme-toggle />
           <button type="button" (click)="showSignOutConfirm.set(true)"
-                  class="h-8.5 px-4 rounded-[4px] bg-[#fff6e8] hover:bg-[#f54e26] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#f54e26] hover:shadow-[2px_2px_0px_#fff6e8] active:translate-x-[1px] active:translate-y-[1px] inline-flex items-center gap-1.5 font-headline uppercase tracking-[0.04em] text-sm font-bold cursor-pointer whitespace-nowrap transition-all">
+                  class="h-8.5 px-4 rounded-[4px] bg-cv-ink hover:bg-[#f54e26] text-cv-ink-inverse hover:text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#f54e26] hover:shadow-[2px_2px_0px_var(--cv-shadow-ink)] active:translate-x-[1px] active:translate-y-[1px] inline-flex items-center gap-1.5 font-headline uppercase tracking-[0.04em] text-sm font-bold cursor-pointer whitespace-nowrap transition-all">
             <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter">
               <path d="M11 4H5v16h6"/>
               <path d="M10 12h10"/>
@@ -37,31 +41,31 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         </div>
       </app-header>
 
-      <main class="w-full bg-[#1c1c1c] flex-1 lg:min-h-0 lg:overflow-y-auto">
+      <main class="w-full bg-cv-canvas flex-1">
         <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 py-5 lg:py-6">
           <!-- Page Title + Even Stats Strip -->
-          <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 mb-5 border-b border-white/[0.14] animate-fade-in-up">
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 mb-5 border-b border-cv-border animate-fade-in-up">
             <div class="min-w-0">
-              <h1 class="font-headline uppercase text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-[#fff6e8] tracking-[0.01em] leading-none">
+              <h1 class="font-headline uppercase text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-cv-ink tracking-[0.01em] leading-none">
                 BRAND REGISTRY <span class="text-[#f54e26]">&amp; ONBOARDING</span>
               </h1>
-              <p class="mt-2 text-sm text-[#a7a9be]">
+              <p class="mt-2 text-sm text-cv-ink-muted">
                 Set up brand workspaces and assign brand managers.
               </p>
             </div>
 
-            <div class="grid grid-cols-3 divide-x divide-white/[0.14] rounded-[4px] bg-[#161616] border border-white/[0.14] w-full md:w-auto shrink-0 tabular-nums">
+            <div class="grid grid-cols-3 divide-x divide-cv-divide rounded-[4px] bg-cv-card border border-cv-border w-full md:w-auto shrink-0 tabular-nums">
               <div class="px-4 py-2">
-                <span class="block text-[11px] text-[#a7a9be]">Active</span>
-                <span class="font-headline text-2xl font-bold text-[#4ade80] leading-none">{{ activeCount() }}</span>
+                <span class="block text-[11px] text-cv-ink-muted">Active</span>
+                <span class="font-headline text-2xl font-bold text-cv-green leading-none">{{ activeCount() }}</span>
               </div>
               <div class="px-4 py-2">
-                <span class="block text-[11px] text-[#a7a9be]">Drafts</span>
-                <span class="font-headline text-2xl font-bold text-[#fabf29] leading-none">{{ draftCount() }}</span>
+                <span class="block text-[11px] text-cv-ink-muted">Drafts</span>
+                <span class="font-headline text-2xl font-bold text-cv-gold leading-none">{{ draftCount() }}</span>
               </div>
               <div class="px-4 py-2">
-                <span class="block text-[11px] text-[#a7a9be]">Total</span>
-                <span class="font-headline text-2xl font-bold text-[#fff6e8] leading-none">{{ brands().length }}</span>
+                <span class="block text-[11px] text-cv-ink-muted">Total</span>
+                <span class="font-headline text-2xl font-bold text-cv-ink leading-none">{{ brands().length }}</span>
               </div>
             </div>
           </div>
@@ -70,18 +74,18 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start lg:items-stretch animate-fade-in-up">
             <!-- Left Column: Brand Onboarding Form -->
             <section
-              class="lg:col-span-7 flex flex-col bg-[#161616] rounded-[6px] border border-white/[0.16] p-5 relative transition-all duration-300"
+              class="lg:col-span-7 flex flex-col bg-cv-card rounded-[6px] border border-cv-border p-5 relative transition-all duration-300"
               [class.animate-shake]="shakeForm()">
-              <div class="flex items-center justify-between gap-3 pb-3.5 mb-4 border-b border-white/[0.12]">
-                <h2 class="font-headline uppercase text-2xl font-bold text-[#fff6e8] tracking-[0.02em] leading-none">NEW BRAND WORKSPACE</h2>
+              <div class="flex items-center justify-between gap-3 pb-3.5 mb-4 border-b border-cv-border-soft">
+                <h2 class="font-headline uppercase text-2xl font-bold text-cv-ink tracking-[0.02em] leading-none">NEW BRAND WORKSPACE</h2>
               </div>
 
               @if (banner(); as msg) {
                 <div
                   class="mb-4 px-3.5 py-2.5 rounded-[4px] border text-xs font-medium flex items-center justify-between gap-2 animate-pop-in"
                   [ngClass]="msg.type === 'error'
-                    ? 'bg-[#2c1517] border-[#ff5c5c]/40 text-[#ffb4b4]'
-                    : 'bg-[#0d2820] border-[#007656] text-[#8ef0cc]'">
+                    ? 'bg-cv-danger-bg border-[#ff5c5c]/40 text-cv-danger-ink'
+                    : 'bg-cv-success-bg border-[#007656] text-cv-success-ink'">
                   <div class="flex items-center gap-2 min-w-0">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                       @if (msg.type === 'error') {
@@ -107,18 +111,18 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="flex flex-col gap-1">
                       <div class="flex items-center justify-between h-4">
-                        <label for="brand-org" class="text-xs text-[#fff6e8] font-medium">Brand organization name</label>
+                        <label for="brand-org" class="text-xs text-cv-ink font-medium">Brand organization name</label>
                         @if ((brandTouched() || brandDuplicate()) && brandError()) {
-                          <span class="text-xs text-[#ff6b6b] font-medium">{{ brandError() }}</span>
+                          <span class="text-xs text-cv-red-soft font-medium">{{ brandError() }}</span>
                         }
                       </div>
                       <div
-                        class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                        class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-cv-well border transition-colors duration-150"
                         [ngClass]="(brandTouched() || brandDuplicate()) && brandError()
                           ? 'border-[#ff5c5c]'
-                          : (brandValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                          : (brandValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-cv-border focus-within:border-[#f54e26]')">
                         <svg class="doodle-svg w-4 h-4 shrink-0"
-                             [ngClass]="(brandTouched() || brandDuplicate()) && brandError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                             [ngClass]="(brandTouched() || brandDuplicate()) && brandError() ? 'text-[#ff5c5c]' : 'text-cv-ink-muted group-focus-within:text-[#f54e26]'"
                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                           <rect x="4" y="4.5" width="16" height="15" rx="2.5"/>
                           <path d="M9 9h2M13 9h2M9 13h2M13 13h2M10 19.5v-3h4v3"/>
@@ -132,10 +136,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                           autocomplete="off"
                           placeholder="e.g. Acme Skincare"
                           type="text"
-                          class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none"/>
+                          class="w-full min-w-0 bg-transparent text-sm text-cv-ink placeholder:text-cv-ink-subtle focus:outline-none"/>
                         @if (brandValid()) {
-                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
+                          <svg class="w-4 h-4 text-cv-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="currentColor"/>
                             <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                           </svg>
                         }
@@ -144,18 +148,18 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
                     <div class="flex flex-col gap-1">
                       <div class="flex items-center justify-between h-4">
-                        <label for="manager-name" class="text-xs text-[#fff6e8] font-medium">Brand manager name</label>
+                        <label for="manager-name" class="text-xs text-cv-ink font-medium">Brand manager name</label>
                         @if (managerNameTouched() && managerNameError()) {
-                          <span class="text-xs text-[#ff6b6b] font-medium">{{ managerNameError() }}</span>
+                          <span class="text-xs text-cv-red-soft font-medium">{{ managerNameError() }}</span>
                         }
                       </div>
                       <div
-                        class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                        class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-cv-well border transition-colors duration-150"
                         [ngClass]="managerNameTouched() && managerNameError()
                           ? 'border-[#ff5c5c]'
-                          : (managerNameValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                          : (managerNameValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-cv-border focus-within:border-[#f54e26]')">
                         <svg class="doodle-svg w-4 h-4 shrink-0"
-                             [ngClass]="managerNameTouched() && managerNameError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                             [ngClass]="managerNameTouched() && managerNameError() ? 'text-[#ff5c5c]' : 'text-cv-ink-muted group-focus-within:text-[#f54e26]'"
                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                           <circle cx="12" cy="8.5" r="3.6"/>
                           <path d="M5.5 19.5c1-3.2 3.3-4.8 6.5-4.8s5.5 1.6 6.5 4.8"/>
@@ -169,10 +173,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                           autocomplete="off"
                           placeholder="Manager full name"
                           type="text"
-                          class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none"/>
+                          class="w-full min-w-0 bg-transparent text-sm text-cv-ink placeholder:text-cv-ink-subtle focus:outline-none"/>
                         @if (managerNameValid()) {
-                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
+                          <svg class="w-4 h-4 text-cv-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="currentColor"/>
                             <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                           </svg>
                         }
@@ -184,18 +188,18 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="flex flex-col gap-1">
                       <div class="flex items-center justify-between h-4">
-                        <label for="manager-email" class="text-xs text-[#fff6e8] font-medium">Brand manager email</label>
+                        <label for="manager-email" class="text-xs text-cv-ink font-medium">Brand manager email</label>
                         @if ((emailTouched() || emailIsAdmin()) && emailError()) {
-                          <span class="text-xs text-[#ff6b6b] font-medium">{{ emailError() }}</span>
+                          <span class="text-xs text-cv-red-soft font-medium">{{ emailError() }}</span>
                         }
                       </div>
                       <div
-                        class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                        class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-cv-well border transition-colors duration-150"
                         [ngClass]="(emailTouched() || emailIsAdmin()) && emailError()
                           ? 'border-[#ff5c5c]'
-                          : (emailValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                          : (emailValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-cv-border focus-within:border-[#f54e26]')">
                         <svg class="doodle-svg w-4 h-4 shrink-0"
-                             [ngClass]="(emailTouched() || emailIsAdmin()) && emailError() ? 'text-[#ff5c5c]' : 'text-[#a7a9be] group-focus-within:text-[#f54e26]'"
+                             [ngClass]="(emailTouched() || emailIsAdmin()) && emailError() ? 'text-[#ff5c5c]' : 'text-cv-ink-muted group-focus-within:text-[#f54e26]'"
                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                           <rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/>
                           <path d="M5 7.5l7 5.2 7-5.2"/>
@@ -209,10 +213,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                           autocomplete="off"
                           placeholder="manager@brand.com"
                           type="email"
-                          class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none"/>
+                          class="w-full min-w-0 bg-transparent text-sm text-cv-ink placeholder:text-cv-ink-subtle focus:outline-none"/>
                         @if (emailValid()) {
-                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
+                          <svg class="w-4 h-4 text-cv-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="currentColor"/>
                             <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                           </svg>
                         }
@@ -221,16 +225,16 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
                     <div class="flex flex-col gap-1">
                       <div class="flex items-center justify-between h-4">
-                        <label for="brand-contact" class="text-xs text-[#fff6e8] font-medium">Contact number</label>
+                        <label for="brand-contact" class="text-xs text-cv-ink font-medium">Contact number</label>
                         @if (phoneTouched() && phoneError()) {
-                          <span class="text-xs text-[#ff6b6b] font-medium">{{ phoneError() }}</span>
+                          <span class="text-xs text-cv-red-soft font-medium">{{ phoneError() }}</span>
                         }
                       </div>
                       <div
-                        class="group flex items-center gap-2 pl-2 pr-3 h-10 rounded-[4px] bg-[#111111] border transition-colors duration-150"
+                        class="group flex items-center gap-2 pl-2 pr-3 h-10 rounded-[4px] bg-cv-well border transition-colors duration-150"
                         [ngClass]="phoneTouched() && phoneError()
                           ? 'border-[#ff5c5c]'
-                          : (phoneValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-white/[0.16] focus-within:border-[#f54e26]')">
+                          : (phoneValid() ? 'border-[#007656] focus-within:border-[#f54e26]' : 'border-cv-border focus-within:border-[#f54e26]')">
                         <app-country-picker
                           [iso]="countryIso()"
                           (isoChange)="onCountryChange($event)">
@@ -249,11 +253,11 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                           autocomplete="off"
                           [placeholder]="selectedCountry().placeholder"
                           type="tel"
-                          class="w-full min-w-0 bg-transparent text-sm text-[#fff6e8] placeholder:text-[#7c7e8c] focus:outline-none tabular-nums"/>
+                          class="w-full min-w-0 bg-transparent text-sm text-cv-ink placeholder:text-cv-ink-subtle focus:outline-none tabular-nums"/>
 
                         @if (phoneValid()) {
-                          <svg class="w-4 h-4 text-[#4ade80] shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="#4ade80"/>
+                          <svg class="w-4 h-4 text-cv-green shrink-0 animate-pop-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" class="opacity-25" fill="currentColor"/>
                             <path d="M8 12.5l2.7 2.7 5.5-6" class="doodle-check-path"/>
                           </svg>
                         }
@@ -262,9 +266,9 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                   </div>
                 </div>
 
-                <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-white/[0.12]">
+                <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-cv-border-soft">
                   <button type="button" (click)="submitBrand('DRAFT')" [disabled]="submitting()"
-                          class="h-10 px-5 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] text-[#a7a9be] hover:text-[#fff6e8] text-xs font-semibold border border-white/[0.16] cursor-pointer transition-colors">
+                          class="h-10 px-5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover text-cv-ink-muted hover:text-cv-ink text-xs font-semibold border border-cv-border cursor-pointer transition-colors">
                     Save as Draft
                   </button>
                   <button type="submit" [disabled]="submitting()"
@@ -281,16 +285,16 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
               <!-- Success Overlay -->
               @if (provisionedBrand(); as pb) {
-                <div class="absolute inset-0 rounded-[6px] bg-[#161616]/95 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center z-30 animate-pop-in">
+                <div class="absolute inset-0 rounded-[6px] bg-cv-card/95 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center z-30 animate-pop-in">
                   @if (pb.status === 'DRAFT') {
                     <div class="w-12 h-12 rounded-[6px] bg-[#fabf29] flex items-center justify-center text-[#111111] mb-3">
                       <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v15.5l-6.5-4-6.5 4V5A1.5 1.5 0 0 1 7 3.5z"/>
                       </svg>
                     </div>
-                    <h3 class="font-headline uppercase text-3xl font-bold text-[#fff6e8] tracking-[0.02em]">{{ pb.name }} SAVED AS DRAFT</h3>
-                    <p class="text-sm text-[#a7a9be] max-w-md mt-2">
-                      Saved for <strong class="text-[#fff6e8]">{{ pb.managerName }} ({{ pb.managerEmail }})</strong>. Open Brand Details to activate when ready.
+                    <h3 class="font-headline uppercase text-3xl font-bold text-cv-ink tracking-[0.02em]">{{ pb.name }} SAVED AS DRAFT</h3>
+                    <p class="text-sm text-cv-ink-muted max-w-md mt-2">
+                      Saved for <strong class="text-cv-ink">{{ pb.managerName }} ({{ pb.managerEmail }})</strong>. Open Brand Details to activate when ready.
                     </p>
                   } @else {
                     <div class="w-12 h-12 rounded-[6px] bg-[#007656] flex items-center justify-center text-[#fff6e8] mb-3">
@@ -298,13 +302,13 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                         <path d="M20 6L9 17l-5-5"/>
                       </svg>
                     </div>
-                    <h3 class="font-headline uppercase text-3xl font-bold text-[#fff6e8] tracking-[0.02em]">{{ pb.name }} IS LIVE</h3>
-                    <p class="text-sm text-[#a7a9be] max-w-md mt-2">
-                      <strong class="text-[#fff6e8]">{{ pb.managerName }} ({{ pb.managerEmail }})</strong> can now sign in with this email.
+                    <h3 class="font-headline uppercase text-3xl font-bold text-cv-ink tracking-[0.02em]">{{ pb.name }} IS LIVE</h3>
+                    <p class="text-sm text-cv-ink-muted max-w-md mt-2">
+                      <strong class="text-cv-ink">{{ pb.managerName }} ({{ pb.managerEmail }})</strong> can now sign in with this email.
                     </p>
                   }
                   <div class="mt-6 flex items-center justify-center gap-3">
-                    <button type="button" (click)="openBrand(pb.id)" class="h-10 px-5 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] border border-white/[0.16] text-[#fff6e8] text-xs font-semibold cursor-pointer transition-colors">Open Brand Details</button>
+                    <button type="button" (click)="openBrand(pb.id)" class="h-10 px-5 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-cv-ink text-xs font-semibold cursor-pointer transition-colors">Open Brand Details</button>
                     <button type="button" (click)="provisionedBrand.set(null)" class="h-10 px-6 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-lg font-bold cursor-pointer transition-colors">DONE</button>
                   </div>
                 </div>
@@ -312,39 +316,39 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
             </section>
 
             <!-- Right Column: Unified Brand Directory Panel -->
-            <section class="lg:col-span-5 flex flex-col bg-[#161616] rounded-[6px] border border-white/[0.16] p-5">
-              <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-white/[0.12]">
-                <h2 class="font-headline uppercase text-2xl font-bold text-[#fff6e8] tracking-[0.02em] leading-none">BRAND DIRECTORY</h2>
+            <section class="lg:col-span-5 flex flex-col bg-cv-card rounded-[6px] border border-cv-border p-5">
+              <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-cv-border-soft">
+                <h2 class="font-headline uppercase text-2xl font-bold text-cv-ink tracking-[0.02em] leading-none">BRAND DIRECTORY</h2>
               </div>
 
               <div class="mb-3.5">
-                <div class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-[#111111] border border-white/[0.16] focus-within:border-[#f54e26] transition-colors">
-                  <svg class="doodle-svg w-4 h-4 text-[#a7a9be] group-focus-within:text-[#f54e26] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <div class="group flex items-center gap-2.5 px-3 h-10 rounded-[4px] bg-cv-well border border-cv-border focus-within:border-[#f54e26] transition-colors">
+                  <svg class="doodle-svg w-4 h-4 text-cv-ink-muted group-focus-within:text-[#f54e26] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="6.5"/>
                     <path d="M16 16l4 4"/>
                   </svg>
-                  <input [(ngModel)]="searchQuery" (ngModelChange)="searchSignal.set($event)" placeholder="Filter by brand or manager..." type="text" class="w-full min-w-0 bg-transparent text-[#fff6e8] placeholder:text-[#7c7e8c] text-sm focus:outline-none"/>
+                  <input [(ngModel)]="searchQuery" (ngModelChange)="searchSignal.set($event)" placeholder="Filter by brand or manager..." type="text" class="w-full min-w-0 bg-transparent text-cv-ink placeholder:text-cv-ink-subtle text-sm focus:outline-none"/>
                 </div>
               </div>
 
               @if (filteredBrands().length === 0) {
-                <div class="p-8 rounded-[4px] bg-[#111111] border border-dashed border-white/[0.18] text-center flex flex-col items-center">
-                  <h3 class="font-headline uppercase text-lg font-bold text-[#fff6e8]">NO BRANDS FOUND</h3>
-                  <p class="text-xs text-[#a7a9be] mt-1">Create a brand using the form on the left.</p>
+                <div class="p-8 rounded-[4px] bg-cv-well border border-dashed border-cv-border-strong text-center flex flex-col items-center">
+                  <h3 class="font-headline uppercase text-lg font-bold text-cv-ink">NO BRANDS FOUND</h3>
+                  <p class="text-xs text-cv-ink-muted mt-1">Create a brand using the form on the left.</p>
                 </div>
               } @else {
-                <div class="rounded-[4px] bg-[#111111] border border-white/[0.14] overflow-hidden max-h-[320px] lg:max-h-[calc(100vh-315px)] overflow-y-auto">
+                <div class="rounded-[4px] bg-cv-well border border-cv-border overflow-hidden max-h-[320px] lg:max-h-[calc(100vh-315px)] overflow-y-auto">
                   @for (b of filteredBrands(); track b.id) {
                     <div
                       (click)="openBrand(b.id)"
-                      class="group flex items-center justify-between px-3.5 py-3 border-b last:border-b-0 border-white/[0.1] hover:bg-white/[0.03] transition-colors cursor-pointer">
+                      class="group flex items-center justify-between px-3.5 py-3 border-b last:border-b-0 border-cv-divide hover:bg-cv-hover-subtle transition-colors cursor-pointer">
                       <div class="flex items-center gap-3 min-w-0">
                         <div class="w-9 h-9 rounded-[4px] bg-[#f54e26] text-[#111111] font-headline text-lg font-bold flex items-center justify-center shrink-0">
                           {{ b.name.charAt(0).toUpperCase() }}
                         </div>
                         <div class="min-w-0">
-                          <h3 class="font-headline uppercase text-lg font-bold text-[#fff6e8] tracking-[0.015em] truncate group-hover:text-[#f54e26] transition-colors leading-tight">{{ b.name }}</h3>
-                          <p class="text-xs text-[#a7a9be] truncate mt-0.5">{{ b.managerName }} • {{ b.managerEmail }}</p>
+                          <h3 class="font-headline uppercase text-lg font-bold text-cv-ink tracking-[0.015em] truncate group-hover:text-[#f54e26] transition-colors leading-tight">{{ b.name }}</h3>
+                          <p class="text-xs text-cv-ink-muted truncate mt-0.5">{{ b.managerName }} • {{ b.managerEmail }}</p>
                         </div>
                       </div>
                       <div class="flex items-center gap-2 shrink-0 ml-2">
@@ -353,7 +357,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                             DRAFT
                           </span>
                         }
-                        <span class="font-headline text-base text-[#a7a9be] group-hover:text-[#f54e26] transition-colors">↗</span>
+                        <span class="font-headline text-base text-cv-ink-muted group-hover:text-[#f54e26] transition-colors">↗</span>
                       </div>
                     </div>
                   }
@@ -367,19 +371,21 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       <!-- Sign Out Confirmation Modal -->
       <app-confirm-modal
         [open]="showSignOutConfirm()"
-        title="Sign out of Admin?"
-        message="You will be returned to the sign-in screen."
+        [title]="exitCtrl.promptVisible() ? 'Sign out &amp; leave Admin?' : 'Sign out of Admin?'"
+        [message]="exitCtrl.promptVisible() ? 'Going back to the home page will sign you out of your current session.' : 'You will be returned to the sign-in screen.'"
         confirmLabel="Sign Out"
+        [cancelLabel]="exitCtrl.promptVisible() ? 'Stay Here' : 'Cancel'"
         tone="primary"
-        (confirm)="logout()"
-        (cancel)="showSignOutConfirm.set(false)">
+        (confirm)="confirmSignOutModal()"
+        (cancel)="cancelSignOutModal()">
       </app-confirm-modal>
 
       <app-footer></app-footer>
     </div>
   `
 })
-export class AdminOnboardingComponent implements OnInit {
+export class AdminOnboardingComponent implements OnInit, OnDestroy, DashboardExitAware {
+  readonly exitCtrl = new DashboardExitController();
   brands = signal<Brand[]>([]);
   searchSignal = signal<string>('');
   searchQuery = '';
@@ -593,8 +599,28 @@ export class AdminOnboardingComponent implements OnInit {
     this.router.navigate(['/admin/brands', id]);
   }
 
+  ngOnDestroy(): void {
+    this.exitCtrl.destroy();
+  }
+
+  confirmDashboardExit(): Observable<boolean> {
+    return this.exitCtrl.requestExit(() => this.showSignOutConfirm.set(true));
+  }
+
+  confirmSignOutModal() {
+    if (this.exitCtrl.confirm(() => this.auth.logout())) {
+      this.showSignOutConfirm.set(false);
+      return;
+    }
+    this.logout();
+  }
+
+  cancelSignOutModal() {
+    this.exitCtrl.cancel(() => this.showSignOutConfirm.set(false));
+  }
+
   logout() {
     this.auth.logout();
-    this.router.navigateByUrl('/auth');
+    this.router.navigateByUrl('/auth', { replaceUrl: true });
   }
 }

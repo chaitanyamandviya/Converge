@@ -7,13 +7,13 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     @if (open()) {
-      <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-pop-in" (click)="!busy() && cancel.emit()">
+      <div class="fixed inset-0 z-50 bg-cv-backdrop backdrop-blur-xs flex items-center justify-center p-4 animate-pop-in" (click)="!busy() && cancel.emit()">
         <div
-          class="bg-[#161616] rounded-[8px] max-w-sm w-full p-6 border border-white/[0.18] text-center"
+          class="bg-cv-card rounded-[8px] max-w-sm w-full p-6 border border-cv-border-strong text-center"
           [ngClass]="tone() === 'danger' ? 'shadow-[6px_6px_0px_#ff5c5c]' : 'shadow-[6px_6px_0px_#f54e26]'"
           (click)="$event.stopPropagation()">
           <div
-            class="w-12 h-12 mx-auto rounded-[4px] border-2 border-[#111111] shadow-[3px_3px_0px_#fff6e8] flex items-center justify-center mb-4 text-[#111111]"
+            class="w-12 h-12 mx-auto rounded-[4px] border-2 border-[#111111] shadow-[3px_3px_0px_var(--cv-shadow-ink)] flex items-center justify-center mb-4 text-[#111111]"
             [ngClass]="tone() === 'danger' ? 'bg-[#ff5c5c]' : 'bg-[#f54e26]'">
             @if (tone() === 'danger') {
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -30,14 +30,14 @@ import { CommonModule } from '@angular/common';
               </svg>
             }
           </div>
-          <h3 class="font-headline uppercase text-2xl font-bold tracking-[0.02em] text-[#fff6e8]">{{ title() }}</h3>
-          <p class="text-xs text-[#a7a9be] mt-1.5 leading-relaxed">{{ message() }}</p>
+          <h3 class="font-headline uppercase text-2xl font-bold tracking-[0.02em] text-cv-ink">{{ title() }}</h3>
+          <p class="text-xs text-cv-ink-muted mt-1.5 leading-relaxed">{{ message() }}</p>
           <div class="flex items-center justify-center gap-2.5 mt-5">
             <button
               type="button"
               (click)="cancel.emit()"
               [disabled]="busy()"
-              class="flex-1 h-10 px-4 rounded-[4px] bg-[#242424] hover:bg-[#2c2c2c] border border-white/[0.16] text-xs font-medium text-[#a7a9be] hover:text-[#fff6e8] cursor-pointer transition-colors disabled:opacity-50">
+              class="flex-1 h-10 px-4 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-xs font-medium text-cv-ink-muted hover:text-cv-ink cursor-pointer transition-colors disabled:opacity-50">
               {{ cancelLabel() }}
             </button>
             <button

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { AppHeaderComponent } from '../components/app-header.component';
+import { ThemeToggleComponent } from '../components/theme-toggle.component';
 
 interface WorkflowItem {
   id: string;
@@ -26,7 +27,7 @@ interface SampleCreatorReel {
   views: number;
   likes: number;
   comments: number;
-  saves: number;
+  engagementRate: number;
   accent: string;
   bars: number[];
 }
@@ -34,36 +35,37 @@ interface SampleCreatorReel {
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AppHeaderComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AppHeaderComponent, ThemeToggleComponent],
   template: `
-    <div class="min-h-screen flex flex-col bg-[#1c1c1c] text-[#fff6e8] overflow-x-clip selection:bg-[#f54e26]/30 selection:text-[#fff6e8]">
+    <div class="min-h-screen flex flex-col bg-cv-canvas text-cv-ink overflow-x-clip selection:bg-[#f54e26]/30 selection:text-cv-ink">
       <!-- Minimal Top Navigation -->
       <app-header [elevated]="elevatedHeader()">
-        <div header-right class="flex items-center gap-4 sm:gap-6">
+        <div header-right class="flex items-center gap-3 sm:gap-5">
           <button (click)="scrollTo('story')"
-                  class="hidden sm:inline-block text-sm text-[#a7a9be] hover:text-[#fff6e8] transition-colors cursor-pointer">
+                  class="hidden sm:inline-block text-sm text-cv-ink-muted hover:text-cv-ink transition-colors cursor-pointer">
             Calculator
           </button>
           <button (click)="scrollTo('how-it-works')"
-                  class="hidden sm:inline-block text-sm text-[#a7a9be] hover:text-[#fff6e8] transition-colors cursor-pointer">
+                  class="hidden sm:inline-block text-sm text-cv-ink-muted hover:text-cv-ink transition-colors cursor-pointer">
             How it works
           </button>
           <button (click)="scrollTo('workflows')"
-                  class="hidden sm:inline-block text-sm text-[#a7a9be] hover:text-[#fff6e8] transition-colors cursor-pointer">
+                  class="hidden sm:inline-block text-sm text-cv-ink-muted hover:text-cv-ink transition-colors cursor-pointer">
             Workflows
           </button>
+          <app-theme-toggle />
           @if (auth.isAuthenticated()) {
             <a [routerLink]="dashboardRoute()"
-               class="h-8.5 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#fff6e8] font-headline uppercase tracking-[0.04em] text-sm font-bold inline-flex items-center transition-all">
+               class="h-8.5 px-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_var(--cv-shadow-ink)] font-headline uppercase tracking-[0.04em] text-sm font-bold inline-flex items-center transition-all">
               WORKSPACE ↗
             </a>
           } @else {
             <a routerLink="/auth"
-               class="text-sm text-[#fff6e8] hover:text-[#f54e26] transition-colors font-medium">
+               class="text-sm text-cv-ink hover:text-[#f54e26] transition-colors font-medium">
               Sign in
             </a>
             <a routerLink="/auth" [queryParams]="{mode: 'signup'}"
-               class="h-8.5 px-4 rounded-[4px] bg-[#fff6e8] hover:bg-[#f54e26] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#f54e26] font-headline uppercase tracking-[0.04em] text-sm font-bold hidden sm:inline-flex items-center transition-all">
+               class="h-8.5 px-4 rounded-[4px] bg-cv-ink hover:bg-[#f54e26] text-cv-ink-inverse hover:text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#f54e26] font-headline uppercase tracking-[0.04em] text-sm font-bold hidden sm:inline-flex items-center transition-all">
               GET STARTED ↗
             </a>
           }
@@ -81,19 +83,19 @@ interface SampleCreatorReel {
                 <span>0 DMS ◆ 100% REAL POST NUMBERS</span>
               </div>
 
-              <h1 class="font-headline font-bold uppercase tracking-[0.01em] text-[2.85rem] sm:text-[3.8rem] lg:text-[4.2rem] xl:text-[4.75rem] leading-[0.95] text-[#fff6e8]">
+              <h1 class="font-headline font-bold uppercase tracking-[0.01em] text-[2.85rem] sm:text-[3.8rem] lg:text-[4.2rem] xl:text-[4.75rem] leading-[0.95] text-cv-ink">
                 SKIP
                 <button type="button"
                         (click)="wordStrikeActive.set(!wordStrikeActive())"
                         title="No more screenshots"
-                        class="group/word relative inline-block text-[#fabf29] cursor-pointer text-left uppercase transition-transform duration-200 hover:-rotate-2 hover:scale-[1.03] focus:outline-none"
+                        class="group/word relative inline-block text-cv-gold cursor-pointer text-left uppercase transition-transform duration-200 hover:-rotate-2 hover:scale-[1.03] focus:outline-none"
                         [class.is-active]="wordStrikeActive()">
                   <span>SCREENSHOTS.</span>
                   <!-- Animated hand-drawn brush strike-out doodle -->
                   <svg aria-hidden="true" class="pointer-events-none absolute left-0 right-0 top-[46%] w-full h-4 -translate-y-1/2 overflow-visible" viewBox="0 0 220 18" preserveAspectRatio="none" fill="none">
                     <path d="M4 11 C 55 3, 120 15, 216 7" stroke="#f54e26" stroke-width="5" stroke-linecap="round" class="doodle-draw-hover"/>
                   </svg>
-                  <span class="doodle-pop-hover pointer-events-none hidden sm:inline-block absolute -top-3.5 -right-2 px-1.5 py-0.5 rounded-[3px] bg-[#f54e26] text-[#111111] font-headline text-[11px] font-bold tracking-wider border border-[#111111] shadow-[2px_2px_0px_#fff6e8]">
+                  <span class="doodle-pop-hover pointer-events-none hidden sm:inline-block absolute -top-3.5 -right-2 px-1.5 py-0.5 rounded-[3px] bg-[#f54e26] text-[#111111] font-headline text-[11px] font-bold tracking-wider border border-[#111111] shadow-[2px_2px_0px_var(--cv-shadow-ink)]">
                     0 NEEDED!
                   </span>
                 </button>
@@ -120,41 +122,41 @@ interface SampleCreatorReel {
                         class="group/word relative inline-block text-[#f54e26] cursor-pointer text-left uppercase transition-transform duration-200 hover:-translate-y-0.5 hover:scale-[1.03] focus:outline-none">
                   <span>LIVE NUMBERS.</span>
                   <svg aria-hidden="true" class="pointer-events-none absolute left-0 right-0 -bottom-1.5 w-full h-3.5 overflow-visible" viewBox="0 0 220 14" preserveAspectRatio="none" fill="none">
-                    <path d="M4 9 C 60 2, 140 13, 214 5" stroke="#fff6e8" stroke-width="2.8" stroke-linecap="round" class="doodle-draw-hover"/>
+                    <path d="M4 9 C 60 2, 140 13, 214 5" stroke="var(--cv-ink)" stroke-width="2.8" stroke-linecap="round" class="doodle-draw-hover"/>
                   </svg>
-                  <svg aria-hidden="true" class="pointer-events-none inline-block w-6 h-6 ml-1 -mt-2 text-[#fabf29] transition-transform duration-300 group-hover/word:translate-x-1 group-hover/word:-translate-y-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" class="pointer-events-none inline-block w-6 h-6 ml-1 -mt-2 text-cv-gold transition-transform duration-300 group-hover/word:translate-x-1 group-hover/word:-translate-y-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 17l6-6 4 4 6-7"/>
                     <path d="M15 8h5v5"/>
                   </svg>
                 </button>
               </h1>
 
-              <p class="mt-5 text-sm sm:text-base text-[#a7a9be] leading-relaxed max-w-lg">
-                Track views, likes, saves, and campaign totals straight from any public Instagram Reel—no creator passwords, no cropped phone captures, and no Friday DM chasing.
+              <p class="mt-5 text-sm sm:text-base text-cv-ink-muted leading-relaxed max-w-lg">
+                Track views, likes, comments, and campaign ROI straight from any public Instagram Reel—no creator passwords, no cropped phone captures, and no Friday DM chasing.
               </p>
 
               <div class="mt-7 flex flex-wrap items-center gap-4">
                 @if (auth.isAuthenticated()) {
                   <a [routerLink]="dashboardRoute()"
-                     class="font-headline uppercase tracking-[0.03em] text-xl font-bold px-7 py-3 rounded-[4px] bg-[#f54e26] text-[#111111] border-2 border-[#111111] shadow-[4px_4px_0px_#fff6e8] hover:bg-[#ff643e] active:translate-x-[2px] active:translate-y-[2px] transition-all">
+                     class="font-headline uppercase tracking-[0.03em] text-xl font-bold px-7 py-3 rounded-[4px] bg-[#f54e26] text-[#111111] border-2 border-[#111111] shadow-[4px_4px_0px_var(--cv-shadow-ink)] hover:bg-[#ff643e] active:translate-x-[2px] active:translate-y-[2px] transition-all">
                     OPEN WORKSPACE ↗
                   </a>
                 } @else {
                   <a routerLink="/auth" [queryParams]="{mode: 'signup'}"
-                     class="font-headline uppercase tracking-[0.03em] text-xl font-bold px-7 py-3 rounded-[4px] bg-[#f54e26] text-[#111111] border-2 border-[#111111] shadow-[4px_4px_0px_#fff6e8] hover:bg-[#ff643e] active:translate-x-[2px] active:translate-y-[2px] transition-all">
+                     class="font-headline uppercase tracking-[0.03em] text-xl font-bold px-7 py-3 rounded-[4px] bg-[#f54e26] text-[#111111] border-2 border-[#111111] shadow-[4px_4px_0px_var(--cv-shadow-ink)] hover:bg-[#ff643e] active:translate-x-[2px] active:translate-y-[2px] transition-all">
                     START FREE WORKSPACE ↗
                   </a>
                 }
                 <button type="button" (click)="scrollTo('story')"
-                        class="font-headline uppercase tracking-[0.03em] text-lg font-bold px-4 py-3 text-[#ffccde] hover:text-[#fff6e8] transition-colors cursor-pointer">
+                        class="font-headline uppercase tracking-[0.03em] text-lg font-bold px-4 py-3 text-cv-blush hover:text-cv-ink transition-colors cursor-pointer">
                   CALCULATE TIME SAVED ↓
                 </button>
               </div>
 
               <!-- Playful Hand-Drawn Hint Doodle Pointing to Interactive Workspace -->
-              <div class="hidden lg:flex items-center gap-2 mt-5 text-xs text-[#a7a9be] select-none animate-float-slow">
+              <div class="hidden lg:flex items-center gap-2 mt-5 text-xs text-cv-ink-muted select-none animate-float-slow">
                 <span>Hover any colored word above or try the live demo</span>
-                <svg aria-hidden="true" class="w-10 h-5 text-[#fabf29]" viewBox="0 0 48 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" class="w-10 h-5 text-cv-gold" viewBox="0 0 48 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M2 14 C 14 14, 24 6, 42 8"/>
                   <path d="M36 3l8 5-7 6"/>
                 </svg>
@@ -163,31 +165,31 @@ interface SampleCreatorReel {
 
             <!-- Right Column: Live Interactive Reel Demo Card Above the Fold -->
             <div class="lg:col-span-6 w-full">
-              <div class="rounded-[6px] bg-[#161616] border-2 border-white/[0.18] shadow-[8px_8px_0px_#f54e26] p-4 sm:p-5">
+              <div class="rounded-[6px] bg-cv-card border-2 border-cv-border-strong shadow-[8px_8px_0px_#f54e26] p-4 sm:p-5">
                 <!-- Interactive Creator Selector + View Switcher -->
-                <div class="flex flex-wrap items-center justify-between gap-2 pb-3.5 border-b border-white/[0.12]">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3.5 border-b border-cv-border-soft">
                   <div class="flex items-center gap-1.5 flex-wrap">
                     @for (sample of sampleReels(); track sample.id) {
                       <button type="button"
                               (click)="selectSample(sample.id)"
                               class="px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors cursor-pointer"
                               [ngClass]="selectedSampleId() === sample.id
-                                ? 'bg-[#fff6e8] text-[#111111] font-semibold'
-                                : 'bg-[#111111] border border-white/[0.14] text-[#a7a9be] hover:text-[#fff6e8]'">
+                                ? 'bg-cv-ink text-cv-ink-inverse font-semibold'
+                                : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
                         {{ sample.handle }}
                       </button>
                     }
                   </div>
 
-                  <div class="inline-flex items-center p-0.5 rounded-[4px] bg-[#111111] border border-white/[0.14] text-[11px]">
+                  <div class="inline-flex items-center p-0.5 rounded-[4px] bg-cv-well border border-cv-border text-[11px]">
                     <button type="button" (click)="demoView.set('card')"
                             class="px-2.5 py-1 rounded-[3px] font-medium cursor-pointer transition-colors"
-                            [ngClass]="demoView() === 'card' ? 'bg-[#f54e26] text-[#111111] font-semibold' : 'text-[#a7a9be] hover:text-[#fff6e8]'">
+                            [ngClass]="demoView() === 'card' ? 'bg-[#f54e26] text-[#111111] font-semibold' : 'text-cv-ink-muted hover:text-cv-ink'">
                       Live Stats
                     </button>
                     <button type="button" (click)="demoView.set('csv')"
                             class="px-2.5 py-1 rounded-[3px] font-medium cursor-pointer transition-colors"
-                            [ngClass]="demoView() === 'csv' ? 'bg-[#f54e26] text-[#111111] font-semibold' : 'text-[#a7a9be] hover:text-[#fff6e8]'">
+                            [ngClass]="demoView() === 'csv' ? 'bg-[#f54e26] text-[#111111] font-semibold' : 'text-cv-ink-muted hover:text-cv-ink'">
                       CSV Recap
                     </button>
                   </div>
@@ -198,14 +200,14 @@ interface SampleCreatorReel {
                   @if (activeSample(); as reel) {
                     <div class="pt-4 space-y-4">
                       <!-- Public URL Bar + Interactive Refresh Button -->
-                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-[4px] bg-[#111111] border border-white/[0.12]">
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-[4px] bg-cv-well border border-cv-border-soft">
                         <div class="flex items-center gap-2 min-w-0 text-xs">
-                          <span class="w-2 h-2 rounded-full bg-[#4ade80] shrink-0"></span>
-                          <span class="text-[#fff6e8] font-medium truncate">{{ reel.url }}</span>
+                          <span class="w-2 h-2 rounded-full bg-cv-green shrink-0"></span>
+                          <span class="text-cv-ink font-medium truncate">{{ reel.url }}</span>
                         </div>
                         <button type="button"
                                 (click)="simulateRefresh()"
-                                class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-[#242424] hover:bg-[#f54e26] hover:text-[#111111] text-[#fff6e8] text-[11px] font-semibold transition-colors cursor-pointer">
+                                class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-cv-control hover:bg-[#f54e26] hover:text-[#111111] text-cv-ink text-[11px] font-semibold transition-colors cursor-pointer">
                           <svg class="w-3 h-3" [class.animate-spin]="demoRefreshing()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
                           </svg>
@@ -216,38 +218,38 @@ interface SampleCreatorReel {
                       <!-- Title + Live Delta Note -->
                       <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">
-                          <span class="text-[11px] uppercase tracking-wider text-[#a7a9be]">{{ reel.campaign }}</span>
-                          <h3 class="font-headline uppercase text-2xl font-bold text-[#fff6e8] tracking-[0.015em] truncate">{{ reel.reelTitle }}</h3>
+                          <span class="text-[11px] uppercase tracking-wider text-cv-ink-muted">{{ reel.campaign }}</span>
+                          <h3 class="font-headline uppercase text-2xl font-bold text-cv-ink tracking-[0.015em] truncate">{{ reel.reelTitle }}</h3>
                         </div>
-                        <span class="text-[11px] font-medium text-[#4ade80] shrink-0">{{ refreshNote() }}</span>
+                        <span class="text-[11px] font-medium text-cv-green shrink-0">{{ refreshNote() }}</span>
                       </div>
 
                       <!-- Unified Hairline Metric Grid -->
-                      <div class="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.12] rounded-[4px] bg-[#111111] border border-white/[0.14] tabular-nums">
+                      <div class="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-cv-divide rounded-[4px] bg-cv-well border border-cv-border tabular-nums">
                         <div class="px-3.5 py-3">
-                          <span class="text-[11px] text-[#a7a9be] block">Views</span>
-                          <span class="font-headline text-2xl font-bold text-[#fff6e8]">{{ formatCompact(reel.views) }}</span>
+                          <span class="text-[11px] text-cv-ink-muted block">Views</span>
+                          <span class="font-headline text-2xl font-bold text-cv-ink">{{ formatCompact(reel.views) }}</span>
                         </div>
                         <div class="px-3.5 py-3">
-                          <span class="text-[11px] text-[#a7a9be] block">Likes</span>
-                          <span class="font-headline text-2xl font-bold text-[#fabf29]">{{ formatCompact(reel.likes) }}</span>
+                          <span class="text-[11px] text-cv-ink-muted block">Likes</span>
+                          <span class="font-headline text-2xl font-bold text-cv-gold">{{ formatCompact(reel.likes) }}</span>
                         </div>
                         <div class="px-3.5 py-3">
-                          <span class="text-[11px] text-[#a7a9be] block">Saves</span>
-                          <span class="font-headline text-2xl font-bold text-[#ffccde]">{{ formatCompact(reel.saves) }}</span>
+                          <span class="text-[11px] text-cv-ink-muted block">Comments</span>
+                          <span class="font-headline text-2xl font-bold text-cv-green">{{ reel.comments }}</span>
                         </div>
                         <div class="px-3.5 py-3">
-                          <span class="text-[11px] text-[#a7a9be] block">Comments</span>
-                          <span class="font-headline text-2xl font-bold text-[#4ade80]">{{ reel.comments }}</span>
+                          <span class="text-[11px] text-cv-ink-muted block">Eng. Rate</span>
+                          <span class="font-headline text-2xl font-bold text-cv-blush">{{ reel.engagementRate }}%</span>
                         </div>
                       </div>
 
-                      <!-- Interactive Day-by-Day Bar Chart -->
-                      <div class="px-3.5 py-3 rounded-[4px] bg-[#111111] border border-white/[0.12]">
-                        <div class="flex items-center justify-between text-[11px] text-[#a7a9be] mb-2">
-                          <span>Hover bars to inspect daily view momentum</span>
-                          <span class="text-[#fff6e8] font-medium tabular-nums">
-                            Day {{ hoveredBarIdx() + 1 }}: +{{ formatCompact(reel.bars[hoveredBarIdx()] * 180) }} views
+                      <!-- Interactive Sync Snapshot Bar Chart -->
+                      <div class="px-3.5 py-3 rounded-[4px] bg-cv-well border border-cv-border-soft">
+                        <div class="flex items-center justify-between text-[11px] text-cv-ink-muted mb-2">
+                          <span>Hover bars to inspect sync snapshot momentum</span>
+                          <span class="text-cv-ink font-medium tabular-nums">
+                            Sync #{{ hoveredBarIdx() + 1 }}: +{{ formatCompact(reel.bars[hoveredBarIdx()] * 180) }} views
                           </span>
                         </div>
                         <div class="grid grid-cols-7 gap-2 items-end h-14">
@@ -258,7 +260,7 @@ interface SampleCreatorReel {
                                     class="w-full rounded-t-[2px] transition-all duration-150 cursor-pointer"
                                     [style.height.%]="val"
                                     [style.backgroundColor]="hoveredBarIdx() === $index ? '#f54e26' : (reel.accent + '88')"
-                                    [attr.aria-label]="'Day ' + ($index + 1) + ' momentum'">
+                                    [attr.aria-label]="'Sync snapshot ' + ($index + 1) + ' momentum'">
                             </button>
                           }
                         </div>
@@ -268,25 +270,25 @@ interface SampleCreatorReel {
                 } @else {
                   <!-- Interactive Campaign CSV Export Preview -->
                   <div class="pt-4 space-y-3">
-                    <div class="rounded-[4px] bg-[#111111] border border-white/[0.12] divide-y divide-white/[0.08] text-xs tabular-nums overflow-hidden">
-                      <div class="grid grid-cols-12 px-3 py-2 text-[11px] text-[#a7a9be] font-medium bg-[#181818]">
+                    <div class="rounded-[4px] bg-cv-well border border-cv-border-soft divide-y divide-cv-divide-soft text-xs tabular-nums overflow-hidden">
+                      <div class="grid grid-cols-12 px-3 py-2 text-[11px] text-cv-ink-muted font-medium bg-cv-card-alt">
                         <span class="col-span-5">Creator</span>
                         <span class="col-span-3 text-right">Views</span>
                         <span class="col-span-2 text-right">Likes</span>
-                        <span class="col-span-2 text-right">Saves</span>
+                        <span class="col-span-2 text-right">Cmts</span>
                       </div>
                       @for (r of sampleReels(); track r.id) {
                         <div (click)="selectSample(r.id); demoView.set('card')"
-                             class="grid grid-cols-12 px-3 py-2.5 items-center hover:bg-white/[0.04] cursor-pointer transition-colors">
-                          <span class="col-span-5 font-medium text-[#fff6e8] truncate">{{ r.handle }}</span>
+                             class="grid grid-cols-12 px-3 py-2.5 items-center hover:bg-cv-hover-row cursor-pointer transition-colors">
+                          <span class="col-span-5 font-medium text-cv-ink truncate">{{ r.handle }}</span>
                           <span class="col-span-3 text-right text-[#f54e26] font-semibold">{{ formatCompact(r.views) }}</span>
-                          <span class="col-span-2 text-right text-[#fabf29]">{{ formatCompact(r.likes) }}</span>
-                          <span class="col-span-2 text-right text-[#ffccde]">{{ formatCompact(r.saves) }}</span>
+                          <span class="col-span-2 text-right text-cv-gold">{{ formatCompact(r.likes) }}</span>
+                          <span class="col-span-2 text-right text-cv-green">{{ r.comments }}</span>
                         </div>
                       }
                     </div>
                     <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-                      <span class="text-xs text-[#a7a9be]">No manual copy-pasting from screenshots.</span>
+                      <span class="text-xs text-cv-ink-muted">No manual copy-pasting from screenshots.</span>
                       <button type="button"
                               (click)="downloadSampleCsv()"
                               class="h-8 px-3.5 rounded-[4px] bg-[#007656] hover:bg-[#058c68] text-[#fff6e8] text-xs font-semibold cursor-pointer transition-colors">
@@ -301,14 +303,14 @@ interface SampleCreatorReel {
 
           <!-- Crossing Diagonal Ribbons -->
           <div class="relative mt-14 sm:mt-20 select-none pointer-events-none">
-            <div class="w-[112%] -ml-[6%] h-12 sm:h-14 bg-[#262626] rotate-[2.2deg] translate-y-6 opacity-90"></div>
+            <div class="w-[112%] -ml-[6%] h-12 sm:h-14 bg-cv-ribbon-back rotate-[2.2deg] translate-y-6 opacity-90"></div>
             <div class="w-[112%] -ml-[6%] -mt-9 bg-[#f54e26] -rotate-[2.4deg] py-2.5 sm:py-3 overflow-hidden shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
               <div class="animate-marquee font-headline uppercase font-bold text-xl sm:text-[1.75rem] tracking-[0.04em] text-[#fff6e8] leading-none flex items-center gap-6 whitespace-nowrap">
                 <span>NO CREATOR PASSWORDS</span>
                 <span>◆</span>
                 <span>ONE PUBLIC REEL LINK</span>
                 <span>◆</span>
-                <span>REAL VIEWS &amp; SAVES</span>
+                <span>REAL VIEWS &amp; ROI</span>
                 <span>◆</span>
                 <span>ZERO FOLLOW-UP DMS</span>
                 <span>◆</span>
@@ -320,7 +322,7 @@ interface SampleCreatorReel {
                 <span>◆</span>
                 <span>ONE PUBLIC REEL LINK</span>
                 <span>◆</span>
-                <span>REAL VIEWS &amp; SAVES</span>
+                <span>REAL VIEWS &amp; ROI</span>
                 <span>◆</span>
                 <span>ZERO FOLLOW-UP DMS</span>
                 <span>◆</span>
@@ -338,7 +340,7 @@ interface SampleCreatorReel {
           <div class="max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
             <!-- Left Bold Typographic Story -->
             <div class="lg:col-span-6">
-              <h2 class="font-headline uppercase font-bold text-3xl sm:text-5xl leading-[1.02] tracking-[0.01em] text-[#fff6e8]">
+              <h2 class="font-headline uppercase font-bold text-3xl sm:text-5xl leading-[1.02] tracking-[0.01em] text-cv-ink">
                 BUILT SO BRAND TEAMS<br/>
                 NEVER BEG CREATORS<br/>
                 <span class="group/word relative inline-block text-[#f54e26] cursor-default transition-transform duration-200 hover:-rotate-1">
@@ -347,24 +349,24 @@ interface SampleCreatorReel {
                     <path d="M4 9 C 60 3, 150 13, 214 6" stroke="#fabf29" stroke-width="3.2" stroke-linecap="round" class="doodle-draw-hover"/>
                   </svg>
                 </span><br/>
-                <span class="inline-block text-[#d0d5ff] transition-transform duration-200 hover:translate-x-1">EVER AGAIN.</span>
+                <span class="inline-block text-cv-periwinkle transition-transform duration-200 hover:translate-x-1">EVER AGAIN.</span>
               </h2>
-              <p class="mt-5 text-sm sm:text-base text-[#a7a9be] leading-[1.7] max-w-lg">
+              <p class="mt-5 text-sm sm:text-base text-cv-ink-muted leading-[1.7] max-w-lg">
                 Every launch ends the same way: ten open DM threads, cropped phone screenshots with missing counts, and a Friday afternoon deadline. Slide the number of creators in your campaign to see how much chasing Converge removes.
               </p>
 
               <!-- Overlapping circular badges row with springy hover doodles -->
               <div class="mt-6 flex items-center -space-x-2.5 select-none">
-                <div class="w-11 h-11 rounded-full bg-[#f54e26] text-[#fff6e8] flex items-center justify-center border-2 border-[#1c1c1c] font-headline font-bold text-sm transition-transform duration-200 hover:-translate-y-1.5 hover:z-10">
+                <div class="w-11 h-11 rounded-full bg-[#f54e26] text-[#fff6e8] flex items-center justify-center border-2 border-cv-canvas font-headline font-bold text-sm transition-transform duration-200 hover:-translate-y-1.5 hover:z-10">
                   IG
                 </div>
-                <div class="w-11 h-11 rounded-full bg-[#5738af] text-[#fff6e8] flex items-center justify-center border-2 border-[#1c1c1c] font-headline font-bold text-xs transition-transform duration-200 hover:-translate-y-1.5 hover:z-10">
+                <div class="w-11 h-11 rounded-full bg-[#5738af] text-[#fff6e8] flex items-center justify-center border-2 border-cv-canvas font-headline font-bold text-xs transition-transform duration-200 hover:-translate-y-1.5 hover:z-10">
                   142K
                 </div>
-                <div class="w-11 h-11 rounded-full bg-[#fabf29] text-[#111111] flex items-center justify-center border-2 border-[#1c1c1c] font-headline font-bold text-xs transition-transform duration-200 hover:-translate-y-1.5 hover:z-10">
+                <div class="w-11 h-11 rounded-full bg-[#fabf29] text-[#111111] flex items-center justify-center border-2 border-cv-canvas font-headline font-bold text-xs transition-transform duration-200 hover:-translate-y-1.5 hover:z-10">
                   SAVE
                 </div>
-                <div class="w-11 h-11 rounded-full bg-[#007656] text-[#fff6e8] flex items-center justify-center border-2 border-[#1c1c1c] font-headline font-bold text-xs transition-transform duration-200 hover:-translate-y-1.5 hover:z-10">
+                <div class="w-11 h-11 rounded-full bg-[#007656] text-[#fff6e8] flex items-center justify-center border-2 border-cv-canvas font-headline font-bold text-xs transition-transform duration-200 hover:-translate-y-1.5 hover:z-10">
                   CSV
                 </div>
               </div>
@@ -377,20 +379,20 @@ interface SampleCreatorReel {
                 <div class="px-2.5 py-1 bg-[#5738af] text-[#fff6e8] font-headline font-bold text-lg tracking-wide -rotate-12 -mr-2 z-10 shadow-md">
                   NO DMS!
                 </div>
-                <div class="w-12 h-12 rounded-full bg-[#242424] border border-white/15 flex items-center justify-center shadow-lg">
+                <div class="w-12 h-12 rounded-full bg-cv-control border border-cv-border flex items-center justify-center shadow-lg">
                   <div class="flex items-center gap-1.5">
-                    <span class="w-2.5 h-3.5 rounded-full bg-[#fff6e8] flex items-center justify-end pr-0.5"><span class="w-1 h-1 rounded-full bg-[#111111]"></span></span>
-                    <span class="w-2.5 h-3.5 rounded-full bg-[#fff6e8] flex items-center justify-end pr-0.5"><span class="w-1 h-1 rounded-full bg-[#111111]"></span></span>
+                    <span class="w-2.5 h-3.5 rounded-full bg-[#fff6e8] border border-[#111111]/20 flex items-center justify-end pr-0.5"><span class="w-1 h-1 rounded-full bg-[#111111]"></span></span>
+                    <span class="w-2.5 h-3.5 rounded-full bg-[#fff6e8] border border-[#111111]/20 flex items-center justify-end pr-0.5"><span class="w-1 h-1 rounded-full bg-[#111111]"></span></span>
                   </div>
                 </div>
               </div>
 
-              <div class="rounded-[6px] bg-[#161616] border border-white/[0.16] shadow-[6px_6px_0px_#fabf29] p-5 sm:p-6">
-                <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-white/[0.12]">
+              <div class="rounded-[6px] bg-cv-card border border-cv-border shadow-[6px_6px_0px_#fabf29] p-5 sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-cv-border-soft">
                   <div>
-                    <span class="text-xs text-[#a7a9be] block">Campaign Size</span>
-                    <h3 class="font-headline uppercase text-2xl font-bold text-[#fff6e8] leading-tight">
-                      <span class="text-[#fabf29]">{{ creatorCount() }}</span> CREATORS IN LAUNCH
+                    <span class="text-xs text-cv-ink-muted block">Campaign Size</span>
+                    <h3 class="font-headline uppercase text-2xl font-bold text-cv-ink leading-tight">
+                      <span class="text-cv-gold">{{ creatorCount() }}</span> CREATORS IN LAUNCH
                     </h3>
                   </div>
                   <div class="flex items-center gap-1.5">
@@ -400,7 +402,7 @@ interface SampleCreatorReel {
                               class="px-2.5 py-1 rounded-[4px] text-xs font-medium cursor-pointer transition-colors tabular-nums"
                               [ngClass]="creatorCount() === preset
                                 ? 'bg-[#fabf29] text-[#111111] font-semibold'
-                                : 'bg-[#111111] border border-white/[0.14] text-[#a7a9be] hover:text-[#fff6e8]'">
+                                : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
                         {{ preset }}
                       </button>
                     }
@@ -416,25 +418,25 @@ interface SampleCreatorReel {
                     (ngModelChange)="creatorCount.set(+$event)"
                     aria-label="Number of creators in campaign"
                     class="w-full accent-[#f54e26] cursor-pointer"/>
-                  <div class="flex justify-between text-[11px] text-[#a7a9be] mt-1 tabular-nums">
+                  <div class="flex justify-between text-[11px] text-cv-ink-muted mt-1 tabular-nums">
                     <span>3 creators</span>
                     <span>30 creators</span>
                     <span>60 creators</span>
                   </div>
                 </div>
 
-                <div class="grid grid-cols-3 divide-x divide-white/[0.12] rounded-[4px] bg-[#111111] border border-white/[0.14] tabular-nums text-center">
+                <div class="grid grid-cols-3 divide-x divide-cv-divide rounded-[4px] bg-cv-well border border-cv-border tabular-nums text-center">
                   <div class="py-3 px-2">
                     <span class="font-headline text-2xl sm:text-3xl font-bold text-[#f54e26] block leading-none">{{ followUpDmsSaved() }}</span>
-                    <span class="text-[11px] text-[#a7a9be] mt-1 block">DMs skipped</span>
+                    <span class="text-[11px] text-cv-ink-muted mt-1 block">DMs skipped</span>
                   </div>
                   <div class="py-3 px-2">
-                    <span class="font-headline text-2xl sm:text-3xl font-bold text-[#fabf29] block leading-none">{{ hoursSavedMonthly() }}h</span>
-                    <span class="text-[11px] text-[#a7a9be] mt-1 block">Recap time saved</span>
+                    <span class="font-headline text-2xl sm:text-3xl font-bold text-cv-gold block leading-none">{{ hoursSavedMonthly() }}h</span>
+                    <span class="text-[11px] text-cv-ink-muted mt-1 block">Recap time saved</span>
                   </div>
                   <div class="py-3 px-2">
-                    <span class="font-headline text-2xl sm:text-3xl font-bold text-[#4ade80] block leading-none">0</span>
-                    <span class="text-[11px] text-[#a7a9be] mt-1 block">Logins asked</span>
+                    <span class="font-headline text-2xl sm:text-3xl font-bold text-cv-green block leading-none">0</span>
+                    <span class="text-[11px] text-cv-ink-muted mt-1 block">Logins asked</span>
                   </div>
                 </div>
               </div>
@@ -447,7 +449,7 @@ interface SampleCreatorReel {
           <div class="max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             <!-- Left: Bold Condensed Statement + Responsive SVG Venn -->
             <div class="lg:col-span-5">
-              <h2 class="font-headline uppercase font-bold text-3xl sm:text-5xl leading-[1.03] tracking-[0.01em] text-[#fff6e8]">
+              <h2 class="font-headline uppercase font-bold text-3xl sm:text-5xl leading-[1.03] tracking-[0.01em] text-cv-ink">
                 ONE LINK IN. REAL NUMBERS, CLEAN CAMPAIGNS, READY REPORTS.
               </h2>
 
@@ -455,7 +457,7 @@ interface SampleCreatorReel {
               <div class="mt-8 relative w-72 sm:w-80 mx-auto lg:mx-0 select-none">
                 <svg class="w-full h-auto" viewBox="0 0 340 220" fill="none">
                   <g transform="translate(8, 128)">
-                    <circle cx="28" cy="28" r="24" fill="#fff6e8"/>
+                    <circle cx="28" cy="28" r="24" fill="var(--cv-ink)"/>
                     <circle cx="28" cy="28" r="17" stroke="#fabf29" stroke-width="2.2"/>
                     <ellipse cx="28" cy="28" rx="9" ry="17" stroke="#fabf29" stroke-width="2"/>
                     <line x1="11" y1="28" x2="45" y2="28" stroke="#fabf29" stroke-width="2"/>
@@ -471,7 +473,7 @@ interface SampleCreatorReel {
                             class="transition-all duration-300 cursor-pointer"
                             (click)="toggleAccordion('link')"/>
                     <text x="113" y="109" text-anchor="middle"
-                          [attr.fill]="openAccordionId() === 'link' ? '#fff6e8' : '#a7a9be'"
+                          [attr.fill]="openAccordionId() === 'link' ? '#fff6e8' : '#d4d8e8'"
                           font-size="11" font-weight="600" font-family="DM Sans, sans-serif">CREATORS</text>
 
                     <!-- Right Venn Circle: BRANDS -->
@@ -480,7 +482,7 @@ interface SampleCreatorReel {
                             class="transition-all duration-300 cursor-pointer"
                             (click)="toggleAccordion('organize')"/>
                     <text x="228" y="109" text-anchor="middle"
-                          [attr.fill]="openAccordionId() === 'organize' ? '#fff6e8' : '#a7a9be'"
+                          [attr.fill]="openAccordionId() === 'organize' ? '#fff6e8' : '#d4d8e8'"
                           font-size="11" font-weight="600" font-family="DM Sans, sans-serif">BRANDS</text>
 
                     <!-- Center Intersection Lens: REELS -->
@@ -501,29 +503,29 @@ interface SampleCreatorReel {
                     <path d="M14 5 L16.5 11.5 L23 14 L16.5 16.5 L14 23 L11.5 16.5 L5 14 L11.5 11.5 Z" fill="#5738af"/>
                   </g>
                 </svg>
-                <p class="text-xs text-[#a7a9be] mt-2 text-center lg:text-left">
+                <p class="text-xs text-cv-ink-muted mt-2 text-center lg:text-left">
                   Click any step on the right or circle above to inspect how they connect.
                 </p>
               </div>
             </div>
 
             <!-- Right: Clean Hairline Accordion -->
-            <div class="lg:col-span-7 border-t border-white/[0.16]">
+            <div class="lg:col-span-7 border-t border-cv-border">
               @for (item of accordionItems; track item.id) {
-                <div class="border-b border-white/[0.16]">
+                <div class="border-b border-cv-border">
                   <button type="button"
                           (click)="openAccordionId.set(item.id)"
                           class="w-full py-5 sm:py-6 flex items-center justify-between gap-4 text-left cursor-pointer group">
                     <span class="font-headline uppercase font-bold text-2xl sm:text-3xl tracking-[0.02em] transition-colors"
-                          [ngClass]="openAccordionId() === item.id ? 'text-[#f54e26]' : 'text-[#fff6e8]/85 group-hover:text-[#fff6e8]'">
+                          [ngClass]="openAccordionId() === item.id ? 'text-[#f54e26]' : 'text-cv-ink/85 group-hover:text-cv-ink'">
                       {{ item.title }}
                     </span>
-                    <span class="text-2xl font-light text-[#a7a9be] group-hover:text-[#fff6e8] transition-colors shrink-0 leading-none">
+                    <span class="text-2xl font-light text-cv-ink-muted group-hover:text-cv-ink transition-colors shrink-0 leading-none">
                       {{ openAccordionId() === item.id ? '−' : '+' }}
                     </span>
                   </button>
                   @if (openAccordionId() === item.id) {
-                    <div class="pb-6 pr-8 text-sm sm:text-base text-[#a7a9be] leading-relaxed animate-fade-in-up">
+                    <div class="pb-6 pr-8 text-sm sm:text-base text-cv-ink-muted leading-relaxed animate-fade-in-up">
                       {{ item.body }}
                     </div>
                   }
@@ -538,7 +540,7 @@ interface SampleCreatorReel {
           <div class="max-w-[1320px] mx-auto">
             <div class="flex items-center justify-center mb-12 relative">
               <div class="relative inline-block text-center">
-                <h2 class="font-headline uppercase font-bold text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.02] tracking-[0.01em] text-[#fff6e8]">
+                <h2 class="font-headline uppercase font-bold text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.02] tracking-[0.01em] text-cv-ink">
                   HOW CONVERGE HELPS<br/>
                   TEAMS EVERY WEEK
                 </h2>
@@ -556,17 +558,17 @@ interface SampleCreatorReel {
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <!-- Click/Hover Index Rows -->
-              <div class="lg:col-span-7 border-t border-white/[0.16]">
+              <div class="lg:col-span-7 border-t border-cv-border">
                 @for (row of workflows; track row.id) {
                   <button
                     type="button"
                     (mouseenter)="selectedWorkflowId.set(row.id)"
                     (click)="selectedWorkflowId.set(row.id)"
-                    class="w-full text-left py-6 sm:py-7 px-3 border-b border-white/[0.16] flex items-center justify-between gap-4 group transition-colors cursor-pointer"
-                    [ngClass]="selectedWorkflowId() === row.id ? 'bg-white/[0.03]' : 'hover:bg-white/[0.015]'">
+                    class="w-full text-left py-6 sm:py-7 px-3 border-b border-cv-border flex items-center justify-between gap-4 group transition-colors cursor-pointer"
+                    [ngClass]="selectedWorkflowId() === row.id ? 'bg-cv-hover-subtle' : 'hover:bg-cv-hover-subtle'">
                     <div class="min-w-0">
                       <h3 class="font-headline uppercase font-bold text-3xl sm:text-4xl leading-[1] tracking-[0.01em] transition-colors"
-                          [ngClass]="selectedWorkflowId() === row.id ? 'text-[#f54e26]' : 'text-[#fff6e8] group-hover:text-[#f54e26]'">
+                          [ngClass]="selectedWorkflowId() === row.id ? 'text-[#f54e26]' : 'text-cv-ink group-hover:text-[#f54e26]'">
                         {{ row.title }}
                       </h3>
                       <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -574,14 +576,14 @@ interface SampleCreatorReel {
                           {{ row.primaryTag }}
                         </span>
                         @for (t of row.tags; track t) {
-                          <span class="px-2.5 py-0.5 rounded-[4px] bg-[#141414] border border-white/[0.14] text-[#e8e8ee] text-xs font-medium">
+                          <span class="px-2.5 py-0.5 rounded-[4px] bg-cv-card-soft border border-cv-border text-cv-ink-soft text-xs font-medium">
                             {{ t }}
                           </span>
                         }
                       </div>
                     </div>
                     <span class="font-headline text-2xl shrink-0 transition-transform"
-                          [ngClass]="selectedWorkflowId() === row.id ? 'text-[#f54e26] translate-x-1' : 'text-[#a7a9be]'">→</span>
+                          [ngClass]="selectedWorkflowId() === row.id ? 'text-[#f54e26] translate-x-1' : 'text-cv-ink-muted'">→</span>
                   </button>
                 }
               </div>
@@ -589,23 +591,23 @@ interface SampleCreatorReel {
               <!-- Sticky Live Workflow Preview Card -->
               <div class="lg:col-span-5 lg:sticky lg:top-24">
                 @if (activeWorkflow(); as wf) {
-                  <div class="rounded-[6px] bg-[#161616] border-2 border-white/[0.18] p-6 transition-all duration-200"
+                  <div class="rounded-[6px] bg-cv-card border-2 border-cv-border-strong p-6 transition-all duration-200"
                        [style.boxShadow]="'8px 8px 0px ' + wf.accent">
-                    <div class="flex items-center justify-between gap-2 pb-4 border-b border-white/[0.12] text-xs">
-                      <span class="text-[#a7a9be] font-medium">{{ wf.previewHandle }}</span>
+                    <div class="flex items-center justify-between gap-2 pb-4 border-b border-cv-border-soft text-xs">
+                      <span class="text-cv-ink-muted font-medium">{{ wf.previewHandle }}</span>
                       <span class="px-2 py-0.5 rounded-[3px] text-[11px] font-bold text-[#111111]" [style.backgroundColor]="wf.accent">
                         {{ wf.previewDelta }}
                       </span>
                     </div>
-                    <p class="font-headline uppercase text-4xl sm:text-5xl font-bold text-[#fff6e8] tracking-wide mt-5 leading-none">
+                    <p class="font-headline uppercase text-4xl sm:text-5xl font-bold text-cv-ink tracking-wide mt-5 leading-none">
                       {{ wf.previewStat }}
                     </p>
-                    <p class="text-sm text-[#a7a9be] mt-3 leading-relaxed">
+                    <p class="text-sm text-cv-ink-muted mt-3 leading-relaxed">
                       {{ wf.previewNote }}
                     </p>
-                    <div class="mt-6 pt-4 border-t border-white/[0.12] flex items-center justify-between">
-                      <span class="text-xs text-[#a7a9be]">Ready in your brand workspace</span>
-                      <a routerLink="/auth" [queryParams]="{mode: 'signup'}" class="font-headline uppercase text-base font-bold text-[#f54e26] hover:text-[#fff6e8] transition-colors">
+                    <div class="mt-6 pt-4 border-t border-cv-border-soft flex items-center justify-between">
+                      <span class="text-xs text-cv-ink-muted">Ready in your brand workspace</span>
+                      <a routerLink="/auth" [queryParams]="{mode: 'signup'}" class="font-headline uppercase text-base font-bold text-[#f54e26] hover:text-cv-ink transition-colors">
                         TRY THIS WORKFLOW ↗
                       </a>
                     </div>
@@ -619,7 +621,7 @@ interface SampleCreatorReel {
         <!-- ================= BAND 5: BEFORE / AFTER SWITCHER + COLOR-BLOCKED CARDS ================= -->
         <section class="py-12 sm:py-20 overflow-hidden">
           <div class="py-5 overflow-hidden select-none">
-            <div class="animate-marquee-slow font-headline uppercase font-bold text-4xl sm:text-6xl tracking-[0.02em] text-[#2b2b2e] whitespace-nowrap flex items-center gap-8">
+            <div class="animate-marquee-slow font-headline uppercase font-bold text-4xl sm:text-6xl tracking-[0.02em] text-cv-ink/[0.09] whitespace-nowrap flex items-center gap-8">
               <span>NO MORE SCREENSHOTS.</span>
               <span>ONE PUBLIC LINK.</span>
               <span>RESPECT CREATORS TIME.</span>
@@ -638,21 +640,21 @@ interface SampleCreatorReel {
               <div class="hidden sm:flex w-11 h-10 rounded-t-2xl rounded-br-2xl bg-[#007656] text-[#ffccde] font-headline font-bold text-2xl items-center justify-center -rotate-12 absolute -left-10 -top-6 shadow-md select-none">
                 “”
               </div>
-              <h2 class="font-headline uppercase font-bold text-4xl sm:text-5xl tracking-[0.01em] text-[#fff6e8]">
+              <h2 class="font-headline uppercase font-bold text-4xl sm:text-5xl tracking-[0.01em] text-cv-ink">
                 WHY TEAMS ACTUALLY SWITCHED
               </h2>
             </div>
 
             <!-- Interactive Before / After Comparison Switch -->
-            <div class="mt-6 inline-grid grid-cols-2 p-1 rounded-[4px] bg-[#111111] border border-white/[0.18]">
+            <div class="mt-6 inline-grid grid-cols-2 p-1 rounded-[4px] bg-cv-well border border-cv-border-strong">
               <button type="button" (click)="compareMode.set('after')"
                       class="px-4 py-2 rounded-[3px] font-headline uppercase text-base tracking-[0.03em] font-bold cursor-pointer transition-colors"
-                      [ngClass]="compareMode() === 'after' ? 'bg-[#f54e26] text-[#111111]' : 'text-[#a7a9be] hover:text-[#fff6e8]'">
+                      [ngClass]="compareMode() === 'after' ? 'bg-[#f54e26] text-[#111111]' : 'text-cv-ink-muted hover:text-cv-ink'">
                 WITH CONVERGE
               </button>
               <button type="button" (click)="compareMode.set('before')"
                       class="px-4 py-2 rounded-[3px] font-headline uppercase text-base tracking-[0.03em] font-bold cursor-pointer transition-colors"
-                      [ngClass]="compareMode() === 'before' ? 'bg-[#fff6e8] text-[#111111]' : 'text-[#a7a9be] hover:text-[#fff6e8]'">
+                      [ngClass]="compareMode() === 'before' ? 'bg-cv-ink text-cv-ink-inverse' : 'text-cv-ink-muted hover:text-cv-ink'">
                 THE OLD WAY (DMS)
               </button>
             </div>
@@ -661,7 +663,7 @@ interface SampleCreatorReel {
           <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10">
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
               @for (card of activeCompareCards(); track card.tag) {
-                <div class="rounded-2xl text-[#1b1b1b] p-6 sm:p-7 flex flex-col justify-between min-h-[235px] card-hover transition-all duration-200"
+                <div class="rounded-2xl text-[#1b1b1b] p-6 sm:p-7 flex flex-col justify-between min-h-[235px] card-hover transition-all duration-200 border border-[#111111]/10"
                      [style.backgroundColor]="card.bg">
                   <div>
                     <h3 class="font-headline uppercase font-bold text-2xl leading-tight">
@@ -684,7 +686,7 @@ interface SampleCreatorReel {
         <!-- ================= BAND 6: COMPACT FINAL CTA ================= -->
         <section class="py-14 sm:py-20 px-4 sm:px-6 lg:px-10 text-center">
           <div class="max-w-[960px] mx-auto">
-            <p class="font-headline uppercase font-bold text-3xl sm:text-5xl leading-[1.15] tracking-[0.01em] text-[#fff6e8]">
+            <p class="font-headline uppercase font-bold text-3xl sm:text-5xl leading-[1.15] tracking-[0.01em] text-cv-ink">
               PASTE ONE
               <button type="button" (click)="jumpToDemo('card')" class="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#e940a5] text-[#fff6e8] text-sm align-middle mx-1 -rotate-6 shadow-md hover:scale-125 hover:rotate-6 transition-transform duration-200 cursor-pointer">IG</button>
               REEL URL, KEEP
@@ -697,12 +699,12 @@ interface SampleCreatorReel {
             <div class="mt-14">
               @if (auth.isAuthenticated()) {
                 <a [routerLink]="dashboardRoute()"
-                   class="inline-flex items-center justify-center px-8 py-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border-2 border-[#111111] shadow-[6px_6px_0px_#fff6e8] font-headline uppercase font-bold text-2xl sm:text-3xl tracking-[0.03em] transition-all">
+                   class="inline-flex items-center justify-center px-8 py-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border-2 border-[#111111] shadow-[6px_6px_0px_var(--cv-shadow-ink)] font-headline uppercase font-bold text-2xl sm:text-3xl tracking-[0.03em] transition-all">
                   OPEN WORKSPACE ↗
                 </a>
               } @else {
                 <a routerLink="/auth" [queryParams]="{mode: 'signup'}"
-                   class="inline-flex items-center justify-center px-8 py-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border-2 border-[#111111] shadow-[6px_6px_0px_#fff6e8] font-headline uppercase font-bold text-2xl sm:text-3xl tracking-[0.03em] transition-all">
+                   class="inline-flex items-center justify-center px-8 py-4 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] border-2 border-[#111111] shadow-[6px_6px_0px_var(--cv-shadow-ink)] font-headline uppercase font-bold text-2xl sm:text-3xl tracking-[0.03em] transition-all">
                   GET STARTED FREE ↗
                 </a>
               }
@@ -796,7 +798,7 @@ export class LandingComponent {
       views: 142800,
       likes: 8420,
       comments: 318,
-      saves: 1940,
+      engagementRate: 6.12,
       accent: '#f54e26',
       bars: [28, 46, 72, 64, 92, 84, 78]
     },
@@ -809,7 +811,7 @@ export class LandingComponent {
       views: 89400,
       likes: 5120,
       comments: 194,
-      saves: 1210,
+      engagementRate: 5.94,
       accent: '#fabf29',
       bars: [35, 58, 86, 94, 76, 62, 68]
     },
@@ -822,7 +824,7 @@ export class LandingComponent {
       views: 214500,
       likes: 12900,
       comments: 482,
-      saves: 3420,
+      engagementRate: 6.24,
       accent: '#007656',
       bars: [22, 40, 60, 88, 98, 90, 85]
     }
@@ -851,7 +853,7 @@ export class LandingComponent {
     {
       id: 'metrics',
       title: 'GET REAL POST NUMBERS',
-      body: 'Views, likes, saves, and comments pull straight from the live post so nobody squints at cropped screenshots or outdated counts.'
+      body: 'Views, likes, comments, and engagement rate pull straight from the live Reel—with optional Creator OAuth unlocking saves, shares, reach, and watch time.'
     },
     {
       id: 'organize',
@@ -870,11 +872,11 @@ export class LandingComponent {
       id: 'live',
       title: 'BEFORE ANY CLIENT CALL',
       primaryTag: 'Live Metrics',
-      tags: ['Views', 'Likes', 'Saves', 'Comments'],
+      tags: ['Views', 'Likes', 'Comments', 'Sync Deltas'],
       previewHandle: '@sarah.creates',
       previewStat: '142.8K VIEWS',
-      previewDelta: '+6.4K TODAY',
-      previewNote: 'Updated directly from the live Reel right before your client review starts.',
+      previewDelta: '+6.4K LAST SYNC',
+      previewNote: 'Updated directly from the live Reel with sync-over-sync deltas before your review starts.',
       accent: '#f54e26'
     },
     {
@@ -967,7 +969,7 @@ export class LandingComponent {
       {
         bg: '#a7b2db',
         title: 'VIEWS STILL GROW AFTER DAY ONE',
-        body: 'Click refresh before Monday’s review and see current views, likes, saves, and comments immediately.',
+        body: 'Click refresh before Monday’s review and see current views, likes, comments, and snapshot growth deltas immediately.',
         tag: 'Live Numbers',
         note: 'Client Ready'
       },
@@ -1013,13 +1015,15 @@ export class LandingComponent {
         if (item.id !== targetId) return item;
         const deltaViews = 1400 + Math.floor(Math.random() * 900);
         const deltaLikes = 85 + Math.floor(Math.random() * 60);
-        const deltaSaves = 24 + Math.floor(Math.random() * 20);
+        const nextViews = item.views + deltaViews;
+        const nextLikes = item.likes + deltaLikes;
+        const nextComments = item.comments + 6;
         return {
           ...item,
-          views: item.views + deltaViews,
-          likes: item.likes + deltaLikes,
-          saves: item.saves + deltaSaves,
-          comments: item.comments + 6
+          views: nextViews,
+          likes: nextLikes,
+          comments: nextComments,
+          engagementRate: Math.round(((nextLikes + nextComments) * 100 / nextViews) * 100) / 100
         };
       }));
       this.refreshNote.set('Updated just now ✓');
@@ -1028,9 +1032,9 @@ export class LandingComponent {
   }
 
   downloadSampleCsv() {
-    const rows = ['Creator,Campaign,Reel,Views,Likes,Saves,Comments'];
+    const rows = ['Creator,Campaign,Reel,Views,Likes,Comments,EngagementRate'];
     for (const r of this.sampleReels()) {
-      rows.push(`${r.handle},"${r.campaign}","${r.reelTitle}",${r.views},${r.likes},${r.saves},${r.comments}`);
+      rows.push(`${r.handle},"${r.campaign}","${r.reelTitle}",${r.views},${r.likes},${r.comments},${r.engagementRate}%`);
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
