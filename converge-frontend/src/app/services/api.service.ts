@@ -371,8 +371,10 @@ export class ApiService {
     return this.http.post<ReelDeliverable>(`/api/instagram/deliverables/${deliverableId}/sync`, {});
   }
 
-  syncBrandDeliverables(brandId: string): Observable<{ syncedCount: number; verifiedCount?: number; pendingCount?: number; metaConfigured?: boolean; status: string; syncedAt: string }> {
-    return this.http.post<any>(`/api/brands/${brandId}/sync`, {});
+  syncBrandDeliverables(brandId: string, source?: 'login' | 'manual'): Observable<{ syncedCount: number; verifiedCount?: number; pendingCount?: number; metaConfigured?: boolean; status: string; syncedAt: string }> {
+    let params = new HttpParams();
+    if (source) params = params.set('source', source);
+    return this.http.post<any>(`/api/brands/${brandId}/sync`, {}, { params });
   }
 
   getInstagramOAuthUrl(state?: string): Observable<{ authorizeUrl: string; redirectUri: string; scopes: string[] }> {

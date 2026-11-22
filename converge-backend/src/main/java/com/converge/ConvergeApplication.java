@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.File;
 import java.net.URI;
@@ -15,6 +16,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 @SpringBootApplication
+@EnableScheduling
 public class ConvergeApplication {
 
     private static final Pattern VERSION_SUFFIX_PATTERN = Pattern.compile(".*/v\\d+(?:\\.\\d+)?$");

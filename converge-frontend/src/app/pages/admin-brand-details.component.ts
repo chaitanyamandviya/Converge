@@ -670,7 +670,7 @@ export class AdminBrandDetailsComponent implements OnInit, OnDestroy, DashboardE
     }, 3200);
   }
 
-  loadOverview() {
+  loadOverview(skipAutoLoginSync = false) {
     this.api.getBrandOverview(this.brandId).subscribe({
       next: (res) => {
         this.brand.set(res.brand);
@@ -679,10 +679,32 @@ export class AdminBrandDetailsComponent implements OnInit, OnDestroy, DashboardE
         this.recentReels.set(res.recentReels);
         this.stats.set(res.stats);
         this.loaded.set(true);
+        if (!skipAutoLoginSync && this.auth.shouldAutoSyncBrandOnVisit(this.brandId) && ((res.recentReels?.length || 0) > 0 || (res.creators?.length || 0) > 0)) {
+          this.triggerAutoSyncOnLogin();
+        }
       },
       error: (err) => {
         this.loaded.set(true);
         this.showToast(err?.error?.error || 'Could not load brand details.');
+      }
+    });
+  }
+
+  private triggerAutoSyncOnLogin(): void {
+    if (this.syncing()) return;
+    this.syncing.set(true);
+    this.api.syncBrandDeliverables(this.brandId, 'login').subscribe({
+      next: (res) => {
+        this.syncing.set(false);
+        if (res.status !== 'RECENTLY_SYNCED' && (res.syncedCount || 0) > 0) {
+          this.loadOverview(true);
+          if (this.activeTab() === 'audit') {
+            this.loadAuditLogs();
+          }
+        }
+      },
+      error: () => {
+        this.syncing.set(false);
       }
     });
   }

@@ -115,8 +115,14 @@ public class BrandController {
     }
 
     @PostMapping("/{id}/sync")
-    public Map<String, Object> sync(@PathVariable UUID id, Authentication auth) {
+    public Map<String, Object> sync(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String source,
+            Authentication auth) {
         brandService.requireBrandAccess(id, auth);
+        if ("login".equalsIgnoreCase(source)) {
+            return brandService.syncBrandDeliverablesOnLogin(id, brandService.resolveActor(auth, "Login Auto-Sync"), auth);
+        }
         return brandService.syncBrandDeliverables(id, brandService.resolveActor(auth, "Workspace Manager"), auth);
     }
 

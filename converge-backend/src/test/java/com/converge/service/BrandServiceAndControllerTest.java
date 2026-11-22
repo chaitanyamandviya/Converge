@@ -672,4 +672,60 @@ class BrandServiceAndControllerTest {
         assertEquals(2, snapshots.size());
         assertEquals(200L, ((Number) snapshots.get(1).get("deltaViews")).longValue());
     }
+
+    @Test
+    void scheduledAndLoginSyncFetchLatestViewsAndRespectCooldownWhileManualAlwaysRuns() {
+        UUID brandId = UUID.randomUUID();
+        UUID creatorId = UUID.randomUUID();
+        UUID deliverableId = UUID.randomUUID();
+
+        Brand brand = new Brand();
+        brand.setId(brandId);
+        brand.setName("Aura");
+        brand.setStatus("ACTIVE");
+        brand.setManagerEmail("brand@aura.test");
+
+        com.converge.entity.Creator creator = new com.converge.entity.Creator();
+        creator.setId(creatorId);
+        creator.setBrandId(brandId);
+        creator.setName("Aman");
+        creator.setHandle("@aman.gulabani");
+        creator.setSourceType("DIRECT");
+
+        com.converge.entity.ReelDeliverable reel = new com.converge.entity.ReelDeliverable();
+        reel.setId(deliverableId);
+        reel.setBrandId(brandId);
+        reel.setCreatorId(creatorId);
+        reel.setViewsCount(1000L);
+        reel.setStatus("VERIFIED");
+
+        when(brandRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(brand));
+        when(brandRepository.findById(brandId)).thenReturn(Optional.of(brand));
+        when(creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId)).thenReturn(List.of(creator));
+        when(reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId)).thenReturn(List.of(reel));
+        when(reelRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(creatorRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(brandRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(instagramGraphService.isBusinessDiscoveryConfigured()).thenReturn(true);
+
+        doAnswer(inv -> {
+            com.converge.entity.ReelDeliverable target = inv.getArgument(0);
+            target.setViewsCount(target.getViewsCount() + 500L);
+            return null;
+        }).when(instagramGraphService).syncReelDeliverable(any(), any());
+
+        int syncedBrands = brandService.runScheduledInstagramSync();
+        assertEquals(1, syncedBrands);
+        assertEquals(1500L, reel.getViewsCount());
+
+        // Immediate follow-up login auto-sync within 60s cooldown returns RECENTLY_SYNCED without re-hitting Meta
+        Map<String, Object> loginRes = brandService.syncBrandDeliverablesOnLogin(brandId, "Login Auto-Sync", null);
+        assertEquals("RECENTLY_SYNCED", loginRes.get("status"));
+        assertEquals(1500L, reel.getViewsCount());
+
+        // Manual sync still forces an immediate refresh even during auto-sync cooldown
+        Map<String, Object> manualRes = brandService.syncBrandDeliverables(brandId, "Manual Refresh", null);
+        assertEquals("SYNCED", manualRes.get("status"));
+        assertEquals(2000L, reel.getViewsCount());
+    }
 }

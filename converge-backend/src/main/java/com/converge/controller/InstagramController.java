@@ -92,8 +92,14 @@ public class InstagramController {
     }
 
     @PostMapping("/brands/{brandId}/sync")
-    public Map<String, Object> syncBrand(@PathVariable UUID brandId, Authentication auth) {
+    public Map<String, Object> syncBrand(
+            @PathVariable UUID brandId,
+            @RequestParam(required = false) String source,
+            Authentication auth) {
         brandService.requireBrandAccess(brandId, auth);
+        if ("login".equalsIgnoreCase(source)) {
+            return brandService.syncBrandDeliverablesOnLogin(brandId, brandService.resolveActor(auth, "Login Auto-Sync"), auth);
+        }
         return brandService.syncBrandDeliverables(brandId, brandService.resolveActor(auth, "Workspace Manager"), auth);
     }
 

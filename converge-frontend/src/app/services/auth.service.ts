@@ -23,6 +23,8 @@ interface ActiveTabRecord {
 const SESSION_TOKEN_KEY = 'converge_token';
 const SESSION_USER_KEY = 'converge_user';
 const SESSION_TAB_ID_KEY = 'converge_tab_id';
+const LOGIN_SYNC_PENDING_KEY = 'converge_login_sync_pending';
+const TAB_SYNCED_BRANDS_PREFIX = 'converge_login_synced_brand_';
 const ACTIVE_TABS_REGISTRY_KEY = 'converge_active_tabs';
 const SESSION_CHANNEL_NAME = 'converge_auth_sessions';
 const HEARTBEAT_INTERVAL_MS = 4000;
@@ -384,10 +386,45 @@ export class AuthService implements OnDestroy {
     this.currentUser.set(null);
   }
 
+  shouldAutoSyncBrandOnVisit(brandId: string): boolean {
+    if (!brandId || typeof sessionStorage === 'undefined') return false;
+    try {
+      const loginPending = sessionStorage.getItem(LOGIN_SYNC_PENDING_KEY) === '1';
+      const brandKey = `${TAB_SYNCED_BRANDS_PREFIX}${brandId}`;
+      const alreadySyncedInTab = sessionStorage.getItem(brandKey) === '1';
+      if (loginPending || !alreadySyncedInTab) {
+        sessionStorage.removeItem(LOGIN_SYNC_PENDING_KEY);
+        sessionStorage.setItem(brandKey, '1');
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  private clearLoginSyncTracking(): void {
+    if (typeof sessionStorage === 'undefined') return;
+    try {
+      sessionStorage.removeItem(LOGIN_SYNC_PENDING_KEY);
+      const toRemove: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith(TAB_SYNCED_BRANDS_PREFIX)) {
+          toRemove.push(k);
+        }
+      }
+      for (const k of toRemove) {
+        sessionStorage.removeItem(k);
+      }
+    } catch {}
+  }
+
   private clearTabStorage(): void {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem(SESSION_TOKEN_KEY);
       sessionStorage.removeItem(SESSION_USER_KEY);
+      this.clearLoginSyncTracking();
     }
   }
 
@@ -395,6 +432,8 @@ export class AuthService implements OnDestroy {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(SESSION_TOKEN_KEY, res.token);
       sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(res.user));
+      this.clearLoginSyncTracking();
+      sessionStorage.setItem(LOGIN_SYNC_PENDING_KEY, '1');
     }
     this.serverVerifiedThisLoad = true;
     this.currentUser.set(res.user);

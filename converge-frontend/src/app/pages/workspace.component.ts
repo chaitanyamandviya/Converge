@@ -1878,7 +1878,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     this.navigateWorkspace({ brand: brandId, tab: 'overview' });
   }
 
-  selectBrand(brandId: string) {
+  selectBrand(brandId: string, skipAutoLoginSync = false) {
     this.selectedBrandId.set(brandId);
     this.auditLoadedBrandId = '';
     this.api.getBrandOverview(brandId).subscribe({
@@ -1886,7 +1886,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
         this.currentBrand.set(res.brand);
         this.agencies.set(res.agencies);
         this.creators.set(res.creators);
-        this.deliverables.set(res.deliverables || res.recentReels || []);
+        const list = res.deliverables || res.recentReels || [];
+        this.deliverables.set(list);
         this.reelDeltas.set(res.reelDeltas || {});
         this.stats.set(res.stats);
         if (this.activeTab() === 'agencies' && !this.canManageAgencies()) {
@@ -1894,9 +1895,31 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
         } else if (this.activeTab() === 'audit') {
           this.loadAuditLogs(brandId);
         }
+        if (!skipAutoLoginSync && this.auth.shouldAutoSyncBrandOnVisit(brandId) && (list.length > 0 || (res.creators?.length || 0) > 0)) {
+          this.triggerAutoSyncOnLogin(brandId);
+        }
       },
       error: (err) => {
         this.showToast(err?.error?.error || 'Could not load brand overview.');
+      }
+    });
+  }
+
+  private triggerAutoSyncOnLogin(brandId: string): void {
+    if (this.syncing()) return;
+    this.syncing.set(true);
+    this.api.syncBrandDeliverables(brandId, 'login').subscribe({
+      next: (res) => {
+        this.syncing.set(false);
+        if (res.status !== 'RECENTLY_SYNCED' && (res.syncedCount || 0) > 0 && this.selectedBrandId() === brandId) {
+          this.selectBrand(brandId, true);
+          if (this.activeTab() === 'audit') {
+            this.loadAuditLogs(brandId);
+          }
+        }
+      },
+      error: () => {
+        this.syncing.set(false);
       }
     });
   }

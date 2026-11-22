@@ -36,6 +36,13 @@ public class BrandService {
     private final InstagramGraphService instagramGraphService;
     private final ReelSnapshotRepository reelSnapshotRepository;
     private final String adminEmail;
+    private static final long AUTO_SYNC_COOLDOWN_SECONDS = 60L;
+    private final java.util.concurrent.ConcurrentHashMap<String, Instant> recentSyncTimestamps =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicBoolean scheduledSyncRunning =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+    @Value("${app.instagram.auto-sync.enabled:true}")
+    private boolean autoSyncEnabled = true;
 
     public BrandService(
             BrandRepository brandRepository,
@@ -1324,12 +1331,95 @@ public class BrandService {
     }
 
     public Map<String, Object> syncBrandDeliverables(UUID brandId, String actor, Authentication auth) {
+        return executeBrandDeliverableSync(brandId, actor, auth, false, false);
+    }
+
+    public Map<String, Object> syncBrandDeliverablesOnLogin(UUID brandId, String actor, Authentication auth) {
+        return executeBrandDeliverableSync(brandId, actor, auth, true, true);
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(
+            fixedDelayString = "${app.instagram.auto-sync.interval-ms:21600000}",
+            initialDelayString = "${app.instagram.auto-sync.initial-delay-ms:120000}")
+    public int runScheduledInstagramSync() {
+        if (!autoSyncEnabled || !scheduledSyncRunning.compareAndSet(false, true)) {
+            return 0;
+        }
+        int syncedBrands = 0;
+        try {
+            List<Brand> brands = brandRepository.findAllByOrderByCreatedAtDesc();
+            for (Brand brand : brands) {
+                if (brand == null || brand.getId() == null || "DRAFT".equalsIgnoreCase(brand.getStatus())) {
+                    continue;
+                }
+                List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brand.getId());
+                if (creators.isEmpty()) {
+                    continue;
+                }
+                boolean hasMetaSource = instagramGraphService.isBusinessDiscoveryConfigured()
+                        || creators.stream().anyMatch(Creator::isIgConnected);
+                if (!hasMetaSource) {
+                    continue;
+                }
+                try {
+                    Map<String, Object> res = executeBrandDeliverableSync(
+                            brand.getId(),
+                            "Scheduled Auto-Sync",
+                            null,
+                            true,
+                            true
+                    );
+                    if (!"RECENTLY_SYNCED".equals(res.get("status"))) {
+                        syncedBrands++;
+                    }
+                } catch (IllegalStateException rateEx) {
+                    if (rateEx.getMessage() != null
+                            && rateEx.getMessage().toLowerCase(Locale.ROOT).contains("rate limit")) {
+                        break;
+                    }
+                } catch (Exception ignored) {
+                    // Isolate single-brand sync failure so remaining workspaces still sync
+                }
+            }
+        } finally {
+            scheduledSyncRunning.set(false);
+        }
+        return syncedBrands;
+    }
+
+    private Map<String, Object> executeBrandDeliverableSync(
+            UUID brandId,
+            String actor,
+            Authentication auth,
+            boolean includeAllForBrandOwner,
+            boolean applyAutoCooldown) {
         Brand brand = getBrand(brandId);
         Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        String scopeKey = brandId + ":" + scopedAgency.map(a -> a.getId().toString())
+                .orElse(includeAllForBrandOwner || auth == null ? "ALL" : "DIRECT");
+
+        if (applyAutoCooldown) {
+            Instant lastSync = recentSyncTimestamps.get(scopeKey);
+            Instant allSync = recentSyncTimestamps.get(brandId + ":ALL");
+            Instant latest = (lastSync != null && allSync != null)
+                    ? (lastSync.isAfter(allSync) ? lastSync : allSync)
+                    : (lastSync != null ? lastSync : allSync);
+            if (latest != null && latest.isAfter(Instant.now().minusSeconds(AUTO_SYNC_COOLDOWN_SECONDS))) {
+                Map<String, Object> skipped = new LinkedHashMap<>();
+                skipped.put("syncedCount", 0);
+                skipped.put("verifiedCount", 0);
+                skipped.put("pendingCount", 0);
+                skipped.put("metaConfigured", instagramGraphService.isBusinessDiscoveryConfigured());
+                skipped.put("status", "RECENTLY_SYNCED");
+                skipped.put("syncedAt", latest.toString());
+                return skipped;
+            }
+        }
+
         List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
                 .filter(c -> scopedAgency.isPresent()
                         ? creatorBelongsToAgency(c, scopedAgency.get())
-                        : (auth == null || !isAgencyManagedCreator(c)))
+                        : (auth == null || includeAllForBrandOwner || !isAgencyManagedCreator(c)))
                 .toList();
         Map<UUID, Creator> creatorMap = new LinkedHashMap<>();
         for (Creator c : creators) {
@@ -1339,7 +1429,8 @@ public class BrandService {
         }
 
         List<ReelDeliverable> reels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId).stream()
-                .filter(r -> (scopedAgency.isEmpty() && auth == null) || (r.getCreatorId() != null && creatorMap.containsKey(r.getCreatorId())))
+                .filter(r -> (scopedAgency.isEmpty() && (auth == null || includeAllForBrandOwner))
+                        || (r.getCreatorId() != null && creatorMap.containsKey(r.getCreatorId())))
                 .toList();
         Map<UUID, List<ReelDeliverable>> reelsByCreator = new LinkedHashMap<>();
         int verifiedCount = 0;
@@ -1366,16 +1457,19 @@ public class BrandService {
         }
 
         Instant now = Instant.now();
+        recentSyncTimestamps.put(scopeKey, now);
         brand.setUpdatedAt(now);
         brandRepository.save(brand);
 
         boolean configured = instagramGraphService.isBusinessDiscoveryConfigured()
                 || creators.stream().anyMatch(Creator::isIgConnected);
 
-        recordAudit(brandId, scopedAgency.map(Agency::getId).orElse(null), "REEL_AUDIT", "Reels Refreshed",
-                "Refreshed",
-                "Updated " + verifiedCount + " verified reel(s) across " + creators.size() + " creator(s).",
-                actor != null && !actor.isBlank() ? actor : "Workspace Manager", "Reels");
+        if (!applyAutoCooldown || !reels.isEmpty() || !creators.isEmpty()) {
+            recordAudit(brandId, scopedAgency.map(Agency::getId).orElse(null), "REEL_AUDIT", "Reels Refreshed",
+                    "Refreshed",
+                    "Updated " + verifiedCount + " verified reel(s) across " + creators.size() + " creator(s).",
+                    actor != null && !actor.isBlank() ? actor : "Workspace Manager", "Reels");
+        }
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("syncedCount", reels.size());
