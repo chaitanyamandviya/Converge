@@ -160,7 +160,9 @@ import { formatPublishedDateLabel, formatReelKindLabel } from '../utils/reel-for
                         <th class="px-3 py-2 font-semibold text-right">Likes</th>
                         <th class="px-3 py-2 font-semibold text-right">Cmts</th>
                         <th class="px-3 py-2 font-semibold text-right">Eng.</th>
-                        <th class="px-3 py-2 font-semibold text-right">Hook (3s)</th>
+                        @if (summary().avgHookRatePct != null) {
+                          <th class="px-3 py-2 font-semibold text-right">Hook (3s)</th>
+                        }
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-[#141414]/10">
@@ -173,7 +175,9 @@ import { formatPublishedDateLabel, formatReelKindLabel } from '../utils/reel-for
                           <td class="px-3 py-2 text-right">{{ (r.likesCount || 0).toLocaleString('en-IN') }}</td>
                           <td class="px-3 py-2 text-right">{{ (r.commentsCount || 0).toLocaleString('en-IN') }}</td>
                           <td class="px-3 py-2 text-right font-semibold text-[#007656]">{{ r.engagementRate > 0 ? r.engagementRate + '%' : '—' }}</td>
-                          <td class="px-3 py-2 text-right font-semibold text-[#b45309]">{{ r.hookRatePct != null ? r.hookRatePct + '%' : '—' }}</td>
+                          @if (summary().avgHookRatePct != null) {
+                            <td class="px-3 py-2 text-right font-semibold text-[#b45309]">{{ r.hookRatePct != null ? r.hookRatePct + '%' : '—' }}</td>
+                          }
                         </tr>
                       }
                     </tbody>

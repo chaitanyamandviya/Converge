@@ -273,7 +273,9 @@ import { safeExternalUrl } from '../utils/url-safety';
                       <th class="px-4 py-2.5 text-right">Likes</th>
                       <th class="px-4 py-2.5 text-right">Comments</th>
                       <th class="px-4 py-2.5 text-right">Eng. Rate</th>
-                      <th class="px-4 py-2.5 text-right">Hook (3s)</th>
+                      @if (sum.avgHookRatePct != null) {
+                        <th class="px-4 py-2.5 text-right">Hook (3s)</th>
+                      }
                       <th class="px-4 py-2.5 text-right cv-print-hide">Link</th>
                     </tr>
                   </thead>
@@ -287,7 +289,9 @@ import { safeExternalUrl } from '../utils/url-safety';
                         <td class="px-4 py-3 text-right text-cv-gold">{{ (r.likesCount || 0).toLocaleString('en-IN') }}</td>
                         <td class="px-4 py-3 text-right text-cv-green">{{ (r.commentsCount || 0).toLocaleString('en-IN') }}</td>
                         <td class="px-4 py-3 text-right text-cv-blush">{{ r.engagementRate > 0 ? r.engagementRate + '%' : '—' }}</td>
-                        <td class="px-4 py-3 text-right font-semibold text-cv-green">{{ r.hookRatePct != null ? r.hookRatePct + '%' : '—' }}</td>
+                        @if (sum.avgHookRatePct != null) {
+                          <td class="px-4 py-3 text-right font-semibold text-cv-green">{{ r.hookRatePct != null ? r.hookRatePct + '%' : '—' }}</td>
+                        }
                         <td class="px-4 py-3 text-right cv-print-hide">
                           @if (safeExternalUrl(r.reelUrl, true); as safeLink) {
                             <a [href]="safeLink" target="_blank" rel="noopener noreferrer" class="text-[#f54e26] hover:underline font-semibold">View ↗</a>
