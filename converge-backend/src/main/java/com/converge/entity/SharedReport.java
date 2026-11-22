@@ -26,6 +26,8 @@ public class SharedReport {
     @Column(length = 80)
     private String campaignFilter = "ALL";
 
+    private UUID campaignId;
+
     private Boolean includeSpend = true;
 
     private String createdBy;
@@ -49,6 +51,8 @@ public class SharedReport {
     public void setTitle(String title) { this.title = title; }
     public String getCampaignFilter() { return campaignFilter != null && !campaignFilter.isBlank() ? campaignFilter : "ALL"; }
     public void setCampaignFilter(String campaignFilter) { this.campaignFilter = campaignFilter != null && !campaignFilter.isBlank() ? campaignFilter : "ALL"; }
+    public UUID getCampaignId() { return campaignId; }
+    public void setCampaignId(UUID campaignId) { this.campaignId = campaignId; }
     public boolean isIncludeSpend() { return includeSpend == null || Boolean.TRUE.equals(includeSpend); }
     public void setIncludeSpend(Boolean includeSpend) { this.includeSpend = includeSpend == null || Boolean.TRUE.equals(includeSpend); }
     public String getCreatedBy() { return createdBy; }

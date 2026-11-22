@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -36,6 +37,8 @@ public class BrandService {
     private final InstagramGraphService instagramGraphService;
     private final ReelSnapshotRepository reelSnapshotRepository;
     private final SharedReportRepository sharedReportRepository;
+    private final CampaignRepository campaignRepository;
+    private final CampaignCreatorRepository campaignCreatorRepository;
     private final String adminEmail;
     private static final long AUTO_SYNC_COOLDOWN_SECONDS = 60L;
     private final java.util.concurrent.ConcurrentHashMap<String, Instant> recentSyncTimestamps =
@@ -56,7 +59,8 @@ public class BrandService {
             InstagramGraphService instagramGraphService,
             @Value("${app.admin.email:}") String adminEmail) {
         this(brandRepository, agencyRepository, creatorRepository, reelRepository,
-                auditLogRepository, userRepository, emailService, instagramGraphService, null, null, adminEmail);
+                auditLogRepository, userRepository, emailService, instagramGraphService,
+                null, null, null, null, adminEmail);
     }
 
     public BrandService(
@@ -72,7 +76,7 @@ public class BrandService {
             @Value("${app.admin.email:}") String adminEmail) {
         this(brandRepository, agencyRepository, creatorRepository, reelRepository,
                 auditLogRepository, userRepository, emailService, instagramGraphService,
-                reelSnapshotRepository, null, adminEmail);
+                reelSnapshotRepository, null, null, null, adminEmail);
     }
 
     @Autowired
@@ -87,6 +91,8 @@ public class BrandService {
             InstagramGraphService instagramGraphService,
             ReelSnapshotRepository reelSnapshotRepository,
             SharedReportRepository sharedReportRepository,
+            CampaignRepository campaignRepository,
+            CampaignCreatorRepository campaignCreatorRepository,
             @Value("${app.admin.email:}") String adminEmail) {
         this.brandRepository = brandRepository;
         this.agencyRepository = agencyRepository;
@@ -98,6 +104,8 @@ public class BrandService {
         this.instagramGraphService = instagramGraphService;
         this.reelSnapshotRepository = reelSnapshotRepository;
         this.sharedReportRepository = sharedReportRepository;
+        this.campaignRepository = campaignRepository;
+        this.campaignCreatorRepository = campaignCreatorRepository;
         this.adminEmail = adminEmail != null ? adminEmail.trim().toLowerCase() : "";
     }
 
@@ -183,7 +191,7 @@ public class BrandService {
         return reel;
     }
 
-    private Optional<Agency> resolveScopedAgencyForCaller(Brand brand, Authentication auth) {
+    public Optional<Agency> resolveScopedAgencyForCaller(Brand brand, Authentication auth) {
         if (brand == null || brand.getId() == null
                 || auth == null || !auth.isAuthenticated() || auth.getName() == null || auth.getName().isBlank()) {
             return Optional.empty();
@@ -199,7 +207,7 @@ public class BrandService {
                 .findFirst();
     }
 
-    private static boolean creatorBelongsToAgency(Creator creator, Agency agency) {
+    public static boolean creatorBelongsToAgency(Creator creator, Agency agency) {
         if (creator == null || agency == null) return false;
         if (agency.getId() != null && agency.getId().equals(creator.getAgencyId())) {
             return true;
@@ -352,8 +360,10 @@ public class BrandService {
         return getBrandOverview(brandId, null);
     }
 
+    @Transactional
     public Map<String, Object> getBrandOverview(UUID brandId, Authentication auth) {
         Brand brand = getBrand(brandId);
+        ensureLegacyCampaignsMigrated(brandId);
         Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
         List<Agency> agencies;
         List<Creator> creators;
@@ -387,6 +397,7 @@ public class BrandService {
         result.put("creators", creators);
         result.put("recentReels", reels.stream().limit(6).toList());
         result.put("deliverables", reels);
+        result.put("campaigns", buildCampaignSummariesList(brandId, scopedAgency, creators, reels));
         result.put("reelDeltas", buildBrandReelDeltasMap(brandId, reels));
         result.put("stats", Map.of(
                 "totalReels", reels.size(),
@@ -601,6 +612,12 @@ public class BrandService {
     @Transactional
     public void deleteBrand(UUID brandId) {
         Brand brand = getBrand(brandId);
+        if (campaignCreatorRepository != null) {
+            campaignCreatorRepository.deleteByBrandId(brandId);
+        }
+        if (campaignRepository != null) {
+            campaignRepository.deleteByBrandId(brandId);
+        }
         if (sharedReportRepository != null) {
             sharedReportRepository.deleteByBrandId(brandId);
         }
@@ -971,7 +988,17 @@ public class BrandService {
 
         String title = trimToMax(strVal(payload.get("title")), 160);
         if (title.isEmpty()) title = "Campaign Reel Deliverable";
-        String campaignTag = trimToMax(strVal(payload.get("campaignTag")), 80);
+        Campaign resolvedCamp = resolveCampaignForDeliverable(
+                creator.getBrandId(),
+                strVal(payload.get("campaignId")),
+                strVal(payload.get("campaignTag")),
+                creator.getCampaignName(),
+                actor,
+                false
+        );
+        String campaignTag = resolvedCamp != null
+                ? resolvedCamp.getName()
+                : trimToMax(strVal(payload.get("campaignTag")), 80);
         if (campaignTag.isEmpty() && creator.getCampaignName() != null && !creator.getCampaignName().isBlank()) {
             campaignTag = trimToMax(creator.getCampaignName().trim(), 80);
         }
@@ -983,6 +1010,7 @@ public class BrandService {
         reel.setTitle(title);
         reel.setReelUrl(reelUrl);
         reel.setShortcode(shortcode);
+        reel.setCampaignId(resolvedCamp != null ? resolvedCamp.getId() : null);
         reel.setCampaignTag(campaignTag);
         Double delCost = parseNullablePositiveDouble(payload.get("costQuoted"));
         if (delCost != null) {
@@ -996,6 +1024,9 @@ public class BrandService {
         }
 
         ReelDeliverable saved = reelRepository.save(reel);
+        if (resolvedCamp != null) {
+            ensureCampaignCreatorLinked(resolvedCamp.getId(), creator.getBrandId(), creator.getId(), creator.isDemoData(), 1, null);
+        }
         recordDeliverableSnapshotIfChanged(saved, false);
         rollUpCreatorMetrics(creator);
 
@@ -1258,8 +1289,26 @@ public class BrandService {
             if (payload.containsKey("costQuoted")) {
                 reel.setCostQuoted(parseNullablePositiveDouble(payload.get("costQuoted")));
             }
-            if (payload.containsKey("campaignTag")) {
-                reel.setCampaignTag(trimToMax(strVal(payload.get("campaignTag")), 80));
+            if (payload.containsKey("campaignId") || payload.containsKey("campaignTag")) {
+                String reqCid = payload.containsKey("campaignId") ? strVal(payload.get("campaignId")) : "";
+                String reqTag = payload.containsKey("campaignTag") ? strVal(payload.get("campaignTag")) : "";
+                if (reqCid.isEmpty() && reqTag.isEmpty()) {
+                    reel.setCampaignId(null);
+                    reel.setCampaignTag("");
+                } else {
+                    Campaign resolvedCamp = resolveCampaignForDeliverable(
+                            reel.getBrandId(), reqCid, reqTag, "", actor, false);
+                    if (resolvedCamp != null) {
+                        reel.setCampaignId(resolvedCamp.getId());
+                        reel.setCampaignTag(resolvedCamp.getName());
+                        if (reel.getCreatorId() != null) {
+                            ensureCampaignCreatorLinked(resolvedCamp.getId(), reel.getBrandId(), reel.getCreatorId(), reel.isDemoData(), 1, null);
+                        }
+                    } else {
+                        reel.setCampaignId(null);
+                        reel.setCampaignTag(trimToMax(reqTag, 80));
+                    }
+                }
             }
         }
         ReelDeliverable saved = reelRepository.save(reel);
@@ -1302,6 +1351,9 @@ public class BrandService {
         Creator creator = creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
         UUID agencyId = creator.getAgencyId();
+        if (campaignCreatorRepository != null) {
+            campaignCreatorRepository.deleteByCreatorId(creatorId);
+        }
         if (reelSnapshotRepository != null) {
             reelSnapshotRepository.deleteByCreatorId(creatorId);
         }
@@ -1731,7 +1783,7 @@ public class BrandService {
         return sb.toString();
     }
 
-    private Double parseNullablePositiveDouble(Object v) {
+    public Double parseNullablePositiveDouble(Object v) {
         if (v == null) return null;
         if (v instanceof Number n) {
             double d = n.doubleValue();
@@ -1747,7 +1799,7 @@ public class BrandService {
         }
     }
 
-    private String strVal(Object v) {
+    public String strVal(Object v) {
         return v != null ? String.valueOf(v).trim() : "";
     }
 
@@ -1758,12 +1810,12 @@ public class BrandService {
         return strVal(v);
     }
 
-    private void recordAudit(UUID brandId, String category, String title, String badge,
+    public void recordAudit(UUID brandId, String category, String title, String badge,
                              String description, String actor, String tag) {
         recordAudit(brandId, null, category, title, badge, description, actor, tag);
     }
 
-    private void recordAudit(UUID brandId, UUID agencyId, String category, String title, String badge,
+    public void recordAudit(UUID brandId, UUID agencyId, String category, String title, String badge,
                              String description, String actor, String tag) {
         AuditLog log = new AuditLog();
         log.setBrandId(brandId);
@@ -1903,7 +1955,7 @@ public class BrandService {
         }
     }
 
-    private Map<String, Map<String, Object>> buildBrandReelDeltasMap(UUID brandId, List<ReelDeliverable> scopedReels) {
+    public Map<String, Map<String, Object>> buildBrandReelDeltasMap(UUID brandId, List<ReelDeliverable> scopedReels) {
         Map<String, Map<String, Object>> out = new LinkedHashMap<>();
         if (scopedReels == null || scopedReels.isEmpty()) {
             return out;
@@ -2039,7 +2091,13 @@ public class BrandService {
             }
         }
 
-        String defaultCampaignTag = trimToMax(strVal(payload.get("defaultCampaignTag")), 80);
+        String defaultCampaignIdStr = strVal(payload.get("defaultCampaignId"));
+        Campaign defaultCampaign = !defaultCampaignIdStr.isEmpty()
+                ? resolveCampaignByIdForBrand(brandId, defaultCampaignIdStr, scopedAgency.isPresent())
+                : null;
+        String defaultCampaignTag = defaultCampaign != null
+                ? defaultCampaign.getName()
+                : trimToMax(strVal(payload.get("defaultCampaignTag")), 80);
         Double defaultCost = parseNullablePositiveDouble(payload.get("defaultCostQuoted"));
 
         Map<String, Creator> creatorCache = new LinkedHashMap<>();
@@ -2073,8 +2131,18 @@ public class BrandService {
                 continue;
             }
 
+            String itemCampaignIdStr = strVal(entryMap.get("campaignId"));
             String itemCampaignTag = trimToMax(strVal(entryMap.get("campaignTag")), 80);
-            if (itemCampaignTag.isEmpty()) itemCampaignTag = defaultCampaignTag;
+            Campaign itemCampaign = null;
+            if (!itemCampaignIdStr.isEmpty()) {
+                itemCampaign = resolveCampaignByIdForBrand(brandId, itemCampaignIdStr, scopedAgency.isPresent());
+                itemCampaignTag = itemCampaign.getName();
+            } else if (!itemCampaignTag.isEmpty() && campaignRepository != null) {
+                itemCampaign = campaignRepository.findByBrandIdAndNameIgnoreCase(brandId, itemCampaignTag).orElse(null);
+            } else if (itemCampaignTag.isEmpty()) {
+                itemCampaign = defaultCampaign;
+                itemCampaignTag = defaultCampaignTag;
+            }
 
             Double itemCost = null;
             if (entryMap.get("costQuoted") != null && !strVal(entryMap.get("costQuoted")).isEmpty()) {
@@ -2147,8 +2215,11 @@ public class BrandService {
 
             String title = trimToMax(strVal(entryMap.get("title")), 160);
             if (title.isEmpty()) title = "Campaign Reel Deliverable";
-            if (itemCampaignTag.isEmpty() && finalTarget.getCampaignName() != null && !finalTarget.getCampaignName().isBlank()) {
+            if (itemCampaign == null && itemCampaignTag.isEmpty() && finalTarget.getCampaignName() != null && !finalTarget.getCampaignName().isBlank()) {
                 itemCampaignTag = trimToMax(finalTarget.getCampaignName(), 80);
+                if (campaignRepository != null) {
+                    itemCampaign = campaignRepository.findByBrandIdAndNameIgnoreCase(brandId, itemCampaignTag).orElse(null);
+                }
             }
 
             ReelDeliverable reel = new ReelDeliverable();
@@ -2158,7 +2229,8 @@ public class BrandService {
             reel.setTitle(title);
             reel.setReelUrl(reelUrl);
             reel.setShortcode(shortcode);
-            reel.setCampaignTag(itemCampaignTag);
+            reel.setCampaignId(itemCampaign != null ? itemCampaign.getId() : null);
+            reel.setCampaignTag(itemCampaign != null ? itemCampaign.getName() : itemCampaignTag);
             if (itemCost != null) {
                 reel.setCostQuoted(itemCost);
             }
@@ -2178,6 +2250,9 @@ public class BrandService {
             }
 
             ReelDeliverable saved = reelRepository.save(reel);
+            if (itemCampaign != null) {
+                ensureCampaignCreatorLinked(itemCampaign.getId(), brandId, finalTarget.getId(), finalTarget.isDemoData(), 1, itemCost);
+            }
             recordDeliverableSnapshotIfChanged(saved, false);
             scSet.add(shortcode.toLowerCase(Locale.ROOT));
             urlSet.add(normUrl);
@@ -2275,6 +2350,11 @@ public class BrandService {
         }
 
         Instant now = Instant.now();
+        Campaign summerCamp = ensureDemoCampaignRecord(brandId, "Summer Glow Drop", 225_000.0, 2_200_000L,
+                "Hero summer product launch Reels showcasing daily Vitamin C & hydration routines.", -14, 16);
+        Campaign monsoonCamp = ensureDemoCampaignRecord(brandId, "Monsoon Creator Wave", 120_000.0, 800_000L,
+                "Monsoon travel-ready skincare & honest SPF review deliverables.", -7, 21);
+
         List<Creator> createdCreators = new ArrayList<>();
         Creator aanya = saveDemoCreator(brandId, scopedAgency, "Aanya Kapoor", "@aanya.kapoor_demo",
                 "Skincare & Beauty", "India", 284_000L, "284K", "PER_DELIVERABLE", 35_000.0,
@@ -2293,22 +2373,36 @@ public class BrandService {
                 "Monsoon Creator Wave", false);
         createdCreators.addAll(List.of(aanya, rohan, nisha, kabir, tara));
 
+        if (summerCamp != null) {
+            ensureCampaignCreatorLinked(summerCamp.getId(), brandId, aanya.getId(), true, 2, 70_000.0);
+            ensureCampaignCreatorLinked(summerCamp.getId(), brandId, rohan.getId(), true, 1, 48_000.0);
+            ensureCampaignCreatorLinked(summerCamp.getId(), brandId, kabir.getId(), true, 2, 90_000.0);
+        }
+        if (monsoonCamp != null) {
+            ensureCampaignCreatorLinked(monsoonCamp.getId(), brandId, rohan.getId(), true, 1, 48_000.0);
+            ensureCampaignCreatorLinked(monsoonCamp.getId(), brandId, nisha.getId(), true, 1, 55_000.0);
+            ensureCampaignCreatorLinked(monsoonCamp.getId(), brandId, tara.getId(), true, 1, 18_000.0);
+        }
+
+        UUID summerId = summerCamp != null ? summerCamp.getId() : null;
+        UUID monsoonId = monsoonCamp != null ? monsoonCamp.getId() : null;
+
         List<ReelDeliverable> createdReels = new ArrayList<>();
-        createdReels.add(saveDemoReel(aanya, "Morning Vitamin C Routine", "Summer Glow Drop", "C0DemoAanya01",
+        createdReels.add(saveDemoReel(aanya, "Morning Vitamin C Routine", summerId, "Summer Glow Drop", "C0DemoAanya01",
                 840_000L, 48_200L, 912L, 3_420L, 35_000.0, now.minusSeconds(9 * 86400L)));
-        createdReels.add(saveDemoReel(aanya, "7-Day Hydration Test", "Summer Glow Drop", "C0DemoAanya02",
+        createdReels.add(saveDemoReel(aanya, "7-Day Hydration Test", summerId, "Summer Glow Drop", "C0DemoAanya02",
                 310_000L, 19_400L, 418L, 1_290L, 35_000.0, now.minusSeconds(4 * 86400L)));
-        createdReels.add(saveDemoReel(rohan, "AM Grooming Essentials", "Summer Glow Drop", "C0DemoRohan01",
+        createdReels.add(saveDemoReel(rohan, "AM Grooming Essentials", summerId, "Summer Glow Drop", "C0DemoRohan01",
                 520_000L, 28_600L, 640L, 1_850L, 48_000.0, now.minusSeconds(11 * 86400L)));
-        createdReels.add(saveDemoReel(rohan, "Travel Kit Breakdown", "Monsoon Creator Wave", "C0DemoRohan02",
+        createdReels.add(saveDemoReel(rohan, "Travel Kit Breakdown", monsoonId, "Monsoon Creator Wave", "C0DemoRohan02",
                 195_000L, 11_200L, 244L, 680L, 48_000.0, now.minusSeconds(3 * 86400L)));
-        createdReels.add(saveDemoReel(nisha, "Rain-Proof Skincare Layering", "Monsoon Creator Wave", "C0DemoNisha01",
+        createdReels.add(saveDemoReel(nisha, "Rain-Proof Skincare Layering", monsoonId, "Monsoon Creator Wave", "C0DemoNisha01",
                 245_000L, 16_800L, 530L, 1_940L, null, now.minusSeconds(6 * 86400L)));
-        createdReels.add(saveDemoReel(kabir, "Post-Workout Recovery Ritual", "Summer Glow Drop", "C0DemoKabir01",
+        createdReels.add(saveDemoReel(kabir, "Post-Workout Recovery Ritual", summerId, "Summer Glow Drop", "C0DemoKabir01",
                 218_000L, 12_900L, 310L, 820L, null, now.minusSeconds(8 * 86400L)));
-        createdReels.add(saveDemoReel(kabir, "Unboxing Brand Kit", "Summer Glow Drop", "C0DemoKabir02",
+        createdReels.add(saveDemoReel(kabir, "Unboxing Brand Kit", summerId, "Summer Glow Drop", "C0DemoKabir02",
                 142_000L, 7_600L, 198L, 410L, null, now.minusSeconds(2 * 86400L)));
-        createdReels.add(saveDemoReel(tara, "Honest Texture & SPF Review", "Monsoon Creator Wave", "C0DemoTara01",
+        createdReels.add(saveDemoReel(tara, "Honest Texture & SPF Review", monsoonId, "Monsoon Creator Wave", "C0DemoTara01",
                 92_000L, 6_450L, 265L, 790L, 18_000.0, now.minusSeconds(1 * 86400L)));
 
         for (Creator dc : createdCreators) {
@@ -2385,6 +2479,7 @@ public class BrandService {
     private ReelDeliverable saveDemoReel(
             Creator creator,
             String title,
+            UUID campaignId,
             String campaignTag,
             String shortcode,
             long views,
@@ -2398,6 +2493,7 @@ public class BrandService {
         r.setCreatorId(creator.getId());
         r.setCreatorHandle(creator.getHandle());
         r.setTitle(title);
+        r.setCampaignId(campaignId);
         r.setCampaignTag(campaignTag);
         r.setShortcode(shortcode);
         r.setReelUrl("https://www.instagram.com/reel/" + shortcode + "/");
@@ -2464,11 +2560,30 @@ public class BrandService {
                 }
             }
         }
+        if (campaignCreatorRepository != null) {
+            for (UUID dcId : demoCreatorIds) {
+                campaignCreatorRepository.deleteByCreatorId(dcId);
+            }
+        }
         if (!demoReels.isEmpty()) {
             reelRepository.deleteAll(demoReels);
         }
         if (!demoCreators.isEmpty()) {
             creatorRepository.deleteAll(demoCreators);
+        }
+        if (campaignRepository != null) {
+            List<ReelDeliverable> remainingReels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId);
+            List<CampaignCreator> remainingAssignments = campaignCreatorRepository != null
+                    ? campaignCreatorRepository.findByBrandId(brandId)
+                    : List.of();
+            for (Campaign dc : campaignRepository.findByBrandIdOrderByCreatedAtDesc(brandId)) {
+                if (!dc.isDemoData()) continue;
+                boolean hasRealReels = remainingReels.stream().anyMatch(r -> dc.getId().equals(r.getCampaignId()));
+                boolean hasRealCreators = remainingAssignments.stream().anyMatch(a -> dc.getId().equals(a.getCampaignId()));
+                if (!hasRealReels && !hasRealCreators) {
+                    campaignRepository.delete(dc);
+                }
+            }
         }
         if (scopedAgency.isPresent()) {
             Agency ag = scopedAgency.get();
@@ -2491,8 +2606,17 @@ public class BrandService {
         SharedReportRepository repo = requireSharedReportRepository();
 
         String rawTitle = payload != null ? trimToMax(strVal(payload.get("title")), 140) : "";
-        String campaignFilter = payload != null ? trimToMax(strVal(payload.get("campaignFilter")), 80) : "ALL";
+        String rawCampaignId = payload != null ? strVal(payload.get("campaignId")) : "";
+        Campaign linkedCamp = !rawCampaignId.isEmpty()
+                ? resolveCampaignByIdForBrand(brandId, rawCampaignId, scopedAgency.isPresent())
+                : null;
+        String campaignFilter = linkedCamp != null
+                ? linkedCamp.getName()
+                : (payload != null ? trimToMax(strVal(payload.get("campaignFilter")), 80) : "ALL");
         if (campaignFilter.isEmpty()) campaignFilter = "ALL";
+        if (linkedCamp == null && !"ALL".equalsIgnoreCase(campaignFilter) && campaignRepository != null) {
+            linkedCamp = campaignRepository.findByBrandIdAndNameIgnoreCase(brandId, campaignFilter).orElse(null);
+        }
         boolean includeSpend = payload == null || payload.get("includeSpend") == null
                 || Boolean.parseBoolean(String.valueOf(payload.get("includeSpend")));
 
@@ -2515,6 +2639,7 @@ public class BrandService {
         report.setTitle(rawTitle.isEmpty()
                 ? (scopedAgency.map(Agency::getName).orElse(brand.getName()) + " Campaign Report")
                 : rawTitle);
+        report.setCampaignId(linkedCamp != null ? linkedCamp.getId() : null);
         report.setCampaignFilter(campaignFilter);
         report.setIncludeSpend(includeSpend);
         report.setCreatedBy(resolveActor(auth, "Workspace Manager"));
@@ -2592,12 +2717,18 @@ public class BrandService {
                 .filter(r -> scopedAgency == null || (r.getCreatorId() != null && creatorMap.containsKey(r.getCreatorId())))
                 .toList();
 
-        String campaignFilter = report.getCampaignFilter();
-        boolean hasCampaignFilter = campaignFilter != null && !campaignFilter.isBlank() && !"ALL".equalsIgnoreCase(campaignFilter);
+        Campaign scopedCampaign = (report.getCampaignId() != null && campaignRepository != null)
+                ? campaignRepository.findById(report.getCampaignId()).orElse(null)
+                : null;
+        String campaignFilter = scopedCampaign != null ? scopedCampaign.getName() : report.getCampaignFilter();
+        boolean hasCampaignFilter = scopedCampaign != null
+                || (campaignFilter != null && !campaignFilter.isBlank() && !"ALL".equalsIgnoreCase(campaignFilter));
 
+        UUID targetCampId = scopedCampaign != null ? scopedCampaign.getId() : null;
         List<ReelDeliverable> filteredReels = hasCampaignFilter
                 ? allScopedReels.stream()
-                        .filter(r -> effectiveCampaign(r, creatorMap.get(r.getCreatorId())).equalsIgnoreCase(campaignFilter))
+                        .filter(r -> (targetCampId != null && targetCampId.equals(r.getCampaignId()))
+                                || effectiveCampaign(r, creatorMap.get(r.getCreatorId())).equalsIgnoreCase(campaignFilter))
                         .toList()
                 : allScopedReels;
 
@@ -2606,20 +2737,37 @@ public class BrandService {
             reelsByCreator.computeIfAbsent(r.getCreatorId(), k -> new ArrayList<>()).add(r);
         }
 
+        Set<UUID> assignedCreatorIds = new HashSet<>();
+        if (targetCampId != null && campaignCreatorRepository != null) {
+            for (CampaignCreator cc : campaignCreatorRepository.findByCampaignIdOrderByAssignedAtDesc(targetCampId)) {
+                if (cc.getCreatorId() != null) assignedCreatorIds.add(cc.getCreatorId());
+            }
+        }
+
         List<Creator> filteredCreators = hasCampaignFilter
                 ? creators.stream()
-                        .filter(c -> creatorMatchesCampaign(c, reelsByCreator.getOrDefault(c.getId(), List.of()), campaignFilter))
+                        .filter(c -> assignedCreatorIds.contains(c.getId())
+                                || creatorMatchesCampaign(c, reelsByCreator.getOrDefault(c.getId(), List.of()), campaignFilter))
                         .toList()
                 : creators;
 
         boolean includeSpend = report.isIncludeSpend();
+
+        Long effectiveTargetGoal = null;
+        if (scopedAgency == null) {
+            if (scopedCampaign != null && scopedCampaign.getTargetViewsGoal() != null) {
+                effectiveTargetGoal = scopedCampaign.getTargetViewsGoal();
+            } else if (!hasCampaignFilter) {
+                effectiveTargetGoal = brand.getTargetViewsGoal();
+            }
+        }
 
         Map<String, Object> safeBrand = new LinkedHashMap<>();
         safeBrand.put("name", scopedAgency != null ? scopedAgency.getName() : brand.getName());
         safeBrand.put("brandName", brand.getName());
         safeBrand.put("slug", brand.getSlug());
         safeBrand.put("currency", brand.getCurrency());
-        safeBrand.put("targetViewsGoal", (!hasCampaignFilter && scopedAgency == null) ? brand.getTargetViewsGoal() : null);
+        safeBrand.put("targetViewsGoal", effectiveTargetGoal);
 
         List<Map<String, Object>> safeCreators = filteredCreators.stream().map(c -> {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -2715,9 +2863,344 @@ public class BrandService {
         return false;
     }
 
-    private static String trimToMax(String val, int maxLen) {
+    public static String trimToMax(String val, int maxLen) {
         if (val == null) return "";
         String t = val.trim();
         return t.length() > maxLen ? t.substring(0, maxLen) : t;
+    }
+
+    public Campaign resolveCampaignByIdForBrand(UUID brandId, String rawCampaignId, boolean rejectDraft) {
+        if (campaignRepository == null || rawCampaignId == null || rawCampaignId.isBlank()) {
+            return null;
+        }
+        UUID cid;
+        try {
+            cid = UUID.fromString(rawCampaignId.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid campaign ID.");
+        }
+        Campaign campaign = campaignRepository.findById(cid)
+                .orElseThrow(() -> new IllegalArgumentException("Campaign not found."));
+        if (!brandId.equals(campaign.getBrandId())) {
+            throw new AccessDeniedException("Campaign does not belong to this workspace.");
+        }
+        if (rejectDraft && "DRAFT".equalsIgnoreCase(campaign.getStatus())) {
+            throw new AccessDeniedException("This campaign is currently in draft status.");
+        }
+        return campaign;
+    }
+
+    private Campaign resolveCampaignForDeliverable(
+            UUID brandId,
+            String rawCampaignId,
+            String rawCampaignTag,
+            String creatorCampaignName,
+            String actor,
+            boolean autoCreateIfMissing) {
+        if (campaignRepository == null) return null;
+        if (rawCampaignId != null && !rawCampaignId.isBlank()) {
+            return resolveCampaignByIdForBrand(brandId, rawCampaignId, false);
+        }
+        String candidate = trimToMax(rawCampaignTag, 80);
+        if (candidate.isEmpty()) candidate = trimToMax(creatorCampaignName, 80);
+        if (candidate.isEmpty()) return null;
+
+        Optional<Campaign> existing = campaignRepository.findByBrandIdAndNameIgnoreCase(brandId, candidate);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        if (!autoCreateIfMissing) {
+            return null;
+        }
+        Campaign camp = new Campaign();
+        camp.setBrandId(brandId);
+        camp.setName(candidate);
+        camp.setStatus("ACTIVE");
+        camp.setCreatedAt(Instant.now());
+        camp.setUpdatedAt(Instant.now());
+        return campaignRepository.save(camp);
+    }
+
+    public CampaignCreator ensureCampaignCreatorLinked(
+            UUID campaignId,
+            UUID brandId,
+            UUID creatorId,
+            boolean demoData,
+            int expectedReels,
+            Double agreedCost) {
+        if (campaignCreatorRepository == null || campaignId == null || creatorId == null) {
+            return null;
+        }
+        Optional<CampaignCreator> existing = campaignCreatorRepository.findByCampaignIdAndCreatorId(campaignId, creatorId);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        CampaignCreator cc = new CampaignCreator();
+        cc.setCampaignId(campaignId);
+        cc.setBrandId(brandId);
+        cc.setCreatorId(creatorId);
+        cc.setDemoData(demoData);
+        cc.setExpectedReels(Math.max(1, expectedReels));
+        if (agreedCost != null && agreedCost > 0) {
+            cc.setAgreedCost(agreedCost);
+        }
+        return campaignCreatorRepository.save(cc);
+    }
+
+    private Campaign ensureDemoCampaignRecord(
+            UUID brandId,
+            String name,
+            Double budgetAmount,
+            Long targetViewsGoal,
+            String briefNotes,
+            long startOffsetDays,
+            long endOffsetDays) {
+        if (campaignRepository == null) return null;
+        Optional<Campaign> existing = campaignRepository.findByBrandIdAndNameIgnoreCase(brandId, name);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        Campaign c = new Campaign();
+        c.setBrandId(brandId);
+        c.setName(name);
+        c.setStatus("ACTIVE");
+        c.setBudgetAmount(budgetAmount);
+        c.setTargetViewsGoal(targetViewsGoal);
+        c.setBriefNotes(briefNotes);
+        LocalDate today = LocalDate.now();
+        c.setStartDate(today.plusDays(startOffsetDays));
+        c.setEndDate(today.plusDays(endOffsetDays));
+        c.setDemoData(true);
+        return campaignRepository.save(c);
+    }
+
+    /**
+     * Automatically promotes legacy free-text campaign names/tags on Creators and Deliverables
+     * into first-class Campaign & CampaignCreator records so existing workspaces keep all history.
+     */
+    @Transactional
+    public void ensureLegacyCampaignsMigrated(UUID brandId) {
+        if (campaignRepository == null || campaignCreatorRepository == null || brandId == null) {
+            return;
+        }
+        List<Campaign> existingCampaigns = new ArrayList<>(campaignRepository.findByBrandIdOrderByCreatedAtDesc(brandId));
+        Map<String, Campaign> byLowerName = new LinkedHashMap<>();
+        Map<UUID, Campaign> byId = new LinkedHashMap<>();
+        for (Campaign c : existingCampaigns) {
+            if (c.getId() != null) byId.put(c.getId(), c);
+            if (c.getName() != null && !c.getName().isBlank()) {
+                byLowerName.putIfAbsent(c.getName().trim().toLowerCase(Locale.ROOT), c);
+            }
+        }
+
+        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId);
+        Map<UUID, Creator> creatorById = new HashMap<>();
+        for (Creator c : creators) {
+            if (c.getId() != null) creatorById.put(c.getId(), c);
+            String cName = trimToMax(c.getCampaignName(), 80);
+            if (!cName.isEmpty() && !"Untagged / General".equalsIgnoreCase(cName)) {
+                Campaign camp = findOrPromoteCampaign(brandId, cName, c.isDemoData(), byLowerName, byId);
+                ensureCampaignCreatorLinked(camp.getId(), brandId, c.getId(), c.isDemoData(), 1, null);
+            }
+        }
+
+        List<ReelDeliverable> reels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId);
+        List<ReelDeliverable> dirtyReels = new ArrayList<>();
+        for (ReelDeliverable r : reels) {
+            Creator parent = creatorById.get(r.getCreatorId());
+            if (r.getCampaignId() != null && byId.containsKey(r.getCampaignId())) {
+                Campaign linked = byId.get(r.getCampaignId());
+                if (!linked.getName().equals(r.getCampaignTag())) {
+                    r.setCampaignTag(linked.getName());
+                    dirtyReels.add(r);
+                }
+                if (parent != null) {
+                    ensureCampaignCreatorLinked(linked.getId(), brandId, parent.getId(),
+                            r.isDemoData() || parent.isDemoData(), 1, null);
+                }
+                continue;
+            }
+            String effTag = trimToMax(effectiveCampaign(r, parent), 80);
+            if (!effTag.isEmpty() && !"Untagged / General".equalsIgnoreCase(effTag)) {
+                boolean isDemo = r.isDemoData() || (parent != null && parent.isDemoData());
+                Campaign camp = findOrPromoteCampaign(brandId, effTag, isDemo, byLowerName, byId);
+                r.setCampaignId(camp.getId());
+                r.setCampaignTag(camp.getName());
+                dirtyReels.add(r);
+                if (parent != null) {
+                    ensureCampaignCreatorLinked(camp.getId(), brandId, parent.getId(), isDemo, 1, null);
+                }
+            }
+        }
+        if (!dirtyReels.isEmpty()) {
+            reelRepository.saveAll(dirtyReels);
+        }
+    }
+
+    private Campaign findOrPromoteCampaign(
+            UUID brandId,
+            String name,
+            boolean isDemo,
+            Map<String, Campaign> byLowerName,
+            Map<UUID, Campaign> byId) {
+        String key = name.trim().toLowerCase(Locale.ROOT);
+        Campaign existing = byLowerName.get(key);
+        if (existing != null) return existing;
+
+        Campaign created = new Campaign();
+        created.setBrandId(brandId);
+        created.setName(name.trim());
+        created.setStatus("ACTIVE");
+        created.setDemoData(isDemo);
+        Campaign saved = campaignRepository.save(created);
+        byLowerName.put(key, saved);
+        if (saved.getId() != null) byId.put(saved.getId(), saved);
+        return saved;
+    }
+
+    @Transactional
+    public List<Map<String, Object>> listScopedCampaignSummaries(UUID brandId, Authentication auth) {
+        Brand brand = getBrand(brandId);
+        ensureLegacyCampaignsMigrated(brandId);
+        Optional<Agency> scopedAgency = resolveScopedAgencyForCaller(brand, auth);
+        List<Creator> creators = creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId).stream()
+                .filter(c -> scopedAgency.isEmpty() || creatorBelongsToAgency(c, scopedAgency.get()))
+                .toList();
+        Set<UUID> allowedCreatorIds = new HashSet<>();
+        for (Creator c : creators) {
+            if (c.getId() != null) allowedCreatorIds.add(c.getId());
+        }
+        List<ReelDeliverable> reels = reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId).stream()
+                .filter(r -> scopedAgency.isEmpty() || (r.getCreatorId() != null && allowedCreatorIds.contains(r.getCreatorId())))
+                .toList();
+        return buildCampaignSummariesList(brandId, scopedAgency, creators, reels);
+    }
+
+    public List<Map<String, Object>> buildCampaignSummariesList(
+            UUID brandId,
+            Optional<Agency> scopedAgency,
+            List<Creator> scopedCreators,
+            List<ReelDeliverable> scopedReels) {
+        if (campaignRepository == null) return List.of();
+
+        List<Campaign> allCampaigns = campaignRepository.findByBrandIdOrderByCreatedAtDesc(brandId).stream()
+                .filter(c -> scopedAgency.isEmpty() || !"DRAFT".equalsIgnoreCase(c.getStatus()))
+                .toList();
+        if (allCampaigns.isEmpty()) return List.of();
+
+        Map<UUID, Creator> creatorMap = new LinkedHashMap<>();
+        for (Creator c : scopedCreators) {
+            if (c.getId() != null) creatorMap.put(c.getId(), c);
+        }
+
+        List<CampaignCreator> allAssignments = campaignCreatorRepository != null
+                ? campaignCreatorRepository.findByBrandId(brandId)
+                : List.of();
+        Map<UUID, List<CampaignCreator>> assignmentsByCamp = new HashMap<>();
+        for (CampaignCreator cc : allAssignments) {
+            if (scopedAgency.isPresent() && !creatorMap.containsKey(cc.getCreatorId())) continue;
+            assignmentsByCamp.computeIfAbsent(cc.getCampaignId(), k -> new ArrayList<>()).add(cc);
+        }
+
+        Map<UUID, List<ReelDeliverable>> reelsByCamp = new HashMap<>();
+        Map<UUID, Integer> totalReelsByCreator = new HashMap<>();
+        for (ReelDeliverable r : scopedReels) {
+            totalReelsByCreator.merge(r.getCreatorId(), 1, Integer::sum);
+            UUID cid = r.getCampaignId();
+            if (cid != null) {
+                reelsByCamp.computeIfAbsent(cid, k -> new ArrayList<>()).add(r);
+            }
+        }
+
+        List<Map<String, Object>> summaries = new ArrayList<>();
+        for (Campaign camp : allCampaigns) {
+            List<ReelDeliverable> campReels = new ArrayList<>(reelsByCamp.getOrDefault(camp.getId(), List.of()));
+            for (ReelDeliverable r : scopedReels) {
+                if (r.getCampaignId() == null && camp.getName().equalsIgnoreCase(effectiveCampaign(r, creatorMap.get(r.getCreatorId())))) {
+                    campReels.add(r);
+                }
+            }
+
+            List<CampaignCreator> campAssignments = assignmentsByCamp.getOrDefault(camp.getId(), List.of());
+            Map<UUID, CampaignCreator> assignmentByCreator = new HashMap<>();
+            Set<UUID> creatorIdsInCamp = new LinkedHashSet<>();
+            for (CampaignCreator cc : campAssignments) {
+                if (creatorMap.containsKey(cc.getCreatorId())) {
+                    creatorIdsInCamp.add(cc.getCreatorId());
+                    assignmentByCreator.put(cc.getCreatorId(), cc);
+                }
+            }
+            for (ReelDeliverable r : campReels) {
+                if (r.getCreatorId() != null && creatorMap.containsKey(r.getCreatorId())) {
+                    creatorIdsInCamp.add(r.getCreatorId());
+                }
+            }
+
+            long views = 0;
+            long interactions = 0;
+            for (ReelDeliverable r : campReels) {
+                views += r.getViewsCount();
+                interactions += r.getLikesCount() + r.getCommentsCount();
+            }
+
+            double spend = computeCampaignSpend(creatorIdsInCamp, assignmentByCreator, creatorMap, campReels, totalReelsByCreator);
+            double cpv = (spend > 0 && views > 0) ? Math.round((spend / views) * 100.0) / 100.0 : 0.0;
+            double engRate = (views > 0 && interactions > 0) ? Math.round((interactions * 100.0 / views) * 100.0) / 100.0 : 0.0;
+
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", camp.getId());
+            row.put("brandId", camp.getBrandId());
+            row.put("name", camp.getName());
+            row.put("status", camp.getStatus());
+            row.put("budgetAmount", camp.getBudgetAmount());
+            row.put("targetViewsGoal", camp.getTargetViewsGoal());
+            row.put("startDate", camp.getStartDate());
+            row.put("endDate", camp.getEndDate());
+            row.put("briefNotes", camp.getBriefNotes());
+            row.put("demoData", camp.isDemoData());
+            row.put("createdAt", camp.getCreatedAt());
+            row.put("creatorsCount", creatorIdsInCamp.size());
+            row.put("reelsCount", campReels.size());
+            row.put("viewsCount", views);
+            row.put("interactionsCount", interactions);
+            row.put("spendAmount", Math.round(spend));
+            row.put("blendedCpv", cpv > 0 ? cpv : null);
+            row.put("engagementRate", engRate);
+            summaries.add(row);
+        }
+        return summaries;
+    }
+
+    public double computeCampaignSpend(
+            Set<UUID> creatorIdsInCamp,
+            Map<UUID, CampaignCreator> assignmentByCreator,
+            Map<UUID, Creator> creatorMap,
+            List<ReelDeliverable> campReels,
+            Map<UUID, Integer> totalReelsByCreator) {
+        Map<UUID, List<ReelDeliverable>> campReelsByCreator = new HashMap<>();
+        for (ReelDeliverable r : campReels) {
+            campReelsByCreator.computeIfAbsent(r.getCreatorId(), k -> new ArrayList<>()).add(r);
+        }
+        double spend = 0.0;
+        for (UUID cid : creatorIdsInCamp) {
+            CampaignCreator cc = assignmentByCreator.get(cid);
+            if (cc != null && cc.getAgreedCost() != null && cc.getAgreedCost() > 0) {
+                spend += cc.getAgreedCost();
+                continue;
+            }
+            Creator c = creatorMap.get(cid);
+            if (c == null) continue;
+            List<ReelDeliverable> cReels = campReelsByCreator.getOrDefault(cid, List.of());
+            if ("PER_DELIVERABLE".equals(c.getCostMode())) {
+                for (ReelDeliverable r : cReels) {
+                    Double rc = (r.getCostQuoted() != null && r.getCostQuoted() > 0) ? r.getCostQuoted() : c.getCostQuoted();
+                    if (rc != null && rc > 0) spend += rc;
+                }
+            } else if (c.getCostQuoted() != null && c.getCostQuoted() > 0) {
+                int totalOwned = Math.max(1, totalReelsByCreator.getOrDefault(cid, Math.max(1, cReels.size())));
+                spend += cReels.isEmpty() ? 0.0 : (c.getCostQuoted() * cReels.size() / totalOwned);
+            }
+        }
+        return spend;
     }
 }

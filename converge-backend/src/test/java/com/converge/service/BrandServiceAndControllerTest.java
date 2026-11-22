@@ -775,4 +775,80 @@ class BrandServiceAndControllerTest {
         assertEquals(1, bulkRes.get("failedCount"));
         assertEquals(1, bulkRes.get("createdCreatorsCount"));
     }
+
+    @Test
+    void ensureLegacyCampaignsMigratedPromotesTextTagsIdempotently() {
+        var campRepo = mock(com.converge.repository.CampaignRepository.class);
+        var ccRepo = mock(com.converge.repository.CampaignCreatorRepository.class);
+        BrandService serviceWithCampaigns = new BrandService(
+                brandRepository, agencyRepository, creatorRepository,
+                reelRepository, auditLogRepository, userRepository, emailService,
+                instagramGraphService, null, null,
+                campRepo, ccRepo, "sysadmin@converge.test"
+        );
+
+        UUID brandId = UUID.randomUUID();
+        UUID creator1Id = UUID.randomUUID();
+        UUID creator2Id = UUID.randomUUID();
+
+        var creator1 = new Creator();
+        creator1.setId(creator1Id);
+        creator1.setBrandId(brandId);
+        creator1.setName("Creator One");
+        creator1.setHandle("@creator_one");
+        creator1.setCampaignName("Winter Drop");
+        creator1.setCostQuoted(12000.0);
+
+        var creator2 = new Creator();
+        creator2.setId(creator2Id);
+        creator2.setBrandId(brandId);
+        creator2.setName("Creator Two");
+        creator2.setHandle("@creator_two");
+
+        var legacyReel = new com.converge.entity.ReelDeliverable();
+        legacyReel.setId(UUID.randomUUID());
+        legacyReel.setBrandId(brandId);
+        legacyReel.setCreatorId(creator2Id);
+        legacyReel.setCampaignTag("Monsoon Sale");
+
+        List<com.converge.entity.Campaign> savedCampaigns = new ArrayList<>();
+        List<com.converge.entity.CampaignCreator> savedLinks = new ArrayList<>();
+
+        when(campRepo.findByBrandIdOrderByCreatedAtDesc(brandId)).thenAnswer(inv -> new ArrayList<>(savedCampaigns));
+        when(campRepo.save(any(com.converge.entity.Campaign.class))).thenAnswer(inv -> {
+            var c = inv.getArgument(0, com.converge.entity.Campaign.class);
+            if (c.getId() == null) c.setId(UUID.randomUUID());
+            savedCampaigns.add(c);
+            return c;
+        });
+        when(creatorRepository.findByBrandIdOrderByLinkedAtDesc(brandId)).thenReturn(List.of(creator1, creator2));
+        when(reelRepository.findByBrandIdOrderBySyncedAtDesc(brandId)).thenReturn(List.of(legacyReel));
+        when(ccRepo.findByCampaignIdAndCreatorId(any(), any())).thenAnswer(inv -> {
+            UUID cid = inv.getArgument(0);
+            UUID crid = inv.getArgument(1);
+            return savedLinks.stream()
+                    .filter(l -> cid.equals(l.getCampaignId()) && crid.equals(l.getCreatorId()))
+                    .findFirst();
+        });
+        when(ccRepo.save(any(com.converge.entity.CampaignCreator.class))).thenAnswer(inv -> {
+            var link = inv.getArgument(0, com.converge.entity.CampaignCreator.class);
+            if (link.getId() == null) link.setId(UUID.randomUUID());
+            savedLinks.add(link);
+            return link;
+        });
+        when(reelRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        serviceWithCampaigns.ensureLegacyCampaignsMigrated(brandId);
+
+        assertEquals(2, savedCampaigns.size());
+        assertTrue(savedCampaigns.stream().anyMatch(c -> "Winter Drop".equals(c.getName())));
+        assertTrue(savedCampaigns.stream().anyMatch(c -> "Monsoon Sale".equals(c.getName())));
+        assertNotNull(legacyReel.getCampaignId());
+        assertEquals(2, savedLinks.size());
+
+        // Second run must be completely idempotent (no duplicate campaigns or links)
+        serviceWithCampaigns.ensureLegacyCampaignsMigrated(brandId);
+        assertEquals(2, savedCampaigns.size());
+        assertEquals(2, savedLinks.size());
+    }
 }

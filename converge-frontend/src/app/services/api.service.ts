@@ -200,6 +200,7 @@ export interface ReelDeliverable {
   thumbnailUrl?: string;
   duration: string;
   costQuoted?: number | null;
+  campaignId?: string | null;
   campaignTag?: string;
   demoData?: boolean;
   viewsCount: number;
@@ -216,12 +217,96 @@ export interface ReelDeliverable {
   syncedAt: string;
 }
 
+export interface CampaignSummary {
+  id: string;
+  brandId: string;
+  name: string;
+  status: 'ACTIVE' | 'PLANNING' | 'COMPLETED' | 'DRAFT';
+  budgetAmount?: number | null;
+  targetViewsGoal?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  briefNotes?: string;
+  demoData?: boolean;
+  createdAt: string;
+  creatorsCount: number;
+  reelsCount: number;
+  viewsCount: number;
+  interactionsCount: number;
+  spendAmount: number;
+  blendedCpv?: number | null;
+  engagementRate: number;
+}
+
+export interface Campaign {
+  id: string;
+  brandId: string;
+  name: string;
+  status: 'ACTIVE' | 'PLANNING' | 'COMPLETED' | 'DRAFT';
+  budgetAmount?: number | null;
+  targetViewsGoal?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  briefNotes?: string;
+  demoData?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CampaignCreatorAssignment {
+  id: string;
+  campaignId: string;
+  brandId: string;
+  creatorId: string;
+  agreedCost?: number | null;
+  expectedReels: number;
+  notes?: string;
+  demoData?: boolean;
+  assignedAt: string;
+}
+
+export interface CampaignCreatorEntry {
+  assignment?: CampaignCreatorAssignment | null;
+  creator: Creator;
+  reelsCount: number;
+  expectedReels: number;
+  viewsCount: number;
+  likesCount: number;
+  commentsCount: number;
+  calculatedSpend?: number | null;
+  status: 'POSTED' | 'PENDING_POST';
+}
+
+export interface CampaignDetailBundle {
+  campaign: Campaign;
+  brand: { id: string; name: string; currency: string };
+  assignedCreators: CampaignCreatorEntry[];
+  deliverables: ReelDeliverable[];
+  reelDeltas?: Record<string, ReelDeltaSummary>;
+  stats: {
+    viewsDelivered: number;
+    totalInteractions: number;
+    totalSpend: number;
+    budgetRemaining?: number | null;
+    budgetUtilizationPct?: number | null;
+    goalProgressPct?: number | null;
+    blendedCpv?: number | null;
+    blendedCpe?: number | null;
+    engagementRate: number;
+    assignedCreatorsCount: number;
+    postedCreatorsCount: number;
+    expectedReelsCount: number;
+    deliverablesCount: number;
+  };
+}
+
 export interface SharedReportRecord {
   id: string;
   brandId: string;
   agencyId?: string | null;
   shareToken: string;
   title: string;
+  campaignId?: string | null;
   campaignFilter: string;
   includeSpend: boolean;
   createdBy?: string;
@@ -300,6 +385,7 @@ export class ApiService {
     creators: Creator[];
     recentReels: ReelDeliverable[];
     deliverables?: ReelDeliverable[];
+    campaigns?: CampaignSummary[];
     reelDeltas?: Record<string, ReelDeltaSummary>;
     stats: {
       totalReels: number;
@@ -364,11 +450,11 @@ export class ApiService {
     return this.http.get<ReelDeliverable[]>(`/api/creators/${creatorId}/deliverables`);
   }
 
-  addReelDeliverable(creatorId: string, payload: { title: string; reelUrl: string; costQuoted?: string | number | null; campaignTag?: string }): Observable<ReelDeliverable> {
+  addReelDeliverable(creatorId: string, payload: { title: string; reelUrl: string; costQuoted?: string | number | null; campaignId?: string | null; campaignTag?: string }): Observable<ReelDeliverable> {
     return this.http.post<ReelDeliverable>(`/api/creators/${creatorId}/deliverables`, payload);
   }
 
-  updateDeliverable(deliverableId: string, payload: { title?: string; costQuoted?: number | null; campaignTag?: string }): Observable<ReelDeliverable> {
+  updateDeliverable(deliverableId: string, payload: { title?: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string }): Observable<ReelDeliverable> {
     return this.http.put<ReelDeliverable>(`/api/creators/deliverables/${deliverableId}`, payload);
   }
 
@@ -449,9 +535,10 @@ export class ApiService {
 
   bulkImportDeliverables(brandId: string, payload: {
     defaultCreatorId?: string;
+    defaultCampaignId?: string | null;
     defaultCampaignTag?: string;
     defaultCostQuoted?: number | string | null;
-    items: Array<{ reelUrl: string; creatorHandle?: string; title?: string; costQuoted?: string | number | null; campaignTag?: string }>;
+    items: Array<{ reelUrl: string; creatorHandle?: string; title?: string; costQuoted?: string | number | null; campaignId?: string | null; campaignTag?: string }>;
   }): Observable<{
     addedCount: number;
     skippedDuplicatesCount: number;
@@ -477,6 +564,7 @@ export class ApiService {
 
   createSharedReport(brandId: string, payload: {
     title: string;
+    campaignId?: string | null;
     campaignFilter: string;
     includeSpend: boolean;
     expiryDays?: number | null;
@@ -490,5 +578,54 @@ export class ApiService {
 
   getPublicSharedReport(token: string): Observable<PublicReportBundle> {
     return this.http.get<PublicReportBundle>(`/api/public/reports/${encodeURIComponent(token)}`);
+  }
+
+  listCampaigns(brandId: string): Observable<CampaignSummary[]> {
+    return this.http.get<CampaignSummary[]>(`/api/brands/${brandId}/campaigns`);
+  }
+
+  createCampaign(brandId: string, payload: {
+    name: string;
+    status?: string;
+    budgetAmount?: number | null;
+    targetViewsGoal?: number | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    briefNotes?: string;
+  }): Observable<CampaignDetailBundle> {
+    return this.http.post<CampaignDetailBundle>(`/api/brands/${brandId}/campaigns`, payload);
+  }
+
+  getCampaignDetail(campaignId: string): Observable<CampaignDetailBundle> {
+    return this.http.get<CampaignDetailBundle>(`/api/campaigns/${campaignId}`);
+  }
+
+  updateCampaign(campaignId: string, payload: {
+    name?: string;
+    status?: string;
+    budgetAmount?: number | null;
+    targetViewsGoal?: number | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    briefNotes?: string;
+  }): Observable<CampaignDetailBundle> {
+    return this.http.patch<CampaignDetailBundle>(`/api/campaigns/${campaignId}`, payload);
+  }
+
+  deleteCampaign(campaignId: string): Observable<{ deleted: boolean }> {
+    return this.http.delete<{ deleted: boolean }>(`/api/campaigns/${campaignId}`);
+  }
+
+  assignCreatorToCampaign(campaignId: string, payload: {
+    creatorId: string;
+    agreedCost?: number | null;
+    expectedReels?: number;
+    notes?: string;
+  }): Observable<CampaignCreatorAssignment> {
+    return this.http.post<CampaignCreatorAssignment>(`/api/campaigns/${campaignId}/creators`, payload);
+  }
+
+  removeCreatorFromCampaign(campaignId: string, creatorId: string): Observable<{ removed: boolean }> {
+    return this.http.delete<{ removed: boolean }>(`/api/campaigns/${campaignId}/creators/${creatorId}`);
   }
 }

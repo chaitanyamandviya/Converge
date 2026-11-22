@@ -4,13 +4,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { ApiService, Agency, AuditLog, Brand, Creator, CreatorInsightsBundle, DeliverableInsightsBundle, InstagramStatus, ReelDeliverable, ReelDeltaSummary, ReelSnapshotPoint, SharedReportRecord } from '../services/api.service';
+import { ApiService, Agency, AuditLog, Brand, Campaign, CampaignDetailBundle, CampaignSummary, Creator, CreatorInsightsBundle, DeliverableInsightsBundle, InstagramStatus, ReelDeliverable, ReelDeltaSummary, ReelSnapshotPoint, SharedReportRecord } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { DashboardExitAware, DashboardExitController } from '../services/auth.guard';
 import { ConfirmModalComponent } from '../components/confirm-modal.component';
 import { AgencyFormModalComponent, AgencyFormPayload } from '../components/agency-form-modal.component';
 import { AgencyDetailsModalComponent } from '../components/agency-details-modal.component';
 import { BulkImportModalComponent, BulkImportResult, BulkImportSubmitPayload } from '../components/bulk-import-modal.component';
+import { CampaignFormModalComponent, CampaignFormPayload } from '../components/campaign-form-modal.component';
+import { AssignCreatorPayload, CampaignDetailViewComponent } from '../components/campaign-detail-view.component';
 import { CreateShareReportPayload, ShareReportModalComponent } from '../components/share-report-modal.component';
 import { ExecutivePdfModalComponent } from '../components/executive-pdf-modal.component';
 import { CreatorInsightsViewComponent } from '../components/creator-insights-view.component';
@@ -28,7 +30,7 @@ import { safeExternalUrl } from '../utils/url-safety';
 @Component({
   selector: 'app-workspace',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmModalComponent, AgencyFormModalComponent, AgencyDetailsModalComponent, BulkImportModalComponent, ShareReportModalComponent, ExecutivePdfModalComponent, CreatorInsightsViewComponent, ReelInsightsViewComponent, AppHeaderComponent, AppFooterComponent, ThemeToggleComponent],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent, AgencyFormModalComponent, AgencyDetailsModalComponent, BulkImportModalComponent, CampaignFormModalComponent, CampaignDetailViewComponent, ShareReportModalComponent, ExecutivePdfModalComponent, CreatorInsightsViewComponent, ReelInsightsViewComponent, AppHeaderComponent, AppFooterComponent, ThemeToggleComponent],
   template: `
     <div [class.cv-print-hide]="showPdfModal()" class="bg-cv-canvas text-cv-ink font-body antialiased min-h-screen flex flex-col overflow-x-clip selection:bg-[#f54e26]/25 selection:text-cv-ink">
       <!-- Editorial Header -->
@@ -158,6 +160,7 @@ import { safeExternalUrl } from '../utils/url-safety';
             [bundle]="inspectedBundle()"
             [reels]="creatorReels()"
             [drawerMedia]="drawerMedia()"
+            [campaigns]="campaigns()"
             [igStatus]="igStatus()"
             [canManage]="canManageCreatorDeliverables(ic)"
             [loadingMedia]="loadingCreatorMedia()"
@@ -175,6 +178,23 @@ import { safeExternalUrl } from '../utils/url-safety';
             (copyUrl)="copyReelUrl($event)"
             (requestDeleteReel)="deliverableToDelete.set($event)">
           </app-creator-insights-view>
+        } @else if (inspectedCampaignId()) {
+          <app-campaign-detail-view
+            [bundle]="inspectedCampaignBundle()"
+            [manageableCreators]="manageableCreators()"
+            [canManageCampaign]="canManageAgencies()"
+            [assigningBusy]="campaignAssignBusy()"
+            (back)="closeCampaignDetail()"
+            (editCampaign)="openCampaignEditModal($event)"
+            (deleteCampaign)="campaignToDelete.set($event)"
+            (assignCreator)="submitCampaignCreatorAssign($event)"
+            (removeCreator)="removeCampaignCreator($event)"
+            (openCreator)="openCreatorFromCampaign($event)"
+            (openReel)="openDeliverableInsights($event)"
+            (bulkImportToCampaign)="openBulkImportModal($event.id)"
+            (shareCampaignReport)="openShareModal($event.id)"
+            (exportCampaignPdf)="openCampaignPdf($event)">
+          </app-campaign-detail-view>
         } @else {
           <!-- Workspace Header -->
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-cv-border-soft animate-fade-in-up">
@@ -235,6 +255,12 @@ import { safeExternalUrl } from '../utils/url-safety';
                       class="pb-2.5 -mb-px border-b-2 font-headline uppercase tracking-[0.03em] text-lg font-bold whitespace-nowrap transition-colors cursor-pointer"
                       [ngClass]="activeTab() === 'overview' ? 'border-[#f54e26] text-cv-ink' : 'border-transparent text-cv-ink-muted hover:text-cv-ink'">
                 OVERVIEW
+              </button>
+              <button type="button" (click)="switchTab('campaigns')"
+                      class="pb-2.5 -mb-px border-b-2 font-headline uppercase tracking-[0.03em] text-lg font-bold whitespace-nowrap transition-colors inline-flex items-center gap-2 cursor-pointer"
+                      [ngClass]="activeTab() === 'campaigns' ? 'border-[#f54e26] text-cv-ink' : 'border-transparent text-cv-ink-muted hover:text-cv-ink'">
+                <span>CAMPAIGNS</span>
+                <span class="font-body text-xs font-normal text-cv-ink-muted">({{ campaigns().length }})</span>
               </button>
               <button type="button" (click)="switchTab('creators')"
                       class="pb-2.5 -mb-px border-b-2 font-headline uppercase tracking-[0.03em] text-lg font-bold whitespace-nowrap transition-colors inline-flex items-center gap-2 cursor-pointer"
@@ -1067,6 +1093,162 @@ import { safeExternalUrl } from '../utils/url-safety';
             </section>
           }
 
+          <!-- TAB: CAMPAIGNS -->
+          @if (activeTab() === 'campaigns') {
+            <section class="space-y-5 animate-fade-in-up">
+              <div class="bg-cv-card rounded-[4px] p-4 border border-cv-border space-y-3">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <div class="group flex-1 sm:max-w-md flex items-center gap-2.5 h-10 px-3 rounded-[4px] bg-cv-well border border-cv-border-strong focus-within:border-[#f54e26] transition-colors">
+                    <svg class="doodle-svg w-4 h-4 text-cv-ink-muted group-focus-within:text-[#f54e26] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+                    <input [(ngModel)]="campaignSearch" (ngModelChange)="campaignSearchSig.set($event)" placeholder="Search campaigns by name or brief..." class="w-full min-w-0 bg-transparent text-sm text-cv-ink placeholder:text-cv-ink-subtle focus:outline-none"/>
+                  </div>
+                  @if (canManageAgencies()) {
+                    <button type="button" (click)="openCampaignCreateModal()"
+                            class="h-10 px-5 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase tracking-[0.03em] text-lg font-bold flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-colors">
+                      <span>+ NEW CAMPAIGN</span>
+                    </button>
+                  }
+                </div>
+
+                <div class="flex items-center gap-1.5 pt-2.5 border-t border-cv-border-soft flex-wrap">
+                  <button type="button" (click)="campaignStatusFilter.set('ALL')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
+                          [ngClass]="campaignStatusFilter() === 'ALL' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                    All ({{ campaigns().length }})
+                  </button>
+                  <button type="button" (click)="campaignStatusFilter.set('ACTIVE')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
+                          [ngClass]="campaignStatusFilter() === 'ACTIVE' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                    Active
+                  </button>
+                  <button type="button" (click)="campaignStatusFilter.set('PLANNING')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
+                          [ngClass]="campaignStatusFilter() === 'PLANNING' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                    Planning
+                  </button>
+                  <button type="button" (click)="campaignStatusFilter.set('COMPLETED')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
+                          [ngClass]="campaignStatusFilter() === 'COMPLETED' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                    Completed
+                  </button>
+                  @if (canManageAgencies()) {
+                    <button type="button" (click)="campaignStatusFilter.set('DRAFT')" class="h-8 px-3.5 rounded-[4px] text-xs font-medium cursor-pointer transition-colors"
+                            [ngClass]="campaignStatusFilter() === 'DRAFT' ? 'bg-cv-ink text-cv-ink-inverse font-semibold' : 'bg-cv-well border border-cv-border text-cv-ink-muted hover:text-cv-ink'">
+                      Draft
+                    </button>
+                  }
+                </div>
+              </div>
+
+              @if (filteredCampaigns().length === 0) {
+                <div class="p-8 sm:p-10 rounded-[4px] bg-cv-card border border-dashed border-cv-border-strong text-center space-y-3">
+                  <p class="text-sm text-cv-ink-muted">
+                    {{ campaigns().length === 0
+                      ? 'No campaigns created yet. Create a campaign to organize creator bookings, budgets, and Reels.'
+                      : 'No campaigns match the current filter.' }}
+                  </p>
+                  <div class="flex flex-wrap items-center justify-center gap-2">
+                    @if (canManageAgencies()) {
+                      <button type="button" (click)="openCampaignCreateModal()"
+                              class="h-9 px-5 rounded-[4px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] font-headline uppercase text-base font-bold cursor-pointer transition-colors">
+                        + CREATE CAMPAIGN
+                      </button>
+                    }
+                    @if (creators().length === 0) {
+                      <button type="button" (click)="loadDemoCampaign()" [disabled]="demoBusy()"
+                              class="h-9 px-4 rounded-[4px] bg-cv-control hover:bg-cv-control-hover border border-cv-border-strong text-xs font-semibold text-cv-ink cursor-pointer transition-colors">
+                        Try Demo Campaign
+                      </button>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 tabular-nums">
+                  @for (camp of filteredCampaigns(); track camp.id) {
+                    <article (click)="inspectCampaign(camp.id)"
+                             class="bg-cv-card rounded-[6px] p-4 sm:p-5 border border-cv-border hover:border-[#f54e26] transition-colors cursor-pointer flex flex-col justify-between gap-4">
+                      <div class="space-y-2.5">
+                        <div class="flex items-start justify-between gap-2">
+                          <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                              <span class="px-2 py-0.5 rounded-[3px] text-[10px] font-bold uppercase tracking-wide"
+                                    [ngClass]="camp.status === 'ACTIVE' ? 'bg-[#007656] text-[#fff6e8]' : (camp.status === 'PLANNING' ? 'bg-[#5738af] text-[#fff6e8]' : (camp.status === 'COMPLETED' ? 'bg-cv-ink text-cv-ink-inverse' : 'bg-[#fabf29] text-[#111111]'))">
+                                {{ camp.status }}
+                              </span>
+                              @if (camp.startDate || camp.endDate) {
+                                <span class="text-[11px] text-cv-ink-subtle">{{ camp.startDate || 'Start' }} → {{ camp.endDate || 'Ongoing' }}</span>
+                              }
+                            </div>
+                            <h3 class="font-headline uppercase text-xl font-bold text-cv-ink hover:text-[#f54e26] truncate mt-1.5 leading-tight transition-colors">
+                              {{ camp.name }}
+                            </h3>
+                          </div>
+                        </div>
+
+                        @if (camp.briefNotes) {
+                          <p class="text-xs text-cv-ink-muted line-clamp-2 leading-relaxed">{{ camp.briefNotes }}</p>
+                        }
+
+                        <div class="grid grid-cols-3 divide-x divide-cv-divide rounded-[4px] bg-cv-well border border-cv-border-soft text-center py-2">
+                          <div>
+                            <span class="text-[10px] text-cv-ink-muted block">Views</span>
+                            <span class="font-headline text-lg font-bold text-[#f54e26]">{{ formatNum(camp.viewsCount) }}</span>
+                          </div>
+                          <div>
+                            <span class="text-[10px] text-cv-ink-muted block">Creators</span>
+                            <span class="font-headline text-lg font-bold text-cv-ink">{{ camp.creatorsCount }}</span>
+                          </div>
+                          <div>
+                            <span class="text-[10px] text-cv-ink-muted block">Reels</span>
+                            <span class="font-headline text-lg font-bold text-cv-green">{{ camp.reelsCount }}</span>
+                          </div>
+                        </div>
+
+                        @if (camp.targetViewsGoal && camp.targetViewsGoal > 0) {
+                          @let vPct = Math.min(100, Math.round((camp.viewsCount * 1000) / camp.targetViewsGoal) / 10);
+                          <div class="space-y-1">
+                            <div class="flex items-center justify-between text-[11px]">
+                              <span class="text-cv-ink-muted">Views Goal</span>
+                              <span class="font-semibold text-cv-ink">{{ formatNum(camp.viewsCount) }} / {{ formatNum(camp.targetViewsGoal) }}</span>
+                            </div>
+                            <div class="h-1.5 w-full rounded-[2px] bg-cv-well overflow-hidden">
+                              <div class="h-full" [style.width.%]="vPct" [style.background]="camp.viewsCount >= camp.targetViewsGoal ? '#007656' : '#f54e26'"></div>
+                            </div>
+                          </div>
+                        }
+
+                        @if (camp.budgetAmount && camp.budgetAmount > 0 && canManageAgencies()) {
+                          @let bPct = Math.min(100, Math.round((camp.spendAmount * 1000) / camp.budgetAmount) / 10);
+                          <div class="space-y-1">
+                            <div class="flex items-center justify-between text-[11px]">
+                              <span class="text-cv-ink-muted">Budget Used</span>
+                              <span class="font-semibold text-cv-ink">{{ formatBrandMoney(camp.spendAmount, 0) }} / {{ formatBrandMoney(camp.budgetAmount, 0) }}</span>
+                            </div>
+                            <div class="h-1.5 w-full rounded-[2px] bg-cv-well overflow-hidden">
+                              <div class="h-full" [style.width.%]="bPct" [style.background]="camp.spendAmount > camp.budgetAmount ? '#ff5c5c' : '#fabf29'"></div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      <div class="pt-3 border-t border-cv-border-faint flex items-center justify-between gap-2 text-xs">
+                        <span class="text-cv-ink-muted">
+                          {{ camp.blendedCpv ? ('Blended CPV: ' + formatBrandMoney(camp.blendedCpv, 2)) : (camp.engagementRate > 0 ? camp.engagementRate + '% ER' : 'Ready for deliverables') }}
+                        </span>
+                        <div class="flex items-center gap-2 shrink-0" (click)="$event.stopPropagation()">
+                          @if (canManageAgencies()) {
+                            <button type="button" (click)="openCampaignEditModal(camp)" class="h-7 px-2.5 rounded-[3px] bg-cv-control hover:bg-cv-control-hover border border-cv-border text-[11px] font-medium text-cv-ink cursor-pointer">
+                              Edit
+                            </button>
+                          }
+                          <button type="button" (click)="inspectCampaign(camp.id)" class="h-7 px-3 rounded-[3px] bg-[#f54e26] hover:bg-[#ff643e] text-[#111111] text-[11px] font-bold cursor-pointer">
+                            Open →
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  }
+                </div>
+              }
+            </section>
+          }
+
           <!-- TAB: LINKED AGENCIES -->
           @if (activeTab() === 'agencies' && canManageAgencies()) {
             <section class="space-y-5 animate-fade-in-up">
@@ -1488,6 +1670,28 @@ import { safeExternalUrl } from '../utils/url-safety';
         (cancel)="deliverableToDelete.set(null)">
       </app-confirm-modal>
 
+      <!-- Delete Campaign Confirmation Modal -->
+      <app-confirm-modal
+        [open]="!!campaignToDelete()"
+        [title]="'Delete ' + (campaignToDelete()?.name || 'campaign') + '?'"
+        message="This removes the campaign workspace and creator bookings while keeping all synced Reels safely in your Roster."
+        confirmLabel="Delete Campaign"
+        tone="danger"
+        (confirm)="campaignToDelete() && confirmDeleteCampaign(campaignToDelete()!)"
+        (cancel)="campaignToDelete.set(null)">
+      </app-confirm-modal>
+
+      <!-- Create / Edit Campaign Modal -->
+      <app-campaign-form-modal
+        [open]="showCampaignModal()"
+        [campaign]="editingCampaign()"
+        [currency]="currentBrand()?.currency || 'INR'"
+        [busy]="campaignSaving()"
+        [errorMsg]="campaignFormError()"
+        (close)="closeCampaignFormModal()"
+        (save)="saveCampaign($event)">
+      </app-campaign-form-modal>
+
       <!-- Sign Out Confirmation Modal -->
       <app-confirm-modal
         [open]="showSignOutConfirm()"
@@ -1507,6 +1711,8 @@ import { safeExternalUrl } from '../utils/url-safety';
     <app-bulk-import-modal
       [open]="showBulkImportModal()"
       [manageableCreators]="manageableCreators()"
+      [campaigns]="campaigns()"
+      [preselectedCampaignId]="bulkPreselectedCampaignId()"
       [currency]="currentBrand()?.currency || 'INR'"
       [busy]="bulkImportBusy()"
       [errorMsg]="bulkImportError()"
@@ -1520,6 +1726,8 @@ import { safeExternalUrl } from '../utils/url-safety';
       [open]="showShareModal()"
       [brandName]="currentPartnerAgency()?.name || currentBrand()?.name || 'Workspace'"
       [campaigns]="availableCampaigns()"
+      [campaignsList]="campaigns()"
+      [defaultCampaignId]="sharePreselectedCampaignId()"
       [defaultCampaignFilter]="selectedCampaignFilter()"
       [reports]="sharedReports()"
       [busy]="shareCreating()"
@@ -1551,13 +1759,14 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   selectedBrandId = signal<string>('');
   currentBrand = signal<Brand | null>(null);
   agencies = signal<Agency[]>([]);
+  campaigns = signal<CampaignSummary[]>([]);
   creators = signal<Creator[]>([]);
   deliverables = signal<ReelDeliverable[]>([]);
   reelDeltas = signal<Record<string, ReelDeltaSummary>>({});
   auditLogs = signal<AuditLog[]>([]);
   stats = signal({ totalReels: 0, totalReach: 0, avgEngagement: 0, activeAgencies: 0, totalCreators: 0 });
 
-  activeTab = signal<'overview' | 'creators' | 'instagram' | 'agencies' | 'audit'>('overview');
+  activeTab = signal<'overview' | 'campaigns' | 'creators' | 'instagram' | 'agencies' | 'audit'>('overview');
   overviewMode = signal<'live' | 'csv'>('live');
   spotlightCreatorId = signal<string>('');
   spotlightReelId = signal<string>('');
@@ -1637,24 +1846,58 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   demoBusy = signal(false);
 
   showBulkImportModal = signal(false);
+  bulkPreselectedCampaignId = signal('');
   bulkImportBusy = signal(false);
   bulkImportError = signal('');
   bulkImportResult = signal<BulkImportResult | null>(null);
 
   showShareModal = signal(false);
+  sharePreselectedCampaignId = signal('');
   sharedReports = signal<SharedReportRecord[]>([]);
   shareLoading = signal(false);
   shareCreating = signal(false);
 
   showPdfModal = signal(false);
 
+  campaignSearch = '';
+  campaignSearchSig = signal('');
+  campaignStatusFilter = signal<'ALL' | 'ACTIVE' | 'PLANNING' | 'COMPLETED' | 'DRAFT'>('ALL');
+  inspectedCampaignId = signal('');
+  inspectedCampaignBundle = signal<CampaignDetailBundle | null>(null);
+  showCampaignModal = signal(false);
+  editingCampaign = signal<Campaign | CampaignSummary | null>(null);
+  campaignToDelete = signal<Campaign | CampaignSummary | null>(null);
+  campaignSaving = signal(false);
+  campaignFormError = signal('');
+  campaignAssignBusy = signal(false);
+
   hasDemoData = computed(() =>
     this.creators().some(c => !!c.demoData) || this.deliverables().some(r => !!r.demoData)
   );
 
-  availableCampaigns = computed(() =>
-    extractDistinctCampaigns(this.creators(), this.deliverables())
-  );
+  availableCampaigns = computed(() => {
+    const names = new Map<string, string>();
+    for (const c of this.campaigns()) {
+      const nm = (c.name || '').trim();
+      if (nm && !names.has(nm.toLowerCase())) names.set(nm.toLowerCase(), nm);
+    }
+    for (const nm of extractDistinctCampaigns(this.creators(), this.deliverables())) {
+      if (nm && !names.has(nm.toLowerCase())) names.set(nm.toLowerCase(), nm);
+    }
+    return Array.from(names.values());
+  });
+
+  filteredCampaigns = computed(() => {
+    const q = this.campaignSearchSig().toLowerCase().trim();
+    const st = this.campaignStatusFilter();
+    return this.campaigns().filter(c => {
+      const matchStatus = st === 'ALL' || (c.status || '').toUpperCase() === st;
+      const matchQuery = !q
+        || (c.name || '').toLowerCase().includes(q)
+        || (c.briefNotes || '').toLowerCase().includes(q);
+      return matchStatus && matchQuery;
+    });
+  });
 
   scopedWorkspace = computed(() =>
     filterWorkspaceByCampaign(this.creators(), this.deliverables(), this.selectedCampaignFilter())
@@ -1667,15 +1910,19 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     this.creators().filter(c => this.canManageCreatorDeliverables(c))
   );
 
-  executiveSummary = computed(() =>
-    computeExecutiveAnalytics({
+  executiveSummary = computed(() => {
+    const activeCamp = this.selectedCampaignFilter();
+    const campGoal = activeCamp !== 'ALL'
+      ? (this.campaigns().find(c => c.name.trim().toLowerCase() === activeCamp.trim().toLowerCase())?.targetViewsGoal ?? null)
+      : this.currentBrand()?.targetViewsGoal;
+    return computeExecutiveAnalytics({
       creators: this.scopedCreators(),
       deliverables: this.scopedDeliverables(),
       currency: this.currentBrand()?.currency,
-      targetViewsGoal: this.selectedCampaignFilter() === 'ALL' ? this.currentBrand()?.targetViewsGoal : null,
+      targetViewsGoal: campGoal,
       includeSpend: true
-    })
-  );
+    });
+  });
 
   directCreators = computed(() => this.creators().filter(c => c.sourceType === 'DIRECT'));
   directCount = computed(() => this.directCreators().length);
@@ -1941,6 +2188,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
 
   viewTitle = computed(() => {
     switch (this.activeTab()) {
+      case 'campaigns': return 'Campaigns';
       case 'creators': return 'Creators & Reels';
       case 'instagram': return 'Instagram Lookup';
       case 'agencies': return 'Linked Agencies';
@@ -2008,10 +2256,14 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   private closeTransientModals(): void {
     this.showAddCreatorModal.set(false);
     this.showAgencyModal.set(false);
+    this.showCampaignModal.set(false);
     this.showBulkImportModal.set(false);
     this.showShareModal.set(false);
     this.showPdfModal.set(false);
     this.editingGoal.set(false);
+    this.editingCampaign.set(null);
+    this.campaignToDelete.set(null);
+    this.campaignFormError.set('');
     this.editingAgency.set(null);
     this.viewedAgency.set(null);
     this.agencyToDelete.set(null);
@@ -2026,8 +2278,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     this.modalCostMenuOpen.set(false);
   }
 
-  private normalizeWorkspaceTab(raw: string | undefined): 'overview' | 'creators' | 'instagram' | 'agencies' | 'audit' {
+  private normalizeWorkspaceTab(raw: string | undefined): 'overview' | 'campaigns' | 'creators' | 'instagram' | 'agencies' | 'audit' {
     switch (raw) {
+      case 'campaigns':
       case 'creators':
       case 'instagram':
       case 'overview':
@@ -2043,6 +2296,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
   private navigateWorkspace(next: {
     brand?: string;
     tab?: string;
+    campaign?: string;
     creator?: string;
     reel?: string;
     liveReel?: string;
@@ -2051,6 +2305,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     const queryParams: Record<string, string> = {};
     if (next.brand) queryParams['brand'] = next.brand;
     if (next.tab) queryParams['tab'] = next.tab;
+    if (next.campaign) queryParams['campaign'] = next.campaign;
     if (next.creator) queryParams['creator'] = next.creator;
     if (next.reel) queryParams['reel'] = next.reel;
     if (next.liveReel) queryParams['liveReel'] = next.liveReel;
@@ -2058,7 +2313,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl });
   }
 
-  switchTab(tab: 'overview' | 'creators' | 'instagram' | 'agencies' | 'audit'): void {
+  switchTab(tab: 'overview' | 'campaigns' | 'creators' | 'instagram' | 'agencies' | 'audit'): void {
     if (tab === 'agencies' && !this.canManageAgencies()) {
       tab = 'overview';
     }
@@ -2093,6 +2348,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
             this.navigateWorkspace({
               brand: resolvedBrand,
               tab: this.normalizeWorkspaceTab(this.pendingQueryParams['tab']),
+              campaign: this.pendingQueryParams['campaign'],
               creator: this.pendingQueryParams['creator'],
               reel: this.pendingQueryParams['reel'],
               liveReel: this.pendingQueryParams['liveReel'],
@@ -2124,6 +2380,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     }
 
     const tab = this.normalizeWorkspaceTab(params['tab']);
+    const campaignId = params['campaign'] ? String(params['campaign']) : '';
     const creatorId = params['creator'] ? String(params['creator']) : '';
     const reelId = params['reel'] ? String(params['reel']) : '';
     const liveReel = params['liveReel'] ? String(params['liveReel']) : '';
@@ -2141,6 +2398,15 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     if (tab === 'instagram' && igHandle && this.loadedIgHandle.toLowerCase() !== igHandle.toLowerCase()) {
       this.igLookupInput = igHandle.startsWith('@') ? igHandle : `@${igHandle}`;
       this.fetchInstagramPreviewFromRoute(igHandle, liveReel);
+    }
+
+    if (campaignId) {
+      if (this.inspectedCampaignId() !== campaignId) {
+        this.loadCampaignDetailById(campaignId);
+      }
+    } else if (this.inspectedCampaignId()) {
+      this.inspectedCampaignId.set('');
+      this.inspectedCampaignBundle.set(null);
     }
 
     if (creatorId) {
@@ -2178,11 +2444,15 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
       next: (res) => {
         this.currentBrand.set(res.brand);
         this.agencies.set(res.agencies);
+        this.campaigns.set(res.campaigns || []);
         this.creators.set(res.creators);
         const list = res.deliverables || res.recentReels || [];
         this.deliverables.set(list);
         this.reelDeltas.set(res.reelDeltas || {});
         this.stats.set(res.stats);
+        if (this.inspectedCampaignId()) {
+          this.loadCampaignDetailById(this.inspectedCampaignId());
+        }
         if (this.activeTab() === 'agencies' && !this.canManageAgencies()) {
           this.switchTab('overview');
         } else if (this.activeTab() === 'audit') {
@@ -2352,9 +2622,11 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
 
   closeInspector() {
     if (this.selectedBrandId()) {
+      const campId = this.pendingQueryParams['campaign'] ? String(this.pendingQueryParams['campaign']) : '';
       this.navigateWorkspace({
         brand: this.selectedBrandId(),
-        tab: this.activeTab()
+        tab: this.activeTab(),
+        ...(campId ? { campaign: campId } : {})
       });
       return;
     }
@@ -2410,7 +2682,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  submitReel(payload: { title: string; reelUrl: string; costQuoted?: string; campaignTag?: string }) {
+  submitReel(payload: { title: string; reelUrl: string; costQuoted?: string; campaignId?: string | null; campaignTag?: string }) {
     const ic = this.inspectedCreator();
     if (!ic || !payload.reelUrl.trim()) return;
     this.api.addReelDeliverable(ic.id, payload).subscribe({
@@ -2428,10 +2700,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  saveDeliverableEdit(payload: { id: string; title: string; costQuoted?: number | null; campaignTag?: string }) {
-    const body: { title?: string; costQuoted?: number | null; campaignTag?: string } = { title: payload.title };
+  saveDeliverableEdit(payload: { id: string; title: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string }) {
+    const body: { title?: string; costQuoted?: number | null; campaignId?: string | null; campaignTag?: string } = { title: payload.title };
     if (payload.costQuoted !== undefined) {
       body.costQuoted = payload.costQuoted;
+    }
+    if (payload.campaignId !== undefined) {
+      body.campaignId = payload.campaignId;
     }
     if (payload.campaignTag !== undefined) {
       body.campaignTag = payload.campaignTag;
@@ -3063,7 +3338,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  openBulkImportModal() {
+  openBulkImportModal(campaignId = '') {
+    this.bulkPreselectedCampaignId.set(campaignId || '');
     this.bulkImportError.set('');
     this.bulkImportResult.set(null);
     this.showBulkImportModal.set(true);
@@ -3090,11 +3366,175 @@ export class WorkspaceComponent implements OnInit, OnDestroy, DashboardExitAware
     });
   }
 
-  openShareModal() {
+  openShareModal(campaignId = '') {
     const brandId = this.selectedBrandId();
     if (!brandId) return;
+    this.sharePreselectedCampaignId.set(campaignId || '');
     this.showShareModal.set(true);
     this.loadSharedReportsList(brandId);
+  }
+
+  inspectCampaign(campaignId: string) {
+    if (!this.selectedBrandId() || !campaignId) return;
+    this.navigateWorkspace({
+      brand: this.selectedBrandId(),
+      tab: 'campaigns',
+      campaign: campaignId
+    });
+  }
+
+  closeCampaignDetail() {
+    if (this.selectedBrandId()) {
+      this.navigateWorkspace({
+        brand: this.selectedBrandId(),
+        tab: 'campaigns'
+      });
+      return;
+    }
+    this.inspectedCampaignId.set('');
+    this.inspectedCampaignBundle.set(null);
+  }
+
+  openCreatorFromCampaign(c: Creator) {
+    const campId = this.inspectedCampaignId();
+    if (this.selectedBrandId()) {
+      this.navigateWorkspace({
+        brand: this.selectedBrandId(),
+        tab: 'campaigns',
+        ...(campId ? { campaign: campId } : {}),
+        creator: c.id
+      });
+      return;
+    }
+    this.loadCreatorInsightsById(c.id, c);
+  }
+
+  private loadCampaignDetailById(campaignId: string) {
+    this.inspectedCampaignId.set(campaignId);
+    this.api.getCampaignDetail(campaignId).subscribe({
+      next: (bundle) => this.inspectedCampaignBundle.set(bundle),
+      error: (err) => {
+        this.showToast(err?.error?.error || 'Could not load campaign.');
+        this.closeCampaignDetail();
+      }
+    });
+  }
+
+  openCampaignCreateModal() {
+    this.editingCampaign.set(null);
+    this.campaignFormError.set('');
+    this.campaignSaving.set(false);
+    this.showCampaignModal.set(true);
+  }
+
+  openCampaignEditModal(camp: Campaign | CampaignSummary) {
+    this.editingCampaign.set(camp);
+    this.campaignFormError.set('');
+    this.campaignSaving.set(false);
+    this.showCampaignModal.set(true);
+  }
+
+  closeCampaignFormModal() {
+    this.showCampaignModal.set(false);
+    this.editingCampaign.set(null);
+    this.campaignFormError.set('');
+    this.campaignSaving.set(false);
+  }
+
+  saveCampaign(payload: CampaignFormPayload) {
+    const brandId = this.selectedBrandId();
+    if (!brandId || this.campaignSaving()) return;
+    this.campaignSaving.set(true);
+    this.campaignFormError.set('');
+
+    const editing = this.editingCampaign();
+    if (editing) {
+      this.api.updateCampaign(editing.id, payload).subscribe({
+        next: (bundle) => {
+          this.closeCampaignFormModal();
+          if (this.inspectedCampaignId() === bundle.campaign.id) {
+            this.inspectedCampaignBundle.set(bundle);
+          }
+          this.selectBrand(brandId, true);
+          if (this.activeTab() === 'audit') this.loadAuditLogs(brandId);
+          this.showToast('Campaign updated!');
+        },
+        error: (err) => {
+          this.campaignSaving.set(false);
+          this.campaignFormError.set(err?.error?.error || 'Could not update campaign.');
+        }
+      });
+      return;
+    }
+
+    this.api.createCampaign(brandId, payload).subscribe({
+      next: (bundle) => {
+        this.closeCampaignFormModal();
+        this.selectBrand(brandId, true);
+        this.inspectCampaign(bundle.campaign.id);
+        this.showToast('Campaign created!');
+      },
+      error: (err) => {
+        this.campaignSaving.set(false);
+        this.campaignFormError.set(err?.error?.error || 'Could not create campaign.');
+      }
+    });
+  }
+
+  confirmDeleteCampaign(camp: Campaign | CampaignSummary) {
+    const brandId = this.selectedBrandId();
+    if (!brandId || !camp.id) return;
+    this.api.deleteCampaign(camp.id).subscribe({
+      next: () => {
+        this.campaignToDelete.set(null);
+        if (this.selectedCampaignFilter().toLowerCase() === camp.name.toLowerCase()) {
+          this.selectedCampaignFilter.set('ALL');
+        }
+        if (this.inspectedCampaignId() === camp.id) {
+          this.closeCampaignDetail();
+        }
+        this.selectBrand(brandId, true);
+        if (this.activeTab() === 'audit') this.loadAuditLogs(brandId);
+        this.showToast('Campaign removed (synced Reels preserved).');
+      },
+      error: (err) => {
+        this.campaignToDelete.set(null);
+        this.showToast(err?.error?.error || 'Could not remove campaign.');
+      }
+    });
+  }
+
+  submitCampaignCreatorAssign(ev: { campaignId: string; payload: AssignCreatorPayload }) {
+    if (this.campaignAssignBusy()) return;
+    this.campaignAssignBusy.set(true);
+    this.api.assignCreatorToCampaign(ev.campaignId, ev.payload).subscribe({
+      next: () => {
+        this.campaignAssignBusy.set(false);
+        this.loadCampaignDetailById(ev.campaignId);
+        this.selectBrand(this.selectedBrandId(), true);
+        this.showToast('Creator assigned to campaign!');
+      },
+      error: (err) => {
+        this.campaignAssignBusy.set(false);
+        this.showToast(err?.error?.error || 'Could not assign creator.');
+      }
+    });
+  }
+
+  removeCampaignCreator(ev: { campaignId: string; creatorId: string }) {
+    this.api.removeCreatorFromCampaign(ev.campaignId, ev.creatorId).subscribe({
+      next: () => {
+        this.loadCampaignDetailById(ev.campaignId);
+        this.selectBrand(this.selectedBrandId(), true);
+        this.showToast('Removed creator assignment from campaign.');
+      },
+      error: (err) => this.showToast(err?.error?.error || 'Could not remove creator from campaign.')
+    });
+  }
+
+  openCampaignPdf(camp: Campaign) {
+    this.selectedCampaignFilter.set(camp.name);
+    this.showPdfModal.set(true);
   }
 
   private loadSharedReportsList(brandId: string) {

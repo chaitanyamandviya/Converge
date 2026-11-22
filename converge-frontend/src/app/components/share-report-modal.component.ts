@@ -1,10 +1,11 @@
 import { Component, OnChanges, SimpleChanges, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SharedReportRecord } from '../services/api.service';
+import { CampaignSummary, SharedReportRecord } from '../services/api.service';
 
 export interface CreateShareReportPayload {
   title: string;
+  campaignId?: string | null;
   campaignFilter: string;
   includeSpend: boolean;
   expiryDays: number | null;
@@ -46,7 +47,10 @@ export interface CreateShareReportPayload {
                   <select [ngModel]="campaignFilter()" (ngModelChange)="campaignFilter.set($event)" name="repCamp"
                           class="w-full h-9 px-2.5 rounded-[4px] bg-cv-card border border-cv-border text-cv-ink focus:border-[#f54e26] focus:outline-none">
                     <option value="ALL">All Campaigns</option>
-                    @for (c of campaigns(); track c) {
+                    @for (c of campaignsList(); track c.id) {
+                      <option [value]="c.name">{{ c.name }}</option>
+                    }
+                    @for (c of legacyCampaignStrings(); track c) {
                       <option [value]="c">{{ c }}</option>
                     }
                   </select>
@@ -142,6 +146,8 @@ export class ShareReportModalComponent implements OnChanges {
   open = input<boolean>(false);
   brandName = input<string>('');
   campaigns = input<string[]>([]);
+  campaignsList = input<CampaignSummary[]>([]);
+  defaultCampaignId = input<string>('');
   defaultCampaignFilter = input<string>('ALL');
   reports = input<SharedReportRecord[]>([]);
   busy = input<boolean>(false);
@@ -157,9 +163,17 @@ export class ShareReportModalComponent implements OnChanges {
   includeSpend = signal(true);
   expiryDays = signal('');
 
+  legacyCampaignStrings(): string[] {
+    const knownNames = new Set(this.campaignsList().map(c => c.name.trim().toLowerCase()));
+    return this.campaigns().filter(c => !knownNames.has(c.trim().toLowerCase()));
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open()) {
-      const defCamp = this.defaultCampaignFilter() || 'ALL';
+      const matchedCamp = this.defaultCampaignId()
+        ? this.campaignsList().find(c => c.id === this.defaultCampaignId())
+        : null;
+      const defCamp = matchedCamp?.name || this.defaultCampaignFilter() || 'ALL';
       this.campaignFilter.set(defCamp);
       const baseName = this.brandName() || 'Workspace';
       this.title.set(defCamp === 'ALL' ? `${baseName} Campaign Report` : `${baseName} • ${defCamp} Recap`);
@@ -177,9 +191,14 @@ export class ShareReportModalComponent implements OnChanges {
     if (this.busy()) return;
     const rawExp = this.expiryDays();
     const parsedExp = rawExp && Number(rawExp) > 0 ? Number(rawExp) : null;
+    const chosenName = this.campaignFilter() || 'ALL';
+    const matchedCamp = chosenName !== 'ALL'
+      ? this.campaignsList().find(c => c.name.trim().toLowerCase() === chosenName.trim().toLowerCase())
+      : null;
     this.createReport.emit({
       title: this.title().trim() || `${this.brandName() || 'Campaign'} Report`,
-      campaignFilter: this.campaignFilter() || 'ALL',
+      campaignId: matchedCamp ? matchedCamp.id : null,
+      campaignFilter: chosenName,
       includeSpend: this.includeSpend(),
       expiryDays: parsedExp
     });

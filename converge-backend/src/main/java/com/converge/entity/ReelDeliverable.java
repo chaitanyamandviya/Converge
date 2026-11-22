@@ -38,6 +38,7 @@ public class ReelDeliverable {
 
     private String duration = "0:45";
     private Double costQuoted;
+    private UUID campaignId;
     private String campaignTag = "";
     private Boolean demoData = false;
 
@@ -86,6 +87,8 @@ public class ReelDeliverable {
     public void setDuration(String duration) { this.duration = duration; }
     public Double getCostQuoted() { return costQuoted; }
     public void setCostQuoted(Double costQuoted) { this.costQuoted = costQuoted; }
+    public UUID getCampaignId() { return campaignId; }
+    public void setCampaignId(UUID campaignId) { this.campaignId = campaignId; }
     public String getCampaignTag() { return campaignTag != null ? campaignTag : ""; }
     public void setCampaignTag(String campaignTag) { this.campaignTag = campaignTag != null ? campaignTag : ""; }
     public boolean isDemoData() { return Boolean.TRUE.equals(demoData); }

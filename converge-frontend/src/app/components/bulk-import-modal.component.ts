@@ -1,12 +1,13 @@
 import { Component, OnChanges, SimpleChanges, computed, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Creator } from '../services/api.service';
+import { CampaignSummary, Creator } from '../services/api.service';
 import { ParsedBulkReelRow, parseBulkReelLines } from '../utils/bulk-import';
 import { resolveCurrencySymbol } from '../utils/campaign-analytics';
 
 export interface BulkImportSubmitPayload {
   defaultCreatorId?: string;
+  defaultCampaignId?: string | null;
   defaultCampaignTag?: string;
   defaultCostQuoted?: number | null;
   items: Array<{
@@ -90,10 +91,14 @@ export interface BulkImportResult {
                 </select>
               </div>
               <div>
-                <label class="block font-medium text-cv-ink mb-1">Campaign Tag (optional)</label>
-                <input [ngModel]="defaultCampaignTag()" (ngModelChange)="defaultCampaignTag.set($event)"
-                       placeholder="e.g. Summer Glow Drop"
-                       class="w-full h-9 px-3 rounded-[4px] bg-cv-well border border-cv-border text-cv-ink placeholder:text-cv-ink-subtle text-xs focus:border-[#f54e26] focus:outline-none"/>
+                <label class="block font-medium text-cv-ink mb-1">Campaign (optional)</label>
+                <select [ngModel]="selectedCampaignId()" (ngModelChange)="onSelectCampaign($event)"
+                        class="w-full h-9 px-2.5 rounded-[4px] bg-cv-well border border-cv-border text-cv-ink text-xs focus:border-[#f54e26] focus:outline-none">
+                  <option value="">No Campaign / Use CSV column</option>
+                  @for (camp of campaigns(); track camp.id) {
+                    <option [value]="camp.id">{{ camp.name }}</option>
+                  }
+                </select>
               </div>
               <div>
                 <label class="block font-medium text-cv-ink mb-1">Default Cost / Reel ({{ currencySymbol() }})</label>
@@ -188,6 +193,8 @@ export interface BulkImportResult {
 export class BulkImportModalComponent implements OnChanges {
   open = input<boolean>(false);
   manageableCreators = input<Creator[]>([]);
+  campaigns = input<CampaignSummary[]>([]);
+  preselectedCampaignId = input<string>('');
   currency = input<string>('INR');
   busy = input<boolean>(false);
   errorMsg = input<string>('');
@@ -198,6 +205,7 @@ export class BulkImportModalComponent implements OnChanges {
 
   rawInput = signal('');
   defaultCreatorId = signal('');
+  selectedCampaignId = signal('');
   defaultCampaignTag = signal('');
   defaultCost = signal('');
 
@@ -217,9 +225,16 @@ export class BulkImportModalComponent implements OnChanges {
   invalidRows = computed(() => this.parsedRows().filter(r => !r.valid));
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['open'] && this.open()) {
-      // Preserve pasted text unless completely empty, or clear on fresh open if previous succeeded completely
+    if ((changes['open'] || changes['preselectedCampaignId']) && this.open()) {
+      const preId = this.preselectedCampaignId() || '';
+      this.onSelectCampaign(preId);
     }
+  }
+
+  onSelectCampaign(cid: string): void {
+    this.selectedCampaignId.set(cid || '');
+    const matched = this.campaigns().find(c => c.id === cid);
+    this.defaultCampaignTag.set(matched ? matched.name : '');
   }
 
   onCsvFileSelected(event: Event): void {
@@ -246,6 +261,7 @@ export class BulkImportModalComponent implements OnChanges {
 
     this.importSubmit.emit({
       defaultCreatorId: this.defaultCreatorId() || undefined,
+      defaultCampaignId: this.selectedCampaignId() || undefined,
       defaultCampaignTag: this.defaultCampaignTag().trim() || undefined,
       defaultCostQuoted: parsedDefaultCost,
       items: rows.map(r => ({

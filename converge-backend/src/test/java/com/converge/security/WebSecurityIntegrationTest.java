@@ -46,6 +46,9 @@ class WebSecurityIntegrationTest {
     @Autowired private CreatorRepository creatorRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    @Autowired private com.converge.repository.CampaignRepository campaignRepository;
+    @Autowired private com.converge.repository.CampaignCreatorRepository campaignCreatorRepository;
+    @Autowired private com.converge.repository.ReelDeliverableRepository reelRepository;
 
     private User adminUser;
     private User managerA;
@@ -55,6 +58,9 @@ class WebSecurityIntegrationTest {
 
     @BeforeEach
     void initData() {
+        campaignCreatorRepository.deleteAll();
+        campaignRepository.deleteAll();
+        reelRepository.deleteAll();
         creatorRepository.deleteAll();
         agencyRepository.deleteAll();
         brandRepository.deleteAll();
@@ -545,5 +551,172 @@ class WebSecurityIntegrationTest {
                         .header("Authorization", "Bearer " + tokenA))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.creators.length()").value(2)); // creatorA + @agency_talent remain intact!
+    }
+
+    @Test
+    void enforcesCampaignPermissionsAgencyScopingAndPrePostAssignments() throws Exception {
+        String tokenA = jwtService.generateToken(managerA);
+
+        // Connected Partner Agency setup on Brand A
+        mockMvc.perform(post("/api/brands/{id}/agencies", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Apex Agency\",\"contactName\":\"Apex Lead\",\"contactEmail\":\"lead@apex.test\",\"status\":\"CONNECTED\"}"))
+                .andExpect(status().isOk());
+
+        User agencyUser = new User();
+        agencyUser.setName("Apex Lead");
+        agencyUser.setEmail("lead@apex.test");
+        agencyUser.setRole("BRAND_MANAGER");
+        agencyUser.setVerified(true);
+        agencyUser.setPasswordHash(passwordEncoder.encode("AgencyPass9!"));
+        agencyUser = userRepository.save(agencyUser);
+        String agencyToken = jwtService.generateToken(agencyUser);
+
+        var agencyCreatorRes = mockMvc.perform(post("/api/brands/{id}/creators", brandA.getId())
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Apex Talent\",\"handle\":\"@apex_creator\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String agencyCreatorId = objectMapper.readTree(agencyCreatorRes.getResponse().getContentAsString())
+                .get("id").asText();
+
+        // Option A: Brand Manager creates ACTIVE and DRAFT campaigns; Partner Agency is forbidden from campaign CRUD
+        var activeCampRes = mockMvc.perform(post("/api/brands/{id}/campaigns", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Summer Hydration\",\"status\":\"ACTIVE\",\"budgetAmount\":100000,\"targetViewsGoal\":500000,\"startDate\":\"2026-06-01\",\"endDate\":\"2026-06-30\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.campaign.name").value("Summer Hydration"))
+                .andExpect(jsonPath("$.campaign.status").value("ACTIVE"))
+                .andReturn();
+        String activeCampId = objectMapper.readTree(activeCampRes.getResponse().getContentAsString())
+                .get("campaign").get("id").asText();
+
+        var draftCampRes = mockMvc.perform(post("/api/brands/{id}/campaigns", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Secret Q4 Launch\",\"status\":\"DRAFT\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.campaign.status").value("DRAFT"))
+                .andReturn();
+        String draftCampId = objectMapper.readTree(draftCampRes.getResponse().getContentAsString())
+                .get("campaign").get("id").asText();
+
+        mockMvc.perform(post("/api/brands/{id}/campaigns", brandA.getId())
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Rogue Agency Campaign\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/api/campaigns/{cid}", activeCampId)
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Hijacked\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/campaigns/{cid}", activeCampId)
+                        .header("Authorization", "Bearer " + agencyToken))
+                .andExpect(status().isForbidden());
+
+        // Agency can list non-DRAFT campaigns and cannot open DRAFT campaign detail
+        mockMvc.perform(get("/api/brands/{id}/campaigns", brandA.getId())
+                        .header("Authorization", "Bearer " + agencyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Summer Hydration"));
+        mockMvc.perform(get("/api/campaigns/{cid}", draftCampId)
+                        .header("Authorization", "Bearer " + agencyToken))
+                .andExpect(status().isForbidden());
+
+        // Pre-post assignments enforce creator ownership isolation
+        mockMvc.perform(post("/api/campaigns/{cid}/creators", activeCampId)
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"creatorId\":\"" + creatorA.getId() + "\",\"agreedCost\":25000,\"expectedReels\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.expectedReels").value(2));
+
+        mockMvc.perform(post("/api/campaigns/{cid}/creators", activeCampId)
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"creatorId\":\"" + agencyCreatorId + "\",\"agreedCost\":15000}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/campaigns/{cid}/creators", activeCampId)
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"creatorId\":\"" + creatorA.getId() + "\",\"agreedCost\":10000}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/campaigns/{cid}/creators", draftCampId)
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"creatorId\":\"" + agencyCreatorId + "\"}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/campaigns/{cid}/creators", activeCampId)
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"creatorId\":\"" + agencyCreatorId + "\",\"agreedCost\":15000,\"expectedReels\":1,\"notes\":\"Product unboxing\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.agreedCost").value(15000.0));
+
+        // Before posting reels, status is PENDING_POST and agency sees only its own creator/spend
+        mockMvc.perform(get("/api/campaigns/{cid}", activeCampId)
+                        .header("Authorization", "Bearer " + agencyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assignedCreators.length()").value(1))
+                .andExpect(jsonPath("$.assignedCreators[0].creator.handle").value("@apex_creator"))
+                .andExpect(jsonPath("$.assignedCreators[0].status").value("PENDING_POST"))
+                .andExpect(jsonPath("$.stats.totalSpend").value(15000))
+                .andExpect(content().string(not(containsString("@creator_a"))));
+
+        // Brand owner sees full roster across direct + agency creators
+        mockMvc.perform(get("/api/campaigns/{cid}", activeCampId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assignedCreators.length()").value(2))
+                .andExpect(jsonPath("$.stats.totalSpend").value(40000));
+
+        // Agency links a Reel into the campaign -> creator flips to POSTED
+        mockMvc.perform(post("/api/creators/{creatorId}/deliverables", agencyCreatorId)
+                        .header("Authorization", "Bearer " + agencyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Apex Unboxing Reel\",\"reelUrl\":\"https://www.instagram.com/reel/D1ApexReel1/\",\"campaignId\":\"" + activeCampId + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.campaignId").value(activeCampId))
+                .andExpect(jsonPath("$.campaignTag").value("Summer Hydration"));
+
+        mockMvc.perform(get("/api/campaigns/{cid}", activeCampId)
+                        .header("Authorization", "Bearer " + agencyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assignedCreators[0].status").value("POSTED"))
+                .andExpect(jsonPath("$.assignedCreators[0].reelsCount").value(1));
+
+        // Campaign rename propagates campaignTag onto linked deliverables
+        mockMvc.perform(patch("/api/campaigns/{cid}", activeCampId)
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Summer Hydration 2026\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.campaign.name").value("Summer Hydration 2026"))
+                .andExpect(jsonPath("$.deliverables[0].campaignTag").value("Summer Hydration 2026"));
+
+        // Deleting campaign retains synced Reels without recreating deleted campaign via legacy migration
+        mockMvc.perform(delete("/api/campaigns/{cid}", activeCampId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deleted").value(true));
+
+        mockMvc.perform(get("/api/brands/{id}/campaigns", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Secret Q4 Launch"));
+
+        mockMvc.perform(get("/api/brands/{id}", brandA.getId())
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deliverables.length()").value(1));
     }
 }
